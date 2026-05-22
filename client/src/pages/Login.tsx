@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react"
-import { auth, isFirebaseConfigured } from "../firebase";
+import { useState } from "react"
+import { auth } from "../firebase";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 
 function Login() {
@@ -7,7 +7,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = async (e: FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
@@ -26,10 +26,6 @@ function Login() {
       setError(err instanceof Error ? err.message : "Login failed");
     }
   };
-
-  if (!isFirebaseConfigured || !auth) {
-    return null;
-  }
 
   return (
     <>

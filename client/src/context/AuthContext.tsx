@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"
-import { auth, db, isFirebaseConfigured } from "../firebase"
+import { auth, db } from "../firebase"
 
 
 interface AuthContextValue {
@@ -20,17 +20,12 @@ export default function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth || !db) {
-      setAuthLoading(false);
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUid(firebaseUser.uid);
         setUsername(firebaseUser.displayName);
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid, "private", "account"));
-        setIsAdmin(!!userDoc.data()?.isAdmin);
+        setIsAdmin(userDoc.data()?.isAdmin);
         setAuthLoading(false);
       } else {
         setUid(null);

@@ -1,15 +1,16 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import FirebaseSetupNotice from './components/FirebaseSetupNotice';
-import HomeRedirect from './components/HomeRedirect';
-import RedirectIfAuthed from './components/RedirectIfAuthed';
-import RequireAdmin from './components/RequireAdmin';
-import RequireAuth from './components/RequireAuth';
-import { isFirebaseConfigured } from './firebase';
+//Pages
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import RootLayout from './pages/RootLayout';
 import Welcome from './pages/Welcome';
+
+//RBAC
+import HomeRedirect from './components/HomeRedirect';
+import RedirectIfAuthed from './components/RedirectIfAuthenticated';
+import RequireAdmin from './components/RequireAdmin';
+import RequireAuth from './components/RequireAuth';
 
 const router = createBrowserRouter([
   {
@@ -36,10 +37,6 @@ const router = createBrowserRouter([
 ])
 
 function App() {
-  if (!isFirebaseConfigured) {
-    return <FirebaseSetupNotice />;
-  }
-
   return <RouterProvider router={router}/>
 }
 
