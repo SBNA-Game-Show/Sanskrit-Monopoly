@@ -1,18 +1,18 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+//RBAC
+import HomeRedirect from "./components/HomeRedirect";
+import RedirectIfAuthenticated from "./components/RedirectIfAuthenticated";
+import RequireAdmin from "./components/RequireAdmin";
+import RequireAuth from './components/RequireAuth';
+
 //Pages
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import RootLayout from "./pages/RootLayout";
-import Welcome from "./pages/Welcome';
-
-//RBAC
-import HomeRedirect from './components/HomeRedirect";
-import RedirectIfAuthed from './components/RedirectIfAuthenticated';
-import RequireAdmin from "./components/RequireAdmin";
 import Home from "./pages/Home";
 import Rules from "./pages/Rules";
-import RequireAuth from './components/RequireAuth';
+import Lobby from "./pages/Lobby";
 
 const router = createBrowserRouter([
   {
@@ -21,17 +21,19 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomeRedirect /> },
       {
-        element: <RedirectIfAuthed />,
+        element: <RedirectIfAuthenticated />,
         children: [{ path: 'login', element: <Login /> }],
       },
       {
         element: <RequireAuth />,
         children: [
-          { path: 'welcome', element: <Welcome /> },
+          { path: 'home', element: <Home /> },
           {
             element: <RequireAdmin />,
             children: [{ path: 'admin', element: <Admin /> }],
           },
+          { path: "rules", element: <Rules /> },
+          { path: "lobby", element: <Lobby /> },
         ],
       },
     ],

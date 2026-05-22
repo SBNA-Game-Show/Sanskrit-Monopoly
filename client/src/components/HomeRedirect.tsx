@@ -12,7 +12,7 @@ function HomeRedirect() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to="/welcome" replace />;
+  return <Navigate to="/home" replace />;
 }
 
 export default HomeRedirect;

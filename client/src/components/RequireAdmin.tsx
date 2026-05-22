@@ -9,7 +9,7 @@ function RequireAdmin() {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/welcome" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   return <Outlet />;
