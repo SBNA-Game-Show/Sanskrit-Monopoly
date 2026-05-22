@@ -4,7 +4,7 @@ function Home() {
   return (
     <main className="home-page">
       <section className="hero-card">
-        <p className="eyebrow">THE Sanskrit Monopoly</p>
+        <p className="text-red-800">THE Sanskrit Monopoly</p>
 
         <h1>Test your Sanskrit knowledge!</h1>
 
