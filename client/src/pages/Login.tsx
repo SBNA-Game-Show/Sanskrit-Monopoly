@@ -1,27 +1,19 @@
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { auth, isFirebaseConfigured } from "../firebase";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const navigate = useNavigate();
-
-  function navigateToLobbyJoinPage() {
-    navigate("/");
-  }
-
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigateToLobbyJoinPage();
+      await signInWithEmailAndPassword(auth!, email, password);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Login failed");
     }
   };
 
@@ -29,10 +21,9 @@ function Login() {
     setError("");
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      navigateToLobbyJoinPage();
+      await signInWithPopup(auth!, provider);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Login failed");
     }
   };
 

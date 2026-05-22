@@ -30,7 +30,7 @@ export default function AuthProvider({ children }) {
         setUid(firebaseUser.uid);
         setUsername(firebaseUser.displayName);
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid, "private", "account"));
-        setIsAdmin(userDoc.data()?.isAdmin);
+        setIsAdmin(!!userDoc.data()?.isAdmin);
         setAuthLoading(false);
       } else {
         setUid(null);
