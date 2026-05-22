@@ -1,21 +1,26 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import RootLayout from './pages/RootLayout';
-import JoinLobby from './pages/JoinLobby';
-import Login from './pages/Login';
+import RootLayout from "./pages/RootLayout";
+import JoinLobby from "./pages/JoinLobby";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Rules from "./pages/Rules";
 
 const router = createBrowserRouter([
-  { path:'/', 
+  {
+    path: "/",
     element: <RootLayout />,
     children: [
-      { path:'/', element: <JoinLobby /> },
-      { path:'/login', element: <Login /> },
-    ], 
+      { index: true, element: <Home /> },
+      { path: "joinlobby", element: <JoinLobby /> },
+      { path: "login", element: <Login /> },
+      { path: "rules", element: <Rules /> },
+    ],
   },
-])
+]);
 
 function App() {
-  return <RouterProvider router={router}/>
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;
