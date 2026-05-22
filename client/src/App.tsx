@@ -1,20 +1,22 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 //Pages
 import Admin from './pages/Admin';
 import Login from './pages/Login';
-import RootLayout from './pages/RootLayout';
-import Welcome from './pages/Welcome';
+import RootLayout from "./pages/RootLayout";
+import Welcome from "./pages/Welcome';
 
 //RBAC
-import HomeRedirect from './components/HomeRedirect';
+import HomeRedirect from './components/HomeRedirect";
 import RedirectIfAuthed from './components/RedirectIfAuthenticated';
-import RequireAdmin from './components/RequireAdmin';
+import RequireAdmin from "./components/RequireAdmin";
+import Home from "./pages/Home";
+import Rules from "./pages/Rules";
 import RequireAuth from './components/RequireAuth';
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <RootLayout />,
     children: [
       { index: true, element: <HomeRedirect /> },
@@ -34,10 +36,10 @@ const router = createBrowserRouter([
       },
     ],
   },
-])
+]);
 
 function App() {
-  return <RouterProvider router={router}/>
+  return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;

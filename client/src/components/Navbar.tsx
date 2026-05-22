@@ -7,25 +7,23 @@ function Navbar() {
   const { uid, username, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  function navigateToLoginPage() {
-    navigate("/login");
-  }
-
   const handleLogout = async () => {
     if (!auth) return;
     await signOut(auth);
-    navigateToLoginPage();
+    navigate("/login");
   };
 
   return (
-    <>
-      <h1>Sanskrit Monopoly</h1>
-      <h2>uid: {uid}</h2>
-      <h2>username: {username}</h2>
-      <h2>isAdmin: {isAdmin ? "true" : "false"}</h2>
+    <header className="navbar">
+      <div className="navbar-user">
+        <p className="navbar-meta">
+          {username || "Unknown user"} · {isAdmin ? "Admin" : "Player"}
+        </p>
+        <p className="navbar-uid">UID: {uid}</p>
+      </div>
+
       {uid && <button onClick={handleLogout}>Logout</button>}
-      <hr />
-    </>
+    </header>
   );
 }
 
