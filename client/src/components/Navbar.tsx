@@ -12,6 +12,7 @@ function Navbar() {
   }
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     navigateToLoginPage();
   };

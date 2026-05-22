@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { auth } from "../firebase";
+import { auth, isFirebaseConfigured } from "../firebase";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +35,10 @@ function Login() {
       setError(err.message);
     }
   };
+
+  if (!isFirebaseConfigured || !auth) {
+    return null;
+  }
 
   return (
     <>
