@@ -3,6 +3,25 @@ import { useEffect, useState } from "react";
 import { socket } from "../socket";
 
 function Home() {
+  const [serverMessage, setServerMessage] = useState("Not connected");
+  useEffect(() => {
+    socket.connect();
+    socket.on("serverMessage", (data: { message: string }) => {
+      setServerMessage(data.message);
+    });
+
+    return () => {
+      socket.off("serverMessage");
+      socket.disconnect();
+    };
+  }, []);
+
+  function testSocket() {
+    socket.emit("pingServer", {
+      message: "Hello! This be from client.",
+    });
+  }
+
   return (
     <main className="home-page">
       <section className="hero-card">
