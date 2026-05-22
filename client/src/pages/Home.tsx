@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { socket } from "../socket";
 
 function Home() {
   return (
@@ -24,6 +26,13 @@ function Home() {
             />
             <button type="button">Join Room</button>
           </div>
+        </div>
+
+        <div className="socket-test">
+          <p>{serverMessage}</p>
+          <button type="button" onClick={testSocket}>
+            Test that dang socket
+          </button>
         </div>
 
         <Link to="/rules" className="nav-link">
