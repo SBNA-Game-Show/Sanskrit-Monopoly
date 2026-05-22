@@ -144,3 +144,15 @@ input {
 }
 
 /* #endregion ------------ Form Controls ------------ */
+
+/* socket test style */
+.socket-test {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.socket-test p {
+  margin-bottom: 0.75rem;
+  color: #4b5563;
+  font-weight: 600;
+}
