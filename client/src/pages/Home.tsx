@@ -1,6 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Home() {
+  const navigate = useNavigate();
+  const { uid, username, } = useAuth();
+
+  const createRoom = async () => {
+    const response = await fetch("http://localhost:3000/api/lobby-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostUid: uid, hostUsername: username }),
+    });
+
+    const data = await response.json();
+    navigate(`/lobby/${data.lobby.lobbyCode}`);
+  };
+
   return (
     <main className="home-page">
       <section className="hero-card">
@@ -12,9 +27,10 @@ function Home() {
           Monopoly-styled board game with cultural heritage sites as rewards or
           whatever
         </p>
-
         <div className="action-row">
-          <button type="button">Create Room</button>
+          <button onClick={createRoom} type="button">
+            Create Room
+          </button>
 
           <div className="join-box">
             <input
