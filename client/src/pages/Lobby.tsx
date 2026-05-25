@@ -18,9 +18,8 @@ function Lobby() {
       <section className="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-xl">
         <h1 className="m-0 text-3xl font-extrabold text-slate-800">Lobby</h1>
 
-        <p className="mt-2 text-slate-600">Sample Text babyyyyy</p>
+        <p className="mt-2 text-slate-600">Lobby Code: {lobbyCode}</p>
       </section>
-      <div>Lobby Code: {lobbyCode}</div>
     </main>
   );
 }
