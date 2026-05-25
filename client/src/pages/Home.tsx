@@ -1,6 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Home() {
+  const navigate = useNavigate();
+  const { uid, username, } = useAuth();
+
+  const createRoom = async () => {
+    const response = await fetch("http://localhost:3000/api/lobby-create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostUid: uid, hostUsername: username }),
+    });
+
+    const data = await response.json();
+    navigate(`/lobby/${data.lobby.lobbyCode}`);
+  };
+
   return (
     <main className="grid min-h-[calc(100vh-56px)] place-items-center bg-orange-50 p-8">
       <section className="flex w-full max-w-4xl flex-col items-center rounded-3xl bg-white p-12 text-center shadow-xl">
@@ -16,13 +31,14 @@ function Home() {
           Monopoly-styled board game with cultural heritage sites as rewards or
           whatever
         </p>
-
         <div className="mb-5 flex flex-wrap items-center justify-center gap-4">
-          <button
+          <button onClick={createRoom}
             type="button"
             className="rounded-full bg-orange-600 px-5 py-3 font-bold text-white transition hover:bg-orange-200 hover:text-slate-900"
           >
+            
             Create Room
+          
           </button>
 
           <div className="flex flex-wrap justify-center gap-2">
