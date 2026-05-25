@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { auth } from "../firebase";
 import {
   signInWithEmailAndPassword,
@@ -11,9 +11,10 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
+  const handleLogin: ComponentProps<"form">["onSubmit"] = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
       await signInWithEmailAndPassword(auth!, email, password);
     } catch (err) {
