@@ -512,11 +512,11 @@ function AdminGame() {
 
         {/* Footer */}
         <footer className="min-h-[82px] bg-[#f5bd78] px-8 py-3 text-[20px] leading-tight">
-          Current Turn: Player {currentPlayerIndex + 1} — {currentPlayer?.name || "None"}
+          {/* Current Turn: Player {currentPlayerIndex + 1} — {currentPlayer?.name || "None"}
           <br />
           Dice Result: {diceResult}
           <br />
-          Tile Landed: {tileLanded}
+          Tile Landed: {tileLanded} */}
         </footer>
       </section>
 
