@@ -350,38 +350,9 @@ function AdminGame() {
   return (
     <main className="min-h-screen w-full bg-[#161616] font-sans text-[#160f08]">
       <section className="flex min-h-screen w-full flex-col bg-[#fffaf0]">
-        {/* Header */}
-        <header className="grid min-h-[90px] grid-cols-[340px_1fr_190px] items-center gap-4 bg-[#f5bd78] px-8 py-3 shadow-md">
-          <div className="flex items-center gap-4">
-            <div className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-[#e84a15] text-sm font-bold text-white shadow">
-              Logo
-            </div>
-
-            <div>
-              <h1 className="text-[25px] leading-none tracking-wide">Sanskrit Monopoly</h1>
-              <p className="mt-1 text-xs">संस्कृत-विहारः</p>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <p className="text-[31px] leading-none">UUID</p>
-            <p className="mt-2 text-[20px] font-extrabold">
-              Edition: Temples Edition&nbsp;&nbsp;&nbsp; Room: SAM-4821
-              <span className="mx-3 inline-block h-[16px] w-[16px] rounded-full border border-[#188c35] bg-[#31c85a]" />
-              Live
-            </p>
-          </div>
-
-          <div className="flex flex-col items-end text-xs">
-            <div className="flex h-[58px] w-[58px] items-center justify-center rounded-full bg-red-600 text-[11px] text-black">
-              User state
-            </div>
-            <p className="mt-1">Username</p>
-          </div>
-        </header>
-
+        
         {/* Main Content */}
-        <section className="grid flex-1 grid-cols-[320px_1fr_330px] gap-6 bg-[#fffaf0] p-6">
+        <section className="grid flex-1 grid-cols-[340px_1fr_340px] gap-6 bg-[#fffaf0] p-6 pt-8">
           {/* Players Panel */}
         <aside className="max-h-[calc(100vh-130px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
         <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
@@ -445,7 +416,12 @@ function AdminGame() {
 
           {/* Board */}
           <section className="flex min-w-0 flex-col">
-            <h2 className="mb-3 text-[24px] font-normal">Live Board View</h2>
+            <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
+                <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
+                <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
+                    SAM-4821
+                </h2>
+            </div>
 
             <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
               <div className="aspect-square h-full max-h-[calc(100vh-210px)] w-full max-w-[calc(100vh-210px)]">
