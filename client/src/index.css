@@ -15,6 +15,24 @@ body {
   background: #fff7ed;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+
+
+#root {
+  max-width: none;
+  border: 0;
+  text-align: left;
+  display: block;
+}
+
+/* #endregion ------------ Form Controls ------------ */
 /* #endregion ------------ Global Defaults ------------ */
 
 /* Font family for lobby workspace */
