@@ -1,19 +1,38 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 function Home() {
   const navigate = useNavigate();
-  const { uid, username, } = useAuth();
+  const { uid, username } = useAuth();
+  const { showToast } = useToast();
 
   const createRoom = async () => {
-    const response = await fetch("http://localhost:3000/api/lobby-create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hostUid: uid, hostUsername: username }),
-    });
+    try {
+      const response = await fetch("http://localhost:3000/api/lobby-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostUid: uid, hostUsername: username }),
+      });
 
-    const data = await response.json();
-    navigate(`/lobby/${data.lobby.lobbyCode}`);
+      if (!response.ok) {
+        throw new Error("Failed to create room");
+      }
+
+      const data = await response.json();
+      showToast({
+        variant: "success",
+        title: "Room created",
+        message: "Room has been created successfully.",
+      });
+      navigate(`/lobby/${data.lobby.lobbyCode}`);
+    } catch {
+      showToast({
+        variant: "error",
+        title: "Could not create room",
+        message: "Something went wrong. Please try again.",
+      });
+    }
   };
 
   return (
