@@ -2,6 +2,7 @@
    =================== Root stylesheet =========================
    ============================================================= */
 
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
 @import "tailwindcss";
 @import "./styles/typography.css";
 @import "./styles/components.css";
@@ -21,4 +22,46 @@ body {
   background: #fff7ed;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+
+
+#root {
+  max-width: none;
+  border: 0;
+  text-align: left;
+  display: block;
+}
+
+/* #region ------------ Toasts ------------ */
+
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-slide-down {
+  animation: toast-slide-down 280ms ease-out;
+}
+
+/* #endregion ------------ Toasts ------------ */
+
+/* #endregion ------------ Form Controls ------------ */
 /* #endregion ------------ Global Defaults ------------ */
+
+/* Font family for lobby workspace */
+.font-jersey {
+  font-family: 'Jersey 10', sans-serif;
+}

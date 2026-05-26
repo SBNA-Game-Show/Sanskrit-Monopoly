@@ -13,6 +13,8 @@ import RootLayout from "./pages/RootLayout";
 import Home from "./pages/Home";
 import Rules from "./pages/Rules";
 import Lobby from "./pages/Lobby";
+import Game from "./pages/Game";
+import AdminGame from "./pages/AdminGame";
 
 const router = createBrowserRouter([
   {
