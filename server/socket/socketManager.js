@@ -6,7 +6,7 @@ export function setupSocketEvents(io) {
 
     socket.on("lobby-join", ({ lobbyCode, uid, username }) => {
       const lobby = lobbies[lobbyCode];
-      if (lobby && lobby.status === "waiting") {
+      if (lobby) {
         if (lobby.host.uid === uid) {
           lobby.host.socketId = socket.id;
         } 
@@ -19,6 +19,14 @@ export function setupSocketEvents(io) {
           }
         }
         socket.join(lobbyCode);
+        io.to(lobbyCode).emit("lobby-update", lobby);
+      }
+    });
+
+    socket.on("game-start", ({ lobbyCode }) => {
+      const lobby = lobbies[lobbyCode];
+      if (lobby && lobby.host.socketId === socket.id) {
+        lobby.status = "playing";
         io.to(lobbyCode).emit("lobby-update", lobby);
       }
     });
