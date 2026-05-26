@@ -1,5 +1,12 @@
+/* =============================================================
+   =================== Root stylesheet =========================
+   ============================================================= */
+
 @import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
 @import "tailwindcss";
+@import "./styles/typography.css";
+@import "./styles/components.css";
+@import "./styles/animations.css";
 
 /* #region ------------ Global Defaults ------------ */
 
