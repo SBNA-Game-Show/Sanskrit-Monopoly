@@ -1,19 +1,40 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
+import { useToast } from "../context/ToastContext";
 
 function Home() {
+  const [lobbyCode, setLobbyCode] = useState("");
   const navigate = useNavigate();
-  const { uid, username, } = useAuth();
+  const { uid, username } = useAuth();
+  const { showToast } = useToast();
 
   const createRoom = async () => {
-    const response = await fetch("http://localhost:3000/api/lobby-create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ hostUid: uid, hostUsername: username }),
-    });
+    try {
+      const response = await fetch("http://localhost:3000/api/lobby-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostUid: uid, hostUsername: username }),
+      });
 
-    const data = await response.json();
-    navigate(`/lobby/${data.lobby.lobbyCode}`);
+      if (!response.ok) {
+        throw new Error("Failed to create room");
+      }
+
+      const data = await response.json();
+      showToast({
+        variant: "success",
+        title: "Room created",
+        message: "Room has been created successfully.",
+      });
+      navigate(`/lobby/${data.lobby.lobbyCode}`);
+    } catch {
+      showToast({
+        variant: "error",
+        title: "Could not create room",
+        message: "Something went wrong. Please try again.",
+      });
+    }
   };
 
   return (
@@ -46,11 +67,13 @@ function Home() {
               type="text"
               placeholder="Enter room code"
               aria-label="Room code"
+              value={lobbyCode}
+              onChange={(e) => setLobbyCode(e.target.value.toUpperCase())}
               className="min-w-45 rounded-full border border-orange-200 px-4 py-3 outline-none transition focus:border-orange-500"
             />
 
             <button
-              type="button"
+              type="button" onClick={() => navigate(`/lobby/${lobbyCode}`)}
               className="rounded-full bg-orange-600 px-5 py-3 font-bold text-white transition hover:bg-orange-200 hover:text-slate-900"
             >
               Join Room
@@ -62,7 +85,7 @@ function Home() {
           to="/rules"
           className="font-bold text-blue-700 no-underline transition hover:text-orange-500"
         >
-          Them Rules
+          The Rules
         </Link>
       </section>
     </main>

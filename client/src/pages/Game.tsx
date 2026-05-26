@@ -12,11 +12,11 @@ type Player = {
   score: number;
 };
 
-function Game() {
+function Game({gameState}) {
   const [players, setPlayers] = useState<Player[]>([
     {
       id: 1,
-      name: "XYZ",
+      name: gameState.players[0].username,
       money: 850,
       position: 12,
       status: "Active",
@@ -26,7 +26,7 @@ function Game() {
     },
     {
       id: 2,
-      name: "ABC",
+      name: gameState.players[1].username,
       money: 823,
       position: 15,
       status: "Active",
@@ -36,7 +36,7 @@ function Game() {
     },
     {
       id: 3,
-      name: "DFK",
+      name: gameState.players[2].username,
       money: 489,
       position: 7,
       status: "Active",
@@ -46,7 +46,7 @@ function Game() {
     },
     {
       id: 4,
-      name: "SAW",
+      name: gameState.players[3].username,
       money: 569,
       position: 13,
       status: "Active",
@@ -229,7 +229,7 @@ function Game() {
             <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
                 <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
                 <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
-                    SAM-4821
+                    {gameState.lobbyCode}
                 </h2>
             </div>
 

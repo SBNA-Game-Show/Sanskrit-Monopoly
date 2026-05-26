@@ -10,8 +10,7 @@ export function createLobby(hostUid, hostUsername) {
     lobbyCode: lobbyCode,
     status: "waiting",
     players: [],
-    hostUid: hostUid,
-    hostUsername: hostUsername
+    host: { uid: hostUid, username: hostUsername, socketId: null },
   }
   console.log(lobbies);
   return lobbies[lobbyCode]
