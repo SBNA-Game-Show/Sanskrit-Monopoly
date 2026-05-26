@@ -1,147 +1,35 @@
 @import "tailwindcss";
-/* #region ------------ Page Layout ------------ */
 
-.home-page {
-  min-height: calc(100vh - 72px);
-  display: grid;
-  place-items: center;
-  padding: 2rem;
+/* #region ------------ Global Defaults ------------ */
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body {
   background: #fff7ed;
 }
 
-/* #endregion ------------ Page Layout ------------ */
-
-/* #region ------------ Navbar ------------ */
-
-.navbar {
-  min-height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  background: #ffffff;
-  border-bottom: 1px solid #fed7aa;
-}
-
-.navbar-meta {
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #374151;
 }
 
-.navbar button {
-  padding: 0.55rem 1rem;
-  font-size: 0.9rem;
-}
 
-.navbar-user {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
 
-.navbar-uid {
-  margin: 0.15rem 0 0;
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-
-.nav-link {
-  color: blue;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-.nav-link:hover {
-  color: orange;
-}
-
-/* #endregion ------------ Navbar ------------ */
-
-/* #region ------------ Hero Card ------------ */
-
-.hero-card {
-  width: min(900px, 100%);
-  padding: 3rem;
-  border-radius: 24px;
-  background: white;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-
-  /* center items inside the hero card */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.eyebrow {
-  margin: 0 0 0.75rem;
-  font-weight: 700;
-  color: #c2410c;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.hero-card h1 {
-  max-width: 720px;
-  margin: 0 auto;
-  font-size: clamp(1.75rem, 3vw, 3rem);
-  line-height: 1.1;
-  color: #1f2937;
-}
-
-.hero-copy {
-  max-width: 620px;
-  margin: 1.25rem auto 2rem;
-  font-size: 1.1rem;
-  color: #4b5563;
-}
-
-/* #endregion ------------ Hero Card ------------ */
-
-/* #region ------------ Home Page Actions ------------ */
-
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.25rem;
-}
-
-.join-box {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* #endregion ------------ Home Page Actions ------------ */
-
-/* #region ------------ Form Controls ------------ */
-
-button {
+#root {
+  max-width: none;
   border: 0;
-  border-radius: 999px;
-  padding: 0.8rem 1.25rem;
-  font-weight: 700;
-  cursor: pointer;
-  background: #ea580c;
-  color: white;
-  transition: background 0.2s ease;
-}
-
-button:hover {
-  background: #fed7aa;
-  color: black;
-}
-
-input {
-  min-width: 180px;
-  border: 1px solid #fed7aa;
-  border-radius: 999px;
-  padding: 0.8rem 1rem;
+  text-align: left;
+  display: block;
 }
 
 /* #endregion ------------ Form Controls ------------ */
+/* #endregion ------------ Global Defaults ------------ */

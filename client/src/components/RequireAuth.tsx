@@ -5,8 +5,13 @@ function RequireAuth() {
   const { uid, authLoading } = useAuth();
   const location = useLocation();
 
+  // why the hell not
   if (authLoading) {
-    return <p>Loading...</p>;
+    return (
+      <main className="grid min-h-screen place-items-center bg-orange-50 text-slate-600">
+        Loading...
+      </main>
+    );
   }
 
   if (!uid) {

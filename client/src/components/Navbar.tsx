@@ -14,15 +14,26 @@ function Navbar() {
   };
 
   return (
-    <header className="navbar">
-      <div className="navbar-user">
-        <p className="navbar-meta">
-          {username || "Unknown user"} · {isAdmin ? "Admin" : "Player"}
-        </p>
-        <p className="navbar-uid">UID: {uid}</p>
-      </div>
+    <header className="flex min-h-14 items-center justify-end gap-4 border-b border-orange-200 bg-white px-4 py-2">
+      {uid && (
+        <div className="flex flex-col items-end">
+          <p className="m-0 text-sm font-semibold text-slate-700">
+            {username || "Unknown user"} · {isAdmin ? "Admin" : "Player"}
+          </p>
 
-      {uid && <button onClick={handleLogout}>Logout</button>}
+          <p className="m-0 mt-0.5 text-[0.7rem] text-slate-400">UID: {uid}</p>
+        </div>
+      )}
+
+      {uid && (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-orange-200 hover:text-slate-900"
+        >
+          Logout
+        </button>
+      )}
     </header>
   );
 }
