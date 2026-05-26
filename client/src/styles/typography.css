@@ -1,0 +1,50 @@
+/* =============================================================
+   ====== Typography - Fonts + text utility classes ============
+   ============================================================= */
+
+body {
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
+@layer components {
+  /* Small all-caps label */
+  .text-eyebrow {
+    @apply text-sm font-bold uppercase tracking-widest text-orange-700;
+  }
+
+  /* Primary heading */
+  .text-page-title {
+    @apply font-extrabold leading-tight text-slate-800 text-3xl;
+  }
+
+  /* Section or card heading */
+  .text-section-title {
+    @apply text-xl font-bold text-slate-800;
+  }
+
+  /* Standard body copy */
+  .text-body {
+    @apply text-base leading-relaxed text-slate-600;
+  }
+
+  /* Secondary / supporting text */
+  .text-muted {
+    @apply text-sm text-slate-400;
+  }
+
+  /* Inline validation error */
+  .text-error {
+    @apply text-sm font-semibold text-red-600;
+  }
+
+  /* Add whatever custom ones you wanna make here */
+}
