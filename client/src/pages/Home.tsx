@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
 
 function Home() {
+  const [lobbyCode, setLobbyCode] = useState("");
   const navigate = useNavigate();
-  const { uid, username, } = useAuth();
+  const { uid, username } = useAuth();
 
   const createRoom = async () => {
     const response = await fetch("http://localhost:3000/api/lobby-create", {
@@ -37,13 +39,15 @@ function Home() {
               type="text"
               placeholder="Enter room code"
               aria-label="Room code"
+              value={lobbyCode}
+              onChange={(e) => setLobbyCode(e.target.value.toUpperCase())}
             />
-            <button type="button">Join Room</button>
+            <button type="button" onClick={() => navigate(`/lobby/${lobbyCode}`)}>Join Room</button>
           </div>
         </div>
 
         <Link to="/rules" className="nav-link">
-          Them Rules
+          The Rules
         </Link>
       </section>
     </main>
