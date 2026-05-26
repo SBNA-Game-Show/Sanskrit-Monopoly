@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
 @import "tailwindcss";
 
 /* #region ------------ Global Defaults ------------ */
@@ -33,3 +34,8 @@ body,
 
 /* #endregion ------------ Form Controls ------------ */
 /* #endregion ------------ Global Defaults ------------ */
+
+/* Font family for lobby workspace */
+.font-jersey {
+  font-family: 'Jersey 10', sans-serif;
+}
