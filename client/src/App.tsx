@@ -30,9 +30,6 @@ const router = createBrowserRouter([
         element: <RequireAuth />,
         children: [
           { path: 'home', element: <Home /> },
-          { path: "game", element: <Game /> },
-
-          { path: "admin-game", element: <AdminGame /> },
           {
             element: <RequireAdmin />,
             children: [{ path: 'admin', element: <Admin /> }],
