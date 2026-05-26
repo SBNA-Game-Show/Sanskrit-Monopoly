@@ -1,16 +1,32 @@
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     if (!auth) return;
-    await signOut(auth);
-    navigate("/login");
+
+    try {
+      await signOut(auth);
+      showToast({
+        variant: "success",
+        title: "Logged out",
+        message: "You have been logged out successfully.",
+      });
+      navigate("/login");
+    } catch {
+      showToast({
+        variant: "error",
+        title: "Logout failed",
+        message: "Could not log out. Please try again.",
+      });
+    }
   };
 
   return (
