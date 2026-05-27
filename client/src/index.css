@@ -46,6 +46,7 @@ body,
     transform: translateY(-16px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -64,4 +65,132 @@ body,
 /* Font family for lobby workspace */
 .font-jersey {
   font-family: 'Jersey 10', sans-serif;
+}
+
+/* ================= Result Page Styles ================= */
+
+.result-page {
+  min-height: 100vh;
+  background: #fff7ed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.result-frame {
+  width: 1000px;
+  background: white;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.result-header {
+  height: 80px;
+  background: #f3c789;
+  display: grid;
+  grid-template-columns: 220px 1fr 160px;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.result-header h2,
+.result-header p {
+  margin: 0;
+}
+
+.result-header-center {
+  text-align: center;
+}
+
+.result-main {
+  padding: 24px 34px 34px;
+}
+
+.leaderboard-title {
+  text-align: center;
+  font-size: 34px;
+  letter-spacing: 3px;
+  margin: 0 0 28px;
+  color: #2d1606;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 26px;
+}
+
+.result-player-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  background: #fff4df;
+  border: 3px solid #ef9d33;
+  border-radius: 18px;
+  padding: 18px 22px;
+}
+
+.winner-card {
+  border-color: #42a85f;
+  background: #f3fff2;
+}
+
+.rank-badge {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  background: #ef9d33;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.winner-card .rank-badge {
+  background: #42a85f;
+}
+
+.player-token {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  background: white;
+  border-radius: 12px;
+  padding: 8px;
+  border: 1px solid #eee;
+}
+
+.player-result-info h2 {
+  margin: 0 0 12px;
+  color: #2d1606;
+}
+
+.result-stats {
+  display: flex;
+  gap: 18px;
+  font-size: 18px;
+}
+
+.result-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 34px;
+}
+
+.result-buttons button {
+  background: #ef9d33;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 34px;
+  font-weight: bold;
+  cursor: pointer;
 }
