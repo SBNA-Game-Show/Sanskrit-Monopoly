@@ -21,16 +21,17 @@ function Result() {
 
                     <div className="result-header-center">
                         <h2>RESULTS</h2>
-                        <p>🏆 Winner: {winner.username}</p>
+                        <p><span className="winner-trophy">🏆</span>
+                            Winner: {winner.username}</p>
                     </div>
 
-                    <div>
-                        <p>Room: {LOBBY_STATE.lobbyCode}</p>
-                    </div>
+                    <div className="result-room">Room: {LOBBY_STATE.lobbyCode}</div>
                 </header>
 
                 <main className="result-main">
-                    <h1 className="leaderboard-title">⭐ LEADERBOARD ⭐</h1>
+                    <h1 className="leaderboard-title">LEADERBOARD</h1>
+
+                    <p className="result-subtitle">Great job, players! उत्तमम् कार्यम्!</p>
 
                     <div className="result-grid">
                         {sortedPlayers.map((player, index) => (
@@ -39,21 +40,44 @@ function Result() {
                                 className={`result-player-card ${index === 0 ? "winner-card" : ""
                                     }`}
                             >
+                                {index === 0 && <div className="winner-ribbon">WINNER</div>}
+                                {index === 0 && (
+                                    <div className="winner-crown">
+                                        👑
+                                    </div>
+                                )}
                                 <div className="rank-badge">#{index + 1}</div>
 
-                                <img
-                                    src={player.token}
-                                    alt={`${player.username} token`}
-                                    className="player-token"
-                                />
+
+                                <div className="token-box">
+                                    <img
+                                        src={player.token}
+                                        alt={`${player.username} token`}
+                                        className="player-token"
+                                    />
+                                </div>
 
                                 <div className="player-result-info">
                                     <h2>{player.username}</h2>
 
                                     <div className="result-stats">
-                                        <span>⭐ {player.points}</span>
-                                        <span>💰 {player.money}</span>
-                                        <span>🏠 {player.properties.length}</span>
+                                        <div className="stat-box">
+                                            <span className="stat-icon">⭐</span>
+                                            <span className="stat-label">Score/अंकाः</span>
+                                            <strong>{player.points}</strong>
+                                        </div>
+
+                                        <div className="stat-box">
+                                            <span className="stat-icon">💰</span>
+                                            <span className="stat-label">Money/धनम्</span>
+                                            <strong>{player.money}</strong>
+                                        </div>
+
+                                        <div className="stat-box">
+                                            <span className="stat-icon">🏠</span>
+                                            <span className="stat-label">Properties/गृहाः</span>
+                                            <strong>{player.properties.length}</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -61,11 +85,38 @@ function Result() {
                     </div>
 
                     <div className="result-buttons">
-                        <button onClick={() => navigate("/game")}>Restart Game</button>
-                        <button onClick={() => navigate("/lobby/4C1OR4")}>
-                            Return To Lobby
+
+                        <button
+                            className="restart-btn"
+                            onClick={() => navigate("/game")}
+                        >
+                            🎲 Restart Game
+                            <span className="button-sanskrit">
+                                पुनः क्रीडा
+                            </span>
                         </button>
+
+                        <button
+                            className="lobby-btn"
+                            onClick={() => navigate("/lobby/4C1OR4")}
+                        >
+                            🏛 Back to Main Lobby
+                            <span className="button-sanskrit">
+                                मुख्य-सभागृहं
+                            </span>
+                        </button>
+
+
                     </div>
+                    <p className="result-quote">
+                        “विद्या धनं सर्वधनप्रधानम्”
+                    </p>
+
+                    <p className="result-quote-english">
+                        Knowledge is the greatest wealth.
+                    </p>
+
+
                 </main>
             </div>
         </div>
