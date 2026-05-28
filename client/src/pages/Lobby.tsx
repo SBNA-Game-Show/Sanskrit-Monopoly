@@ -47,12 +47,7 @@ export default function Lobby() {
   ];
 
   // Track which token is assigned to which player
-  const [playerTokens, setPlayerTokens] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-    null,
-  ]);
+  const [playerTokens, setPlayerTokens] = useState<(string | null)[]>([null, null, null, null]);
 
   const isHost = host?.uid === uid;
   const canStart = isHost && selectedEdition !== null && startingMoney !== null && players.length === 4;
