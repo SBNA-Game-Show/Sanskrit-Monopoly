@@ -98,7 +98,7 @@ function Result() {
 
                         <button
                             className="lobby-btn"
-                            onClick={() => navigate("/lobby/4C1OR4")}
+                            onClick={() => navigate("/home")}
                         >
                             🏛 Back to Main Lobby
                             <span className="button-sanskrit">
