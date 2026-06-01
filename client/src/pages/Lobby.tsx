@@ -109,6 +109,18 @@ export default function Lobby() {
             .animate-neon {
               animation: neon-pulse 1.8s ease-in-out infinite;
             }
+            
+            @keyframes token-shake {
+              0%, 100% { transform: rotate(0deg); }
+              20% { transform: rotate(-10deg); }
+              40% { transform: rotate(10deg); }
+              60% { transform: rotate(-8deg); }
+              80% { transform: rotate(8deg); }
+            }
+
+            .dog-token-shake:hover img {
+              animation: token-shake 0.35s ease-in-out infinite;
+            }
           `}
         </style>
 
@@ -198,7 +210,11 @@ export default function Lobby() {
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(e, token.id)}
-                        className="w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm"
+                        className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${
+                          token.id === "dog"
+                            ? "dog-token-shake"
+                            : "hover:scale-110 transition-transform"
+                        }`}
                       >
                         <img
                           src={token.src}
