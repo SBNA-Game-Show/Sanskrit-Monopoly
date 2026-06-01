@@ -117,9 +117,17 @@ export default function Lobby() {
               60% { transform: rotate(-8deg); }
               80% { transform: rotate(8deg); }
             }
-
             .dog-token-shake:hover img {
               animation: token-shake 0.35s ease-in-out infinite;
+            }
+
+            @keyframes token-jump {
+              0%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-18px); }
+              60% { transform: translateY(-4px); }
+            }
+            .shoe-token-jump:hover img {
+              animation: token-jump 0.45s ease-in-out infinite;
             }
           `}
         </style>
@@ -213,6 +221,8 @@ export default function Lobby() {
                         className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${
                           token.id === "dog"
                             ? "dog-token-shake"
+                            : token.id === "shoe"
+                            ? "shoe-token-jump"
                             : "hover:scale-110 transition-transform"
                         }`}
                       >
