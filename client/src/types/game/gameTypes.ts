@@ -6,4 +6,4 @@ export type {
   GameTile,
   GameTileType,
   PlayerState,
-} from "../../../shared/gameTypes";
+} from "../../../../shared/gameTypes";

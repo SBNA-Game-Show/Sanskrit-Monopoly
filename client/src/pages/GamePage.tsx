@@ -1,9 +1,9 @@
 import { useAuth } from "../context/AuthContext";
-import type { GameState } from "../game/gameTypes";
-import { GAME_EVENTS } from "../game/gameEvents";
+import type { GameState } from "../types/game/gameTypes";
+import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import ZimMonopolyBoard from "../components/zim/ZimMonopolyBoard";
 import { socket } from "../socket";
-import { TOKEN_IMAGE_BY_ID } from "../game/tokenOptions";
+import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 
 type GamePageProps = {
   gameState: GameState;

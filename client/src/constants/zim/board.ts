@@ -1,16 +1,9 @@
-export type BoardTileType =
-  | "corner"
-  | "property"
-  | "special"
-  | "tax"
-  | "railroad"
-  | "utility";
+import type { BoardTileDefinition } from "../../types/zim/zimBoardTypes";
 
-export type BoardTileDefinition = {
-  name: string;
-  type: BoardTileType;
-  color: string;
-};
+export const BOARD_SIZE = 900;
+export const CORNER_SIZE = 115;
+export const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 9;
+export const TILE_HEIGHT = CORNER_SIZE;
 
 export const DEFAULT_BOARD_TILES: BoardTileDefinition[] = [
   { name: "आरम्भः", type: "corner", color: "#f7d28b" },

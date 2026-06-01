@@ -5,9 +5,9 @@ import { socket } from "../socket";
 
 import GamePage from "./GamePage";
 
-import { GAME_EVENTS } from "../game/gameEvents";
-import type { GameState } from "../game/gameTypes";
-import { TOKEN_OPTIONS } from "../game/tokenOptions";
+import { GAME_EVENTS } from "../constants/socket/gameEvents";
+import type { GameState } from "../types/game/gameTypes";
+import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
 
 export default function Lobby() {

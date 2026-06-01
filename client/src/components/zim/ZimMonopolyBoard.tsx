@@ -4,7 +4,7 @@ import { createZimBoard } from "./createZimBoard";
 import type {
   ZimBoardController,
   ZimMonopolyBoardProps,
-} from "./zimBoardTypes";
+} from "../../types/zim/zimBoardTypes";
 
 export default function ZimMonopolyBoard({
   players,

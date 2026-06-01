@@ -1,7 +1,7 @@
-import boatImg from "../assets/monopoly_boat.png";
-import catImg from "../assets/monopoly_cat.png";
-import shoeImg from "../assets/monopoly_shoe.png";
-import dogImg from "../assets/monopoly_dog.png";
+import boatImg from "../../assets/monopoly_boat.png";
+import catImg from "../../assets/monopoly_cat.png";
+import shoeImg from "../../assets/monopoly_shoe.png";
+import dogImg from "../../assets/monopoly_dog.png";
 
 export const TOKEN_OPTIONS = [
   { id: "boat", src: boatImg, label: "Boat" },
