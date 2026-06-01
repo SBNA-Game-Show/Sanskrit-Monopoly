@@ -5,6 +5,31 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
+import { useToast } from "../context/ToastContext";
+
+function getLoginErrorMessage(err: unknown): string {
+  const code =
+    err && typeof err === "object" && "code" in err
+      ? String((err as { code: string }).code)
+      : "";
+
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Invalid email or password. Please try again.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Wait a moment and try again.";
+    case "auth/popup-closed-by-user":
+      return "Google sign-in was cancelled.";
+    case "auth/network-request-failed":
+      return "Network error. Check your connection and try again.";
+    default:
+      return "Sign-in failed. Please try again.";
+  }
+}
 
 const CIRCLES = [
   [8,  4,  5,   0.5], [14, 18, 2.5, 0.4], [3,  35, 1.5, 0.3],
@@ -20,25 +45,41 @@ const CIRCLES = [
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const { showToast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
     try {
       await signInWithEmailAndPassword(auth!, email, password);
+      showToast({
+        variant: "success",
+        title: "Login successful",
+        message: "Redirecting…",
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      showToast({
+        variant: "error",
+        title: "Login failed",
+        message: getLoginErrorMessage(err),
+      });
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth!, provider);
+      showToast({
+        variant: "success",
+        title: "Login successful",
+        message: "Redirecting…",
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      showToast({
+        variant: "error",
+        title: "Login failed",
+        message: getLoginErrorMessage(err),
+      });
     }
   };
 
@@ -130,13 +171,8 @@ function Login() {
             />
           </div>
 
-            {/* Error message */}
-            {error && (
-              <p className="text-red-700 text-sm text-center font-medium">
-                {error}
-              </p> )}
-            <button type="submit" className="hidden" />
-          </form>
+          <button type="submit" className="hidden" />
+        </form>
 
         {/* Social Divider */}
         <div className="relative flex py-5 items-center">
