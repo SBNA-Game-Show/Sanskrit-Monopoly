@@ -162,6 +162,25 @@ export default function Lobby() {
             .cat-token-walk:hover img {
               animation: cat-walk 1.2s ease-in-out infinite;
             }
+
+            @keyframes boat-rock {
+              0%, 100% {
+                transform: translateY(0) rotate(0deg);
+              }
+              25% {
+                transform: translateY(-4px) rotate(-6deg);
+              }
+              50% {
+                transform: translateY(-2px) rotate(0deg);
+              }
+              75% {
+                transform: translateY(-4px) rotate(6deg);
+              }
+            }
+            .boat-token-rock:hover img {
+              animation: boat-rock 1.6s ease-in-out infinite;
+              transform-origin: center bottom;
+            }
           `}
         </style>
 
@@ -258,7 +277,9 @@ export default function Lobby() {
                               ? "shoe-token-jump"
                               : token.id === "cat"
                                 ? "cat-token-walk"
-                                : "hover:scale-110 transition-transform"
+                                : token.id === "boat"
+                                  ? "boat-token-rock"
+                                  : "hover:scale-110 transition-transform"
                         }`}
                       >
                         <img
