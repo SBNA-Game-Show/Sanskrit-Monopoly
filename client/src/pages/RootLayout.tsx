@@ -1,11 +1,14 @@
 import Navbar from "../components/Navbar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 function RootLayout() {
+  const location = useLocation();
+  const hideNavbar = location.pathname.startsWith("/lobby/");
+
   return (
     <>
-      <Navbar/>
-      <Outlet/>
+      {!hideNavbar && <Navbar />}
+      <Outlet />
     </>
   );
 }

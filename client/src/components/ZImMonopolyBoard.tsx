@@ -4,70 +4,32 @@ import * as zim from "zimjs";
 type ZimMonopolyBoardProps = {
   positions: number[];
   currentPlayerIndex: number;
+  diceValue?: number | null;
 };
 
 const TILES = [
-  { name: "आरम्भः", type: "corner", color: "#f7d28b" },
-  { name: "काशी", type: "property", color: "#7b1e2b" },
-  { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
-  { name: "नालन्दा", type: "property", color: "#7b1e2b" },
-  { name: "करः", type: "tax", color: "#e8b4a6" },
-  { name: "यात्रा", type: "railroad", color: "#d9c3a3" },
-  { name: "सोमनाथः", type: "property", color: "#274c3b" },
-  { name: "भाग्यम्", type: "special", color: "#f4e8c8" },
-  { name: "बद्रीनाथः", type: "property", color: "#274c3b" },
-  { name: "केदारनाथः", type: "property", color: "#274c3b" },
-
-  { name: "विश्रामः", type: "corner", color: "#f7d28b" },
-  { name: "सत्यम्", type: "property", color: "#b85c38" },
-  { name: "विद्युत्", type: "utility", color: "#f4e8c8" },
-  { name: "धर्मः", type: "property", color: "#b85c38" },
-  { name: "सेवा", type: "property", color: "#b85c38" },
-  { name: "रथमार्गः", type: "railroad", color: "#d9c3a3" },
-  { name: "गङ्गा", type: "property", color: "#3f6f8f" },
-  { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
-  { name: "यमुना", type: "property", color: "#3f6f8f" },
-  { name: "सरस्वती", type: "property", color: "#3f6f8f" },
-
-  { name: "मुक्तस्थानम्", type: "corner", color: "#f7d28b" },
-  { name: "गीता", type: "property", color: "#d6a84f" },
-  { name: "भाग्यम्", type: "special", color: "#f4e8c8" },
-  { name: "कर्मयोगः", type: "property", color: "#d6a84f" },
-  { name: "भक्तियोगः", type: "property", color: "#d6a84f" },
-  { name: "यात्रा", type: "railroad", color: "#d9c3a3" },
-  { name: "दीपावली", type: "property", color: "#a13c24" },
-  { name: "होली", type: "property", color: "#a13c24" },
-  { name: "जलम्", type: "utility", color: "#f4e8c8" },
-  { name: "नवरात्रिः", type: "property", color: "#a13c24" },
-
-  { name: "परीक्षा", type: "corner", color: "#f7d28b" },
-  { name: "रामेश्वरम्", type: "property", color: "#5d3a8c" },
-  { name: "द्वारका", type: "property", color: "#5d3a8c" },
-  { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
-  { name: "पुरुषोत्तमः", type: "property", color: "#5d3a8c" },
-  { name: "यात्रा", type: "railroad", color: "#d9c3a3" },
-  { name: "भाग्यम्", type: "special", color: "#f4e8c8" },
-  { name: "तक्षशिला", type: "property", color: "#214f7a" },
-  { name: "दण्डः", type: "tax", color: "#e8b4a6" },
-  { name: "संस्कृतम्", type: "property", color: "#214f7a" },
+  "आरम्भः", "काशी", "प्रश्नः", "नालन्दा", "दण्डः", "यात्रा", "सोमनाथः", "भाग्यम्", "बद्रीनाथः", "केदारः",
+  "विश्रामः", "सत्यम्", "विद्युत्", "धर्मः", "सेवा", "रथः", "गङ्गा", "प्रश्नः", "यमुना", "सरस्वती",
+  "मुक्तम्", "गीता", "भाग्यम्", "कर्मः", "भक्तिः", "यात्रा", "दीपावली", "होली", "जलम्", "नवरात्रिः",
+  "परीक्षा", "रामेश्वरम्", "द्वारका", "प्रश्नः", "पुरी", "यात्रा", "भाग्यम्", "तक्षशिला", "दण्डः", "संस्कृतम्",
 ];
 
-const PLAYER_COLORS = ["#d72638", "#2f80ed", "#f2c94c", "#27ae60", "#9b51e0"];
+const TILE_COLORS = [
+  "#f4e8c8", "#7b1e2b", "#f4e8c8", "#7b1e2b", "#e8b4a6", "#d9c3a3", "#274c3b", "#f4e8c8", "#274c3b", "#274c3b",
+  "#f4e8c8", "#b85c38", "#f4e8c8", "#b85c38", "#b85c38", "#d9c3a3", "#3f6f8f", "#f4e8c8", "#3f6f8f", "#3f6f8f",
+  "#f4e8c8", "#d6a84f", "#f4e8c8", "#d6a84f", "#d6a84f", "#d9c3a3", "#a13c24", "#a13c24", "#f4e8c8", "#a13c24",
+  "#f4e8c8", "#5d3a8c", "#5d3a8c", "#f4e8c8", "#5d3a8c", "#d9c3a3", "#f4e8c8", "#214f7a", "#e8b4a6", "#214f7a",
+];
 
+const PLAYER_COLORS = ["#d72638", "#2f80ed", "#f2c94c", "#27ae60"];
 const TOKEN_OFFSETS = [
   { dx: -15, dy: -15 },
   { dx: 15, dy: -15 },
   { dx: -15, dy: 15 },
   { dx: 15, dy: 15 },
-  { dx: 0, dy: 0 },
 ];
 
-function getTileCenter(
-  tileIndex: number,
-  boardSize: number,
-  corner: number,
-  tileW: number
-) {
+function getTileCenter(tileIndex: number, boardSize: number, corner: number, tileW: number) {
   if (tileIndex === 0) return { x: boardSize - corner / 2, y: boardSize - corner / 2 };
   if (tileIndex === 10) return { x: corner / 2, y: boardSize - corner / 2 };
   if (tileIndex === 20) return { x: corner / 2, y: corner / 2 };
@@ -75,60 +37,62 @@ function getTileCenter(
 
   if (tileIndex >= 1 && tileIndex <= 9) {
     const i = tileIndex - 1;
-    return {
-      x: boardSize - corner - i * tileW - tileW / 2,
-      y: boardSize - corner / 2,
-    };
+    return { x: boardSize - corner - i * tileW - tileW / 2, y: boardSize - corner / 2 };
   }
 
   if (tileIndex >= 11 && tileIndex <= 19) {
     const i = tileIndex - 11;
-    return {
-      x: corner / 2,
-      y: boardSize - corner - i * tileW - tileW / 2,
-    };
+    return { x: corner / 2, y: boardSize - corner - i * tileW - tileW / 2 };
   }
 
   if (tileIndex >= 21 && tileIndex <= 29) {
     const i = tileIndex - 21;
-    return {
-      x: corner + i * tileW + tileW / 2,
-      y: corner / 2,
-    };
+    return { x: corner + i * tileW + tileW / 2, y: corner / 2 };
   }
 
   if (tileIndex >= 31 && tileIndex <= 39) {
     const i = tileIndex - 31;
-    return {
-      x: boardSize - corner / 2,
-      y: corner + i * tileW + tileW / 2,
-    };
+    return { x: boardSize - corner / 2, y: corner + i * tileW + tileW / 2 };
   }
 
   return { x: 0, y: 0 };
 }
 
-function drawBoard(stage: any, positions: number[], currentPlayerIndex: number) {
-  const BOARD = 900;
-  const CORNER = 115;
-  const TILE_W = (BOARD - CORNER * 2) / 9;
-  const TILE_H = CORNER;
+function drawDice(board: zim.Container, diceValue: number | null | undefined) {
+  const dice = new zim.Container(110, 110).pos(620, 560, false, false, board);
+  new zim.Rectangle(110, 110, "#f4e8c8", "#6b3f1d", 5, 18).addTo(dice);
+
+  new zim.Label({
+    text: diceValue ? String(diceValue) : "—",
+    size: 60,
+    bold: true,
+    color: "#2a1c12",
+    font: "Arial",
+    align: "center",
+  }).center(dice);
+
+  new zim.Label({
+    text: "Dice",
+    size: 14,
+    color: "#6b3f1d",
+    font: "Arial",
+    align: "center",
+  }).pos(0, 82, false, false, dice).centerReg(dice);
+}
+
+function drawBoard(stage: zim.Stage, positions: number[], currentPlayerIndex: number, diceValue?: number | null) {
+  const boardSize = 900;
+  const corner = 115;
+  const tileW = (boardSize - corner * 2) / 9;
+  const tileH = corner;
 
   stage.removeAllChildren();
 
-  const board = new zim.Container(BOARD, BOARD).center(stage);
+  const board = new zim.Container(boardSize, boardSize).center(stage);
 
-  new zim.Rectangle(BOARD, BOARD, "#6b3f1d", "#3a2110", 6).addTo(board);
-  new zim.Rectangle(BOARD - 30, BOARD - 30, "#f4e8c8", "#3a2110", 3)
-    .pos(15, 15, false, false, board);
-
-  new zim.Rectangle(
-    BOARD - CORNER * 2,
-    BOARD - CORNER * 2,
-    "#202733",
-    "#3a2110",
-    4
-  ).pos(CORNER, CORNER, false, false, board);
+  new zim.Rectangle(boardSize, boardSize, "#6b3f1d", "#3a2110", 6).addTo(board);
+  new zim.Rectangle(boardSize - 30, boardSize - 30, "#f4e8c8", "#3a2110", 3).pos(15, 15, false, false, board);
+  new zim.Rectangle(boardSize - corner * 2, boardSize - corner * 2, "#202733", "#3a2110", 4).pos(corner, corner, false, false, board);
 
   new zim.Label({
     text: "संस्कृत\nMONOPOLY",
@@ -138,141 +102,65 @@ function drawBoard(stage: any, positions: number[], currentPlayerIndex: number) 
     font: "Georgia",
     align: "center",
     lineHeight: 58,
-  })
-    .center(board)
-    .rot(-18);
+  }).center(board).rot(-18);
 
-  function drawCorner(tile: (typeof TILES)[0], x: number, y: number) {
-    const g = new zim.Container(CORNER, CORNER).pos(x, y, false, false, board);
-    new zim.Rectangle(CORNER, CORNER, tile.color, "#3a2110", 2).addTo(g);
+  drawDice(board, diceValue);
 
-    new zim.Label({
-      text: tile.name,
-      size: 17,
-      bold: true,
-      color: "#2a1c12",
-      font: "Georgia",
-      align: "center",
-      lineWidth: CORNER - 12,
-    }).center(g);
-  }
+  function drawSquareTile(tileIndex: number, x: number, y: number, w: number, h: number, side: "bottom" | "left" | "top" | "right" | "corner") {
+    const tile = new zim.Container(w, h).pos(x, y, false, false, board);
+    new zim.Rectangle(w, h, "#fff8e8", "#3a2110", 1).addTo(tile);
 
-  function drawTile(
-    tile: (typeof TILES)[0],
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    side: "bottom" | "left" | "top" | "right"
-  ) {
-    const g = new zim.Container(w, h).pos(x, y, false, false, board);
+    const color = TILE_COLORS[tileIndex];
+    const isProperty = ![0, 2, 4, 5, 7, 10, 12, 15, 17, 20, 22, 25, 28, 30, 33, 35, 36, 38].includes(tileIndex);
 
-    new zim.Rectangle(w, h, "#fff8e8", "#3a2110", 1).addTo(g);
-
-    if (tile.type === "property") {
-      const bar = 22;
-
-      if (side === "bottom") {
-        new zim.Rectangle(w, bar, tile.color, "transparent", 0).pos(0, 0, false, false, g);
-      }
-
-      if (side === "top") {
-        new zim.Rectangle(w, bar, tile.color, "transparent", 0).pos(0, h - bar, false, false, g);
-      }
-
-      if (side === "left") {
-        new zim.Rectangle(bar, h, tile.color, "transparent", 0).pos(w - bar, 0, false, false, g);
-      }
-
-      if (side === "right") {
-        new zim.Rectangle(bar, h, tile.color, "transparent", 0).pos(0, 0, false, false, g);
-      }
+    if (side === "corner") {
+      new zim.Rectangle(w, h, "#f7d28b", "#3a2110", 2).addTo(tile);
+    } else if (isProperty) {
+      if (side === "bottom") new zim.Rectangle(w, 22, color).pos(0, 0, false, false, tile);
+      if (side === "top") new zim.Rectangle(w, 22, color).pos(0, h - 22, false, false, tile);
+      if (side === "left") new zim.Rectangle(22, h, color).pos(w - 22, 0, false, false, tile);
+      if (side === "right") new zim.Rectangle(22, h, color).pos(0, 0, false, false, tile);
     } else {
-      new zim.Rectangle(w, h, tile.color, "transparent", 0).addTo(g);
+      new zim.Rectangle(w, h, color).addTo(tile).alp(0.75);
     }
 
     const label = new zim.Label({
-      text: tile.name,
-      size: 12,
-      bold: tile.type !== "property",
+      text: TILES[tileIndex],
+      size: side === "corner" ? 16 : 11,
+      bold: side === "corner",
       color: "#2a1c12",
       font: "Georgia",
       align: "center",
-      lineWidth: side === "top" || side === "bottom" ? w - 6 : h - 6,
-    });
-
-    label.center(g);
+      lineWidth: side === "left" || side === "right" ? h - 8 : w - 8,
+    }).center(tile);
 
     if (side === "left") label.rot(90);
     if (side === "right") label.rot(-90);
   }
 
-  drawCorner(TILES[0], BOARD - CORNER, BOARD - CORNER);
-  drawCorner(TILES[10], 0, BOARD - CORNER);
-  drawCorner(TILES[20], 0, 0);
-  drawCorner(TILES[30], BOARD - CORNER, 0);
+  drawSquareTile(0, boardSize - corner, boardSize - corner, corner, corner, "corner");
+  drawSquareTile(10, 0, boardSize - corner, corner, corner, "corner");
+  drawSquareTile(20, 0, 0, corner, corner, "corner");
+  drawSquareTile(30, boardSize - corner, 0, corner, corner, "corner");
 
-  for (let i = 0; i < 9; i++) {
-    drawTile(
-      TILES[i + 1],
-      BOARD - CORNER - (i + 1) * TILE_W,
-      BOARD - CORNER,
-      TILE_W,
-      TILE_H,
-      "bottom"
-    );
+  for (let i = 0; i < 9; i += 1) {
+    drawSquareTile(i + 1, boardSize - corner - (i + 1) * tileW, boardSize - corner, tileW, tileH, "bottom");
+    drawSquareTile(i + 11, 0, boardSize - corner - (i + 1) * tileW, tileH, tileW, "left");
+    drawSquareTile(i + 21, corner + i * tileW, 0, tileW, tileH, "top");
+    drawSquareTile(i + 31, boardSize - corner, corner + i * tileW, tileH, tileW, "right");
   }
 
-  for (let i = 0; i < 9; i++) {
-    drawTile(
-      TILES[i + 11],
-      0,
-      BOARD - CORNER - (i + 1) * TILE_W,
-      TILE_H,
-      TILE_W,
-      "left"
-    );
-  }
-
-  for (let i = 0; i < 9; i++) {
-    drawTile(
-      TILES[i + 21],
-      CORNER + i * TILE_W,
-      0,
-      TILE_W,
-      TILE_H,
-      "top"
-    );
-  }
-
-  for (let i = 0; i < 9; i++) {
-    drawTile(
-      TILES[i + 31],
-      BOARD - CORNER,
-      CORNER + i * TILE_W,
-      TILE_H,
-      TILE_W,
-      "right"
-    );
-  }
-
-  positions.forEach((tileIndex, playerIndex) => {
-    const center = getTileCenter(tileIndex, BOARD, CORNER, TILE_W);
+  positions.forEach((rawTileIndex, playerIndex) => {
+    const tileIndex = ((rawTileIndex % 40) + 40) % 40;
+    const center = getTileCenter(tileIndex, boardSize, corner, tileW);
     const offset = TOKEN_OFFSETS[playerIndex] || { dx: 0, dy: 0 };
+    const tokenSize = playerIndex === currentPlayerIndex ? 20 : 16;
 
-    const token = new zim.Circle(
-      playerIndex === currentPlayerIndex ? 19 : 15,
-      PLAYER_COLORS[playerIndex] || "#000",
-      "#111",
-      3
-    );
-
-    token.x = center.x + offset.dx;
-    token.y = center.y + offset.dy;
-    token.addTo(board);
+    const token = new zim.Circle(tokenSize, PLAYER_COLORS[playerIndex] || "#000", "#111", 3)
+      .loc(center.x + offset.dx, center.y + offset.dy, board);
 
     new zim.Label({
-      text: `${playerIndex + 1}`,
+      text: String(playerIndex + 1),
       size: 13,
       bold: true,
       color: "#fff",
@@ -284,26 +172,27 @@ function drawBoard(stage: any, positions: number[], currentPlayerIndex: number) 
   stage.update();
 }
 
-function ZimMonopolyBoard({ positions, currentPlayerIndex }: ZimMonopolyBoardProps) {
+function ZimMonopolyBoard({ positions, currentPlayerIndex, diceValue }: ZimMonopolyBoardProps) {
   const holderIdRef = useRef(`zim-board-${Math.random().toString(36).slice(2)}`);
-  const frameRef = useRef<any>(null);
-  const stageRef = useRef<any>(null);
+  const frameRef = useRef<zim.Frame | null>(null);
+  const stageRef = useRef<zim.Stage | null>(null);
 
   useEffect(() => {
-    frameRef.current = new zim.Frame({
+    const frame = new zim.Frame({
       scaling: holderIdRef.current,
       width: 900,
       height: 900,
       color: "#202733",
       ready: () => {
-        stageRef.current = frameRef.current.stage;
-        drawBoard(stageRef.current, positions, currentPlayerIndex);
+        stageRef.current = frame.stage;
+        drawBoard(frame.stage, positions, currentPlayerIndex, diceValue);
       },
     });
 
+    frameRef.current = frame;
+
     return () => {
       frameRef.current?.dispose?.();
-
       const holder = document.getElementById(holderIdRef.current);
       if (holder) holder.innerHTML = "";
     };
@@ -311,15 +200,12 @@ function ZimMonopolyBoard({ positions, currentPlayerIndex }: ZimMonopolyBoardPro
 
   useEffect(() => {
     if (!stageRef.current) return;
-    drawBoard(stageRef.current, positions, currentPlayerIndex);
-  }, [positions, currentPlayerIndex]);
+    drawBoard(stageRef.current, positions, currentPlayerIndex, diceValue);
+  }, [positions, currentPlayerIndex, diceValue]);
 
   return (
     <div className="h-full w-full">
-      <div
-        id={holderIdRef.current}
-        className="h-full w-full [&>canvas]:!h-full [&>canvas]:!w-full"
-      />
+      <div id={holderIdRef.current} className="h-full w-full [&>canvas]:!h-full [&>canvas]:!w-full" />
     </div>
   );
 }
