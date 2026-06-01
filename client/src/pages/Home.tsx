@@ -53,13 +53,12 @@ function Home() {
           whatever
         </p>
         <div className="mb-5 flex flex-wrap items-center justify-center gap-4">
-          <button onClick={createRoom}
+          <button
+            onClick={createRoom}
             type="button"
             className="rounded-full bg-orange-600 px-5 py-3 font-bold text-white transition hover:bg-orange-200 hover:text-slate-900"
           >
-            
             Create Room
-          
           </button>
 
           <div className="flex flex-wrap justify-center gap-2">
@@ -73,7 +72,8 @@ function Home() {
             />
 
             <button
-              type="button" onClick={() => navigate(`/lobby/${lobbyCode}`)}
+              type="button"
+              onClick={() => navigate(`/lobby/${lobbyCode}`)}
               className="rounded-full bg-orange-600 px-5 py-3 font-bold text-white transition hover:bg-orange-200 hover:text-slate-900"
             >
               Join Room
