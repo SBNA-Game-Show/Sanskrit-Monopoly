@@ -15,6 +15,7 @@ import Rules from "./pages/Rules";
 import Lobby from "./pages/Lobby";
 //import Game from "./pages/Game";
 //import AdminGame from "./pages/AdminGame";
+import Result from "./pages/Result";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <HomeRedirect /> },
+      { path: "result", element: <Result /> }, // TEST ROUTE
       {
         element: <RedirectIfAuthenticated />,
         children: [{ path: "login", element: <Login /> }],
@@ -36,6 +38,7 @@ const router = createBrowserRouter([
           },
           { path: "rules", element: <Rules /> },
           { path: "lobby/:lobbyCode", element: <Lobby /> },
+
         ],
       },
     ],
