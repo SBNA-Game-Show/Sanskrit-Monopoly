@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
@@ -9,6 +9,7 @@ import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import type { GameState } from "../types/game/gameTypes";
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
+import Result from "./Result";
 
 export default function Lobby() {
   const [lobbyState, setLobbyState] = useState<GameState | null>(null);
@@ -19,7 +20,7 @@ export default function Lobby() {
   const { uid, username, authLoading } = useAuth();
 
   useEffect(() => {
-    if (authLoading || !lobbyCode || !uid || !username) return;
+    if (authLoading) return;
 
     const handleGameUpdated = (nextState: GameState) => {
       setLobbyState(nextState);
@@ -44,17 +45,17 @@ export default function Lobby() {
       socket.off(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
     };
-  }, [authLoading, lobbyCode, uid, username]);
+  }, [authLoading]);
 
   const host = lobbyState?.host;
-  const players = useMemo(() => lobbyState?.players ?? [], [lobbyState]);
+  const players = lobbyState?.players ?? [];
   const isHost = host?.uid === uid;
 
   const canStart =
     isHost &&
     selectedEdition !== null &&
     startingMoney !== null &&
-    players.length > 0;
+    players.length > 0; // we can keep it like this for testing so that only one player is required to start the game
 
   const handleDragStart = (e: React.DragEvent, tokenId: string) => {
     e.dataTransfer.setData("tokenId", tokenId);
@@ -92,12 +93,14 @@ export default function Lobby() {
     });
   };
 
-  if (
-    lobbyState &&
-    (lobbyState.status === "playing" || lobbyState.status === "finished")
-  ) {
+  if (lobbyState && (lobbyState.status === "playing")) {
     return <GamePage gameState={lobbyState} />;
   }
+
+  // todo (jyotirmoy): make the results screen render game data
+  if (lobbyState && lobbyState.status === "finished") {
+    return <Result/>
+  } 
 
   if (!lobbyState || lobbyState.status !== "waiting") {
     return (

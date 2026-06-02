@@ -10,7 +10,7 @@ export function getLobby(lobbyCode) {
   return lobbies[lobbyCode] ?? null;
 }
 
-// function to create lobby. now modified to include edition and turn info
+// function to create lobby
 export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   const lobbyCode = generateLobbyCode();
 
@@ -19,9 +19,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     status: "waiting",
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
-
     edition,
-    turnOrder: [],
     currentTurnUid: null,
     lastRoll: null,
     winnerUid: null,
@@ -37,11 +35,6 @@ export function joinLobby(lobbyCode, playerData) {
   // check if lobby exists
   if (!lobby) {
     return { lobby: null, error: "Lobby not found" };
-  }
-
-  // check if game hasn't already started
-  if (lobby.status !== "waiting") {
-    return { lobby, error: "Game has already started" };
   }
 
   // avoid adding host as normal player
@@ -73,16 +66,6 @@ export function joinLobby(lobbyCode, playerData) {
     points: 0,
     isConnected: true,
   });
-  return { lobby, error: null };
-}
-
-export function updateHostSocket(lobbyCode, socketId) {
-  const lobby = getLobby(lobbyCode);
-
-  if (!lobby) {
-    return { lobby: null, error: "Lobby not found" };
-  }
-  lobby.host.socketId = socketId;
   return { lobby, error: null };
 }
 
@@ -140,8 +123,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   }
 
   lobby.status = "playing";
-  lobby.turnOrder = lobby.players.map((player) => player.uid);
-  lobby.currentTurnUid = lobby.turnOrder[0] ?? null;
+  lobby.currentTurnUid = lobby.players[0].uid ?? null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -201,9 +183,11 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: null };
   }
 
-  const currentTurnIndex = lobby.turnOrder.indexOf(uid);
-  const nextTurnIndex = (currentTurnIndex + 1) % lobby.turnOrder.length;
-  lobby.currentTurnUid = lobby.turnOrder[nextTurnIndex] ?? null;
+  const currentTurnIndex = lobby.players.findIndex(
+    (player) => player.uid === uid,
+  );
+  const nextTurnIndex = (currentTurnIndex + 1) % lobby.players.length;
+  lobby.currentTurnUid = lobby.players[nextTurnIndex]?.uid ?? null;
 
   return { lobby, error: null };
 }

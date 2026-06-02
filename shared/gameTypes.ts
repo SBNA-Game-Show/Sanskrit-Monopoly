@@ -45,7 +45,6 @@ export type GameState = {
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
-  turnOrder: string[];
   currentTurnUid: string | null;
   lastRoll: number | null;
   winnerUid: string | null;

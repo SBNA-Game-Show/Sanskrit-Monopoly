@@ -1,5 +1,4 @@
 export const GAME_EVENTS = {
-  HOST_JOIN: "host:join",
   LOBBY_JOIN: "lobby:join",
   PLAYER_UPDATE_TOKEN: "player:update-token",
 

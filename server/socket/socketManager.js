@@ -3,7 +3,6 @@ import {
   joinLobby,
   startGame,
   rollDice,
-  updateHostSocket,
   updatePlayerToken,
 } from "../services/gameService.js";
 
@@ -20,18 +19,6 @@ function broadcastGameState(io, lobby) {
 export function setupSocketEvents(io) {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
-
-    socket.on(GAME_EVENTS.HOST_JOIN, ({ lobbyCode }) => {
-      const result = updateHostSocket(lobbyCode, socket.id);
-
-      if (result.error) {
-        emitGameError(socket, result.error);
-        return;
-      }
-
-      socket.join(lobbyCode);
-      broadcastGameState(io, result.lobby);
-    });
 
     socket.on(GAME_EVENTS.LOBBY_JOIN, ({ lobbyCode, player }) => {
       if (!lobbyCode || !player?.uid || !player?.username) {

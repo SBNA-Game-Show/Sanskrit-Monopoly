@@ -10,6 +10,9 @@ type GamePageProps = {
 };
 
 export default function GamePage({ gameState }: GamePageProps) {
+  //for debugging (KEEP THIS)
+  console.log(gameState);
+
   const { uid } = useAuth();
 
   const isHost = gameState.host.uid === uid;
@@ -24,47 +27,6 @@ export default function GamePage({ gameState }: GamePageProps) {
       uid,
     });
   };
-
-  const winner = gameState.players.find(
-    (player) => player.uid === gameState.winnerUid,
-  );
-
-  const sortedPlayers = [...gameState.players].sort(
-    (a, b) => b.points - a.points,
-  );
-
-  if (gameState.status === "finished") {
-    return (
-      <main className="min-h-screen bg-orange-50 p-6">
-        <section className="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow">
-          <h1 className="mb-4 text-3xl font-bold text-orange-600">
-            Game Finished
-          </h1>
-
-          <p className="mb-6 text-lg font-semibold">
-            Winner: {winner?.username ?? "Unknown"}
-          </p>
-
-          <h2 className="mb-3 text-xl font-bold">Final Scores</h2>
-
-          <div className="space-y-3">
-            {sortedPlayers.map((player, index) => (
-              <div
-                key={player.uid}
-                className="flex items-center justify-between rounded-xl bg-orange-100 px-4 py-3"
-              >
-                <span className="font-semibold">
-                  #{index + 1} {player.username}
-                </span>
-
-                <span>{player.points} pts</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-[calc(100vh-56px)] bg-white font-jersey p-4">
