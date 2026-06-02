@@ -34,6 +34,18 @@
   }
 }
 
+/* ---- Toasts */
+@keyframes toast-slide-down {
+  from {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* ---- Then the heckin' animation itself ---- */
 .animate-slide-in-up {
   animation: slide-in-up 0.22s ease-out both;
@@ -45,4 +57,8 @@
 
 .animate-slide-in-down {
   animation: slide-in-down 0.22s ease-out both;
+}
+
+.toast-slide-down {
+  animation: toast-slide-down 280ms ease-out;
 }

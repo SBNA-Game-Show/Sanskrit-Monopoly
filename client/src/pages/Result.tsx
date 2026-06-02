@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { LOBBY_STATE } from "../content/fakeGameData";
+import "../styles/results.css";
 
 function Result() {
     const navigate = useNavigate();

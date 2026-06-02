@@ -2,9 +2,16 @@
    ====== Typography - Fonts + text utility classes ============
    ============================================================= */
 
-body {
+/* Apply font stack globally (unless you wanna change it. Idrc ¯\_(ツ)_/¯) */
+
+/* :root {
+  --font-display: "Baloo 2", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+} */
+
+/* body {
   font-family: var(--font-body);
-}
+} */
 
 h1,
 h2,
@@ -47,4 +54,9 @@ h6 {
   }
 
   /* Add whatever custom ones you wanna make here */
+
+  /* Font family for lobby workspace */
+  .font-jersey {
+    font-family: "Jersey 10", sans-serif;
+  }
 }
