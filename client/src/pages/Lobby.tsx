@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 
-import GamePage from "./GamePage";
+import Game from "./Game";
 
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import type { GameState } from "../types/game/gameTypes";
@@ -94,7 +94,7 @@ export default function Lobby() {
   };
 
   if (lobbyState && (lobbyState.status === "playing")) {
-    return <GamePage gameState={lobbyState} />;
+    return <Game gameState={lobbyState} />;
   }
 
   // todo (jyotirmoy): make the results screen render game data
