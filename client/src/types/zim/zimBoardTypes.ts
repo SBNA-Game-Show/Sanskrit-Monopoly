@@ -22,6 +22,7 @@ export type BoardTileDefinition = {
 export type ZimBoardState = {
   players: PlayerState[];
   currentTurnUid: string | null;
+  lastRoll?: number | null;
 };
 
 export type ZimBoardController = {

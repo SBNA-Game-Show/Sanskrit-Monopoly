@@ -9,6 +9,7 @@ import type {
 export default function ZimMonopolyBoard({
   players,
   currentTurnUid,
+  lastRoll,
 }: ZimMonopolyBoardProps) {
   const holderIdRef = useRef(
     `zim-board-${Math.random().toString(36).slice(2)}`,
@@ -16,12 +17,12 @@ export default function ZimMonopolyBoard({
   const frameRef = useRef<zim.Frame | null>(null);
   const stageRef = useRef<zim.Stage | null>(null);
   const boardRef = useRef<ZimBoardController | null>(null);
-  const latestStateRef = useRef({ players, currentTurnUid });
+  const latestStateRef = useRef({ players, currentTurnUid, lastRoll });
 
   useEffect(() => {
-    latestStateRef.current = { players, currentTurnUid };
+    latestStateRef.current = { players, currentTurnUid, lastRoll };
     boardRef.current?.update(latestStateRef.current);
-  }, [players, currentTurnUid]);
+  }, [players, currentTurnUid, lastRoll]);
 
   useEffect(() => {
     frameRef.current = new zim.Frame({

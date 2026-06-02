@@ -110,6 +110,7 @@ export default function Game({ gameState }: GameProps) {
               <ZimMonopolyBoard
                 players={gameState.players}
                 currentTurnUid={gameState.currentTurnUid}
+                lastRoll={gameState.lastRoll}
               />
             </div>
           </div>

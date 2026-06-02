@@ -180,7 +180,21 @@ function drawTile(
   if (side === "right") label.rot(-90);
 }
 
-function drawStaticBoard(stage: zim.Stage) {
+function drawDice(board: zim.Container, diceValue: number | null | undefined) {
+  const dice = new zim.Container(110, 110).pos(620, 560, false, false, board);
+  new zim.Rectangle(110, 110, "#f4e8c8", "#6b3f1d", 5, 18).addTo(dice);
+
+  new zim.Label({
+    text: diceValue ? String(diceValue) : "—",
+    size: 60,
+    bold: true,
+    color: "#2a1c12",
+    font: "Arial",
+    align: "center",
+  }).center(dice);
+}
+
+function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   stage.removeAllChildren();
 
   const board = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
@@ -275,6 +289,8 @@ function drawStaticBoard(stage: zim.Stage) {
     );
   }
 
+  drawDice(board, state.lastRoll);
+
   return board;
 }
 
@@ -316,7 +332,7 @@ export function createZimBoard(
   let board: zim.Container | null = null;
 
   function draw(state: ZimBoardState) {
-    board = drawStaticBoard(stage);
+    board = drawStaticBoard(stage, state);
     drawPlayers(board, state.players, state.currentTurnUid);
     stage.update();
   }
