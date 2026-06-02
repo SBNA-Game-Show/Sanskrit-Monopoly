@@ -285,6 +285,18 @@ export default function Lobby() {
                 })}
               </div>
             </div>
+
+            <div className="mt-8 flex justify-center">
+              <div className="w-[520px] rounded-[18px] bg-[#FF9513] px-8 py-5 text-center shadow-lg">
+                <p className="text-[16px] font-bold tracking-normal text-white">
+                  Start requires 2 to 4 players.
+                </p>
+                <p className="mt-2 text-[16px] font-bold tracking-normal text-white">
+                  Current players: {players.length}/4
+                </p>
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>

@@ -28,80 +28,140 @@ export default function GamePage({ gameState }: GamePageProps) {
     });
   };
 
+  const handleSkipTurn = () => {
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_ADMIN_SKIP_TURN, {
+      lobbyCode: gameState.lobbyCode,
+    });
+  };
+
+  const handleKickPlayer = (uid: string) => {
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_ADMIN_KICK_PLAYER, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
+
   return (
-    <main className="min-h-[calc(100vh-56px)] bg-white font-jersey p-4">
-      <section className="grid grid-cols-1 xl:grid-cols-[280px_1fr_320px] gap-4">
-        <aside className="bg-[#FFC17E] rounded-3xl p-4 shadow">
-          <h2 className="text-3xl text-white tracking-wider mb-4">Players</h2>
+    <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
+      <section className="grid min-h-screen grid-cols-1 xl:grid-cols-[340px_1fr_340px] gap-6 p-6">
 
-          <div className="space-y-3">
-            {gameState.players.map((player) => (
-              <div
-                key={player.uid}
-                className="bg-white rounded-2xl p-3 flex justify-between items-center"
-              >
-                <div>
-                  <p className="text-2xl text-[#FF8C00]">{player.username}</p>
-                  <p className="text-sm text-gray-500">
-                    Position {player.position} · {player.points} pts
-                  </p>
+        {/* Left: Players */}
+        <aside className="max-h-[calc(100vh-48px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
+          <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
+            Players
+          </h2>
+
+          <div className="space-y-5">
+            {gameState.players.map((player, index) => {
+              const isCurrentTurn = player.uid === gameState.currentTurnUid;
+              return (
+                <div
+                  key={player.uid}
+                  className={`rounded-2xl border-[6px] p-4 shadow-md ${
+                    isCurrentTurn
+                      ? "border-[#6b3f1d] bg-[#ffd7a3]"
+                      : "border-[#ffa23b] bg-[#ffb45c]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-[15px] leading-[1.45]">
+                      <p className="font-semibold">
+                        Player {index + 1} — {player.username}
+                      </p>
+                      <p>Position: {player.position}</p>
+                      <p>Points: {player.points}</p>
+                    </div>
+
+                    {player.token && TOKEN_IMAGE_BY_ID[player.token] ? (
+                      <img
+                        src={TOKEN_IMAGE_BY_ID[player.token]}
+                        alt={`${player.username} token`}
+                        className="h-[64px] w-[64px] object-contain rounded-xl bg-white/25"
+                      />
+                    ) : (
+                      <div className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-white/25 text-sm text-[#6b3f1d]">
+                        No token
+                      </div>
+                    )}
+                  </div>
+
+                  {isHost && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={() => handleKickPlayer(player.uid)}
+                        className="rounded-full bg-[#b33a3a] px-4 py-2 text-xs font-bold text-white shadow"
+                      >
+                        Kick
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                {player.token && TOKEN_IMAGE_BY_ID[player.token] ? (
-                  <img
-                    src={TOKEN_IMAGE_BY_ID[player.token]}
-                    alt={`${player.username} token`}
-                    className="h-12 w-12 object-contain"
-                  />
-                ) : (
-                  <span className="text-lg">No token</span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </aside>
 
-        <section className="bg-[#fff7ed] rounded-3xl p-4 shadow min-h-150">
-          <ZimMonopolyBoard
-            players={gameState.players}
-            currentTurnUid={gameState.currentTurnUid}
-          />
+        <section className="flex flex-col">
+          <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
+            <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
+            <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
+              {gameState.lobbyCode || "—"}
+            </h2>
+          </div>
+
+          <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
+            <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
+              <ZimMonopolyBoard
+                players={gameState.players}
+                currentTurnUid={gameState.currentTurnUid}
+              />
+            </div>
+          </div>
         </section>
 
-        <aside className="bg-[#FFC17E] rounded-3xl p-4 shadow">
-          <h2 className="text-3xl text-white tracking-wider mb-4">Game</h2>
-
-          <div className="bg-white rounded-2xl p-4 mb-4">
-            <p className="text-xl text-[#FF8C00]">Current Turn</p>
-            <p className="text-2xl">
+        <aside className="max-h-[calc(100vh-48px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-6 shadow-xl">
+          <div className="mb-6 rounded-2xl bg-[#fff4dc] p-4 text-[18px] leading-tight shadow-inner">
+            <p className="mb-2 font-bold text-[#6b3f1d]">Current Turn</p>
+            <p className="text-[22px] font-semibold text-[#160f08]">
               {currentPlayer?.username ?? "Waiting..."}
             </p>
-            <p className="text-2xl">
-              Last roll: {gameState.lastRoll ?? "None"}
+            <p className="mt-1 text-[#6b3f1d]">
+              Last roll: {gameState.lastRoll ?? "—"}
             </p>
           </div>
 
-          {isHost ? (
-            <div className="space-y-3">
-              <button className="w-full bg-[#FF8C00] text-white rounded-2xl p-3 text-2xl transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">
-                Host Control
-              </button>
-              <button className="w-full bg-[#FF8C00] text-white rounded-2xl p-3 text-2xl transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50">
-                End Game
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
+          <div className="flex flex-col items-center gap-5">
+            {isHost ? (
+              <>
+                <button
+                  onClick={handleRollDice}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                >
+                  Force Roll
+                </button>
+                <button
+                  onClick={handleSkipTurn}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                >
+                  Skip Turn
+                </button>
+                <button className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]">
+                  End Game
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
                 onClick={handleRollDice}
                 disabled={gameState.currentTurnUid !== uid}
-                className="w-full bg-[#FF8C00] text-white rounded-2xl p-3 text-2xl transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </aside>
       </section>
     </main>

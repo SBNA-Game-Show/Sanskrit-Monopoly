@@ -145,12 +145,13 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: "Game is not currently active" };
   }
 
-  if (lobby.currentTurnUid !== uid) {
+  // return if not current player (with the exception of host for host force roll control)
+  if (lobby.currentTurnUid !== uid && lobby.host.uid !== uid) {
     return { lobby, error: "It is not your turn" };
   }
 
   const player = lobby.players.find(
-    (currentPlayer) => currentPlayer.uid === uid,
+    (currentPlayer) => currentPlayer.uid === lobby.currentTurnUid,
   );
 
   if (!player) {
@@ -184,10 +185,60 @@ export function rollDice(lobbyCode, uid) {
   }
 
   const currentTurnIndex = lobby.players.findIndex(
-    (player) => player.uid === uid,
+    (player) => player.uid === lobby.currentTurnUid,
   );
   const nextTurnIndex = (currentTurnIndex + 1) % lobby.players.length;
   lobby.currentTurnUid = lobby.players[nextTurnIndex]?.uid ?? null;
+
+  return { lobby, error: null };
+}
+
+export function forceSkipTurn(lobbyCode) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.status !== "playing") {
+    return { lobby, error: "Game is not currently active" };
+  }
+
+  const currentTurnIndex = lobby.players.findIndex(
+    (player) => player.uid === lobby.currentTurnUid,
+  );
+  const nextTurnIndex = (currentTurnIndex + 1) % lobby.players.length;
+  lobby.currentTurnUid = lobby.players[nextTurnIndex]?.uid ?? null;
+
+  return { lobby, error: null };
+}
+
+export function kickPlayer(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  if (lobby.players.length <= 2) {
+    return { error: "Cannot remove player. Minimum 2 players required." };
+  }
+
+  const isCurrentTurn = lobby.currentTurnUid === uid;
+
+  if (isCurrentTurn) {
+    const kickedIndex = lobby.players.findIndex((player) => player.uid === uid);
+    lobby.players = lobby.players.filter((player) => player.uid !== uid);
+    
+    if (lobby.players.length > 0) {
+      const nextTurnIndex = kickedIndex % lobby.players.length;
+      lobby.currentTurnUid = lobby.players[nextTurnIndex]?.uid ?? null;
+    } else {
+      lobby.currentTurnUid = null;
+    }
+  } else {
+    lobby.players = lobby.players.filter((player) => player.uid !== uid);
+  }
 
   return { lobby, error: null };
 }

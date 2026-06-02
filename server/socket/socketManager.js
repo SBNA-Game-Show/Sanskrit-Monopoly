@@ -1,9 +1,12 @@
 import {
-  disconnectPlayer,
+  getLobby,
   joinLobby,
+  updatePlayerToken,
   startGame,
   rollDice,
-  updatePlayerToken,
+  forceSkipTurn,
+  kickPlayer,
+  disconnectPlayer,
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
@@ -86,6 +89,47 @@ export function setupSocketEvents(io) {
       }
 
       const result = rollDice(lobbyCode, uid);
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+    });
+
+    socket.on(GAME_EVENTS.GAME_ADMIN_SKIP_TURN, ({ lobbyCode }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobbyCode) {
+        emitGameError(socket, "Lobby not found.");
+        return;
+      }
+
+      if (lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can skip turns.");
+        return;
+      }
+
+      const result = forceSkipTurn(lobbyCode);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+    });
+
+    socket.on(GAME_EVENTS.GAME_ADMIN_KICK_PLAYER, ({ lobbyCode, uid }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby || lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can kick players.");
+        return;
+      }
+
+      const result = kickPlayer(lobbyCode, uid);
+
       if (result.error) {
         emitGameError(socket, result.error);
         return;
