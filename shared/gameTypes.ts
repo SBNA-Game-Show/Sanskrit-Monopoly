@@ -30,6 +30,8 @@ export type PlayerState = {
   token: string | null;
   position: number;
   points: number;
+  money: number; // currently unused
+  properties: string[]; // currently unused
   isConnected: boolean;
 };
 
@@ -45,7 +47,7 @@ export type GameState = {
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
-  currentTurnUid: string | null;
+  currentPlayerIndex: number;
   lastRoll: number | null;
   winnerUid: string | null;
 };

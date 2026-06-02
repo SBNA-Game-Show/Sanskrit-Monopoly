@@ -16,9 +16,7 @@ export default function Game({ gameState }: GameProps) {
   const { uid } = useAuth();
 
   const isHost = gameState.host.uid === uid;
-  const currentPlayer = gameState.players.find(
-    (player) => player.uid === gameState.currentTurnUid,
-  );
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const handleRollDice = () => {
     if (!gameState.lobbyCode || !uid) return;
 
@@ -30,16 +28,23 @@ export default function Game({ gameState }: GameProps) {
 
   const handleSkipTurn = () => {
     if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_ADMIN_SKIP_TURN, {
+    socket.emit(GAME_EVENTS.GAME_HOST_SKIP_TURN, {
       lobbyCode: gameState.lobbyCode,
     });
   };
 
   const handleKickPlayer = (uid: string) => {
     if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_ADMIN_KICK_PLAYER, {
+    socket.emit(GAME_EVENTS.GAME_HOST_KICK_PLAYER, {
       lobbyCode: gameState.lobbyCode,
       uid,
+    });
+  };
+
+  const handleEndGame = () => {
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_HOST_END_GAME, {
+      lobbyCode: gameState.lobbyCode,
     });
   };
 
@@ -55,7 +60,7 @@ export default function Game({ gameState }: GameProps) {
 
           <div className="space-y-5">
             {gameState.players.map((player, index) => {
-              const isCurrentTurn = player.uid === gameState.currentTurnUid;
+              const isCurrentTurn = player.uid === currentPlayer.uid;
               return (
                 <div
                   key={player.uid}
@@ -109,7 +114,7 @@ export default function Game({ gameState }: GameProps) {
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
                 players={gameState.players}
-                currentTurnUid={gameState.currentTurnUid}
+                currentTurnUid={currentPlayer.uid}
                 lastRoll={gameState.lastRoll}
               />
             </div>
@@ -142,7 +147,10 @@ export default function Game({ gameState }: GameProps) {
                 >
                   Skip Turn
                 </button>
-                <button className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]">
+                <button 
+                  onClick={handleEndGame}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                >
                   End Game
                 </button>
               </>
@@ -150,7 +158,7 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={gameState.currentTurnUid !== uid}
+                disabled={currentPlayer.uid !== uid}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
