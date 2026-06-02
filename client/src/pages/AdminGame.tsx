@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ZimMonopolyBoard from "../components/ZImMonopolyBoard";
+import { socket } from "../socket";
 
 type Player = {
   id: number;
@@ -14,7 +15,7 @@ type Player = {
 
 type AdminModal = "penalties" | "rewards" | "questions" | "settings" | null;
 
-function AdminGame({gameState}) {
+function AdminGame({ gameState }) {
   console.log(gameState);
   const [players, setPlayers] = useState<Player[]>([
     {
@@ -126,11 +127,11 @@ function AdminGame({gameState}) {
       previousPlayers.map((player, index) =>
         index === currentPlayerIndex
           ? {
-              ...player,
-              position: newPosition,
-              money: newTile === "पुरस्कारः" ? player.money + 100 : player.money - 50,
-              score: newTile === "पुरस्कारः" ? player.score + 50 : player.score - 20,
-            }
+            ...player,
+            position: newPosition,
+            money: newTile === "पुरस्कारः" ? player.money + 100 : player.money - 50,
+            score: newTile === "पुरस्कारः" ? player.score + 50 : player.score - 20,
+          }
           : player
       )
     );
@@ -141,10 +142,10 @@ function AdminGame({gameState}) {
       previousPlayers.map((player) =>
         player.id === playerId
           ? {
-              ...player,
-              money: player.money + amount,
-              score: player.score + amount,
-            }
+            ...player,
+            money: player.money + amount,
+            score: player.score + amount,
+          }
           : player
       )
     );
@@ -351,77 +352,76 @@ function AdminGame({gameState}) {
   return (
     <main className="min-h-screen w-full bg-[#161616] font-sans text-[#160f08]">
       <section className="flex min-h-screen w-full flex-col bg-[#fffaf0]">
-        
+
         {/* Main Content */}
         <section className="grid flex-1 grid-cols-[340px_1fr_340px] gap-6 bg-[#fffaf0] p-6 pt-8">
           {/* Players Panel */}
-        <aside className="max-h-[calc(100vh-130px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
-        <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
-            Players
-            <span className="mt-1 block text-[22px]">क्रीडकाः</span>
-        </h2>
+          <aside className="max-h-[calc(100vh-130px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
+            <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
+              Players
+              <span className="mt-1 block text-[22px]">क्रीडकाः</span>
+            </h2>
 
-        <button
-            onClick={handleAddPlayer}
-            className="mb-5 h-[50px] w-full rounded-[20px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
-        >
-            + Add Player
-        </button>
+            <button
+              onClick={handleAddPlayer}
+              className="mb-5 h-[50px] w-full rounded-[20px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+            >
+              + Add Player
+            </button>
 
-        <div className="space-y-5">
-            {players.map((player, index) => (
+            <div className="space-y-5">
+              {players.map((player, index) => (
                 <div
-                key={player.id}
-                className={`rounded-2xl border-[6px] p-4 shadow-md ${
-                    index === currentPlayerIndex
+                  key={player.id}
+                  className={`rounded-2xl border-[6px] p-4 shadow-md ${index === currentPlayerIndex
                     ? "border-[#6b3f1d] bg-[#ffd7a3]"
                     : "border-[#ffa23b] bg-[#ffb45c]"
-                }`}
+                    }`}
                 >
-                {/* Player info + token */}
-                <div className="flex items-start justify-between gap-3">
+                  {/* Player info + token */}
+                  <div className="flex items-start justify-between gap-3">
                     <div className="text-[15px] leading-[1.45]">
-                    <p className="font-semibold">
+                      <p className="font-semibold">
                         Player {index + 1} — {player.name}
-                    </p>
-                    <p>धनम्: {player.money}</p>
-                    <p>Position: {player.position}</p>
-                    <p>Status: {player.status}</p>
+                      </p>
+                      <p>धनम्: {player.money}</p>
+                      <p>Position: {player.position}</p>
+                      <p>Status: {player.status}</p>
                     </div>
 
                     <div className="flex h-[64px] w-[74px] shrink-0 items-center justify-center rounded-xl bg-white/25 text-[42px] grayscale">
-                    {player.token}
+                      {player.token}
                     </div>
-                </div>
+                  </div>
 
-                {/* Buttons */}
-                <div className="mt-4 flex justify-end gap-3">
+                  {/* Buttons */}
+                  <div className="mt-4 flex justify-end gap-3">
                     <button
-                    onClick={() => handleAdjustMoney(player.id, 50)}
-                    className="rounded-full bg-[#e84a15] px-4 py-2 text-xs font-bold text-white shadow"
+                      onClick={() => handleAdjustMoney(player.id, 50)}
+                      className="rounded-full bg-[#e84a15] px-4 py-2 text-xs font-bold text-white shadow"
                     >
-                    +50
+                      +50
                     </button>
 
                     <button
-                    onClick={() => handleRemovePlayer(player.id)}
-                    className="rounded-full bg-[#b33a3a] px-4 py-2 text-xs font-bold text-white shadow"
+                      onClick={() => handleRemovePlayer(player.id)}
+                      className="rounded-full bg-[#b33a3a] px-4 py-2 text-xs font-bold text-white shadow"
                     >
-                    Remove
+                      Remove
                     </button>
+                  </div>
                 </div>
-                </div>
-            ))}
+              ))}
             </div>
-        </aside>
+          </aside>
 
           {/* Board */}
           <section className="flex min-w-0 flex-col">
             <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
-                <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
-                <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
-                    {gameState.lobbyCode}
-                </h2>
+              <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
+              <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
+                {gameState.lobbyCode}
+              </h2>
             </div>
 
             <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
@@ -491,7 +491,7 @@ function AdminGame({gameState}) {
               </button>
 
               <button
-                onClick={() => alert("End game clicked. Backend logic will be connected later.")}
+                onClick={() => socket.emit("end-game", { lobbyCode: gameState.lobbyCode })}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#b33a3a] text-lg font-bold text-white shadow-md hover:bg-[#d94a4a]"
               >
                 End Game

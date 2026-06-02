@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
+import Result from "./Result";
 
 import AdminGame from "./AdminGame";
 import Game from "./Game";
@@ -12,8 +13,9 @@ import shoeImg from "../assets/monopoly_shoe.png";
 import dogImg from "../assets/monopoly_dog.png";
 import hostImg from "../assets/monopoly_host.png";
 
+
 export default function Lobby() {
-  const [lobbyState, setLobbyState] = useState(null);
+  const [lobbyState, setLobbyState] = useState<any>(null);
   const [selectedEdition, setSelectedEdition] = useState<string | null>(null);
   const [startingMoney, setStartingMoney] = useState<number | null>(null);
 
@@ -25,6 +27,7 @@ export default function Lobby() {
     socket.emit("lobby-join", { lobbyCode, uid, username });
 
     socket.on("lobby-update", (lobby) => {
+      console.log("LOBBY UPDATE:", lobby);
       setLobbyState(lobby);
     });
 
@@ -98,7 +101,7 @@ export default function Lobby() {
   if (lobbyState && lobbyState.status === "waiting") {
     return (
       <main className="h-[calc(100vh-56px)] overflow-hidden bg-white font-jersey flex flex-col justify-between select-none">
-        
+
         {/* Inline style for pulsing glow effect on Start Button */}
         <style>
           {`
@@ -113,11 +116,11 @@ export default function Lobby() {
         </style>
 
         <div className="w-full max-w-6xl mx-auto px-4 py-2 lg:py-4 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 items-center flex-grow min-h-0">
-          
+
           {/* Player Registration Grid */}
           <div className="lg:col-span-3 flex flex-col items-center justify-center space-y-4 w-full h-full">
             <div className="w-full flex flex-col space-y-3 max-w-xl">
-              
+
               {/* Centered Host Box */}
               <div className="flex justify-center w-full">
                 <div className="w-full sm:w-[calc(50%-0.5rem)] bg-[#FFC17E] p-2 rounded-2xl flex justify-between items-center shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] border border-white/20">
@@ -135,7 +138,7 @@ export default function Lobby() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Generic Player Grid w/ Drop Zones */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                 {players.map((p, index) => (
@@ -179,7 +182,7 @@ export default function Lobby() {
                 ))}
               </div> {/* Generic Player Grid w/ Drop Zones */}
             </div> {/* Player Registration Grid */}
-            
+
             {/* Token Pool (Bottom Boxes) */}
             <div
               className="w-full flex justify-center gap-4 mt-2 p-2"
@@ -236,11 +239,10 @@ export default function Lobby() {
                           key={edition}
                           disabled={!isHost}
                           onClick={() => setSelectedEdition(edition)}
-                          className={`text-base lg:text-lg rounded-xl p-2 px-5 tracking-wider transition-all text-white ${
-                            isSelected
-                              ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-[4px]"
-                              : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
-                          }`}
+                          className={`text-base lg:text-lg rounded-xl p-2 px-5 tracking-wider transition-all text-white ${isSelected
+                            ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-[4px]"
+                            : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
+                            }`}
                         >
                           {edition}
                         </button>
@@ -249,7 +251,7 @@ export default function Lobby() {
                   )}
                 </div>
               </div>
-              
+
               {/* Currency Selector */}
               <div>
                 <span className="block text-lg lg:text-xl text-white mb-3 uppercase tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
@@ -264,11 +266,10 @@ export default function Lobby() {
                         key={amount}
                         disabled={!isHost}
                         onClick={() => setStartingMoney(amount)}
-                        className={`flex-1 text-base lg:text-lg rounded-xl p-2 tracking-wider transition-all text-white ${
-                          isSelected
-                            ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-[4px]"
-                            : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
-                        }`}
+                        className={`flex-1 text-base lg:text-lg rounded-xl p-2 tracking-wider transition-all text-white ${isSelected
+                          ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-[4px]"
+                          : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
+                          }`}
                       >
                         {amount}
                       </button>
@@ -287,8 +288,8 @@ export default function Lobby() {
             onClick={handleStartGame}
             className={`
               w-[220px] h-[50px] lg:w-[220px] lg:h-[50px] rounded-2xl text-2xl lg:text-3xl font-jersey tracking-widest text-white transition-all duration-300 relative bottom-0 border-none
-              ${canStart 
-                ? "bg-[#FF9513] animate-neon hover:bg-[#FFA545] hover:scale-105 active:scale-95 active:shadow-none" 
+              ${canStart
+                ? "bg-[#FF9513] animate-neon hover:bg-[#FFA545] hover:scale-105 active:scale-95 active:shadow-none"
                 : "bg-[#FF8C00] opacity-60 cursor-not-allowed"
               }
             `}
@@ -301,10 +302,14 @@ export default function Lobby() {
   }
 
   if (lobbyState && lobbyState.status === "playing" && host.socketId === socket.id) {
-    return <AdminGame gameState={lobbyState}/>
+    return <AdminGame gameState={lobbyState} />
   }
 
   if (lobbyState && lobbyState.status === "playing" && host.socketId !== socket.id) {
-    return <Game gameState={lobbyState}/>
+    return <Game gameState={lobbyState} />
   }
+  if (lobbyState && lobbyState.status === "finished") {
+    return <Result gameState={lobbyState} />;
+  }
+  return <p>Loading lobby...</p>;
 } 

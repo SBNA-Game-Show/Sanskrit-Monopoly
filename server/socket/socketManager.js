@@ -9,7 +9,7 @@ export function setupSocketEvents(io) {
       if (lobby) {
         if (lobby.host.uid === uid) {
           lobby.host.socketId = socket.id;
-        } 
+        }
         else {
           const existingPlayer = lobby.players.find((p) => p.uid === uid);
           if (existingPlayer) {
@@ -27,6 +27,14 @@ export function setupSocketEvents(io) {
       const lobby = lobbies[lobbyCode];
       if (lobby && lobby.host.socketId === socket.id) {
         lobby.status = "playing";
+        io.to(lobbyCode).emit("lobby-update", lobby);
+      }
+    });
+    socket.on("end-game", ({ lobbyCode }) => {
+      const lobby = lobbies[lobbyCode];
+
+      if (lobby && lobby.host.socketId === socket.id) {
+        lobby.status = "finished";
         io.to(lobbyCode).emit("lobby-update", lobby);
       }
     });

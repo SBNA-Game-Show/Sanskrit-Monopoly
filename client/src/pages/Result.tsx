@@ -1,10 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { LOBBY_STATE } from "../content/fakeGameData";
 
-function Result() {
+
+function Result({ gameState }: any) {
     const navigate = useNavigate();
-
-    const sortedPlayers = [...LOBBY_STATE.players].sort(
+    const sortedPlayers = [...gameState.players].sort(
         (a, b) => b.points - a.points
     );
 
@@ -25,7 +24,7 @@ function Result() {
                             Winner: {winner.username}</p>
                     </div>
 
-                    <div className="result-room">Room: {LOBBY_STATE.lobbyCode}</div>
+                    <div className="result-room">Room: {gameState.lobbyCode}</div>
                 </header>
 
                 <main className="result-main">
@@ -51,7 +50,7 @@ function Result() {
 
                                 <div className="token-box">
                                     <img
-                                        src={player.token}
+                                        src={player.token || "/vite.svg"}
                                         alt={`${player.username} token`}
                                         className="player-token"
                                     />
@@ -64,19 +63,19 @@ function Result() {
                                         <div className="stat-box">
                                             <span className="stat-icon">⭐</span>
                                             <span className="stat-label">Score/अंकाः</span>
-                                            <strong>{player.points}</strong>
+                                            <strong>{player.points || 0}</strong>
                                         </div>
 
                                         <div className="stat-box">
                                             <span className="stat-icon">💰</span>
                                             <span className="stat-label">Money/धनम्</span>
-                                            <strong>{player.money}</strong>
+                                            <strong>{player.money || 0}</strong>
                                         </div>
 
                                         <div className="stat-box">
                                             <span className="stat-icon">🏠</span>
                                             <span className="stat-label">Properties/गृहाः</span>
-                                            <strong>{player.properties.length}</strong>
+                                            <strong>{player.properties?.length || 0}</strong>
                                         </div>
                                     </div>
                                 </div>
