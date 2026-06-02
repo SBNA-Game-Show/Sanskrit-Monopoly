@@ -28,16 +28,23 @@ export default function Game({ gameState }: GameProps) {
 
   const handleSkipTurn = () => {
     if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_ADMIN_SKIP_TURN, {
+    socket.emit(GAME_EVENTS.GAME_HOST_SKIP_TURN, {
       lobbyCode: gameState.lobbyCode,
     });
   };
 
   const handleKickPlayer = (uid: string) => {
     if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_ADMIN_KICK_PLAYER, {
+    socket.emit(GAME_EVENTS.GAME_HOST_KICK_PLAYER, {
       lobbyCode: gameState.lobbyCode,
       uid,
+    });
+  };
+
+  const handleEndGame = () => {
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_HOST_END_GAME, {
+      lobbyCode: gameState.lobbyCode,
     });
   };
 
@@ -140,7 +147,10 @@ export default function Game({ gameState }: GameProps) {
                 >
                   Skip Turn
                 </button>
-                <button className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]">
+                <button 
+                  onClick={handleEndGame}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                >
                   End Game
                 </button>
               </>

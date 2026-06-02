@@ -99,7 +99,7 @@ export default function Lobby() {
 
   // todo (jyotirmoy): make the results screen render game data
   if (lobbyState && lobbyState.status === "finished") {
-    return <Result/>
+    return <Result gameState={lobbyState}/>
   } 
 
   if (!lobbyState || lobbyState.status !== "waiting") {

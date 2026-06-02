@@ -64,6 +64,8 @@ export function joinLobby(lobbyCode, playerData) {
     token: null,
     position: 0,
     points: 0,
+    money: 0, // currently unused
+    properties: [], // currently unused
     isConnected: true,
   });
   return { lobby, error: null };
