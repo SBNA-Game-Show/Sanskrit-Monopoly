@@ -151,8 +151,8 @@ function Home() {
               type="text"
               maxLength={6}
               placeholder="ENTER CODE"
-              value={lobbyCode}
-              onChange={(e) => setLobbyCode(e.target.value.toLocaleLowerCase())}
+              value={lobbyCode.toLocaleUpperCase()}
+              onChange={(e) => setLobbyCode(e.target.value.toLocaleUpperCase())}
               className="w-full h-full bg-transparent text-center text-2xl text-orange-900 tracking-widest font-jersey font-normal outline-none placeholder-orange-300 border-none px-2 uppercase flex items-center justify-center"
             />
           </div>
