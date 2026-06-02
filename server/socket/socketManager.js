@@ -97,7 +97,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
     });
 
-    socket.on(GAME_EVENTS.GAME_ADMIN_SKIP_TURN, ({ lobbyCode }) => {
+    socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
       if (!lobbyCode) {
@@ -120,7 +120,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
     });
 
-    socket.on(GAME_EVENTS.GAME_ADMIN_KICK_PLAYER, ({ lobbyCode, uid }) => {
+    socket.on(GAME_EVENTS.GAME_HOST_KICK_PLAYER, ({ lobbyCode, uid }) => {
       const lobby = getLobby(lobbyCode);
 
       if (!lobby || lobby.host.socketId !== socket.id) {
@@ -136,6 +136,18 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+    });
+
+    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, ({ lobbyCode }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby || lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can end the game.");
+        return;
+      }
+
+      lobby.status = "finished";
+      broadcastGameState(io, lobby);
     });
 
     socket.on("disconnect", () => {
