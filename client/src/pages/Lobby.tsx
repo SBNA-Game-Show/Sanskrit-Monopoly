@@ -123,6 +123,78 @@ export default function Lobby() {
           .animate-neon {
             animation: neon-pulse 1.8s ease-in-out infinite;
           }
+            
+            @keyframes token-shake {
+              0%, 100% { transform: rotate(0deg); }
+              20% { transform: rotate(-10deg); }
+              40% { transform: rotate(10deg); }
+              60% { transform: rotate(-8deg); }
+              80% { transform: rotate(8deg); }
+            }
+            .dog-token-shake:hover img {
+              animation: token-shake 0.35s ease-in-out infinite;
+            }
+
+            @keyframes token-jump {
+              0%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-18px); }
+              60% { transform: translateY(-4px); }
+            }
+            .shoe-token-jump:hover img {
+              animation: token-jump 0.45s ease-in-out infinite;
+            }
+
+            @keyframes cat-walk {
+              0% {
+                transform: translateX(-10px) translateY(0) scaleX(1);
+              }
+              12% {
+                transform: translateX(-6px) translateY(-3px) scaleX(1);
+              }
+              25% {
+                transform: translateX(0) translateY(0) scaleX(1);
+              }
+              37% {
+                transform: translateX(6px) translateY(-3px) scaleX(1);
+              }
+              50% {
+                transform: translateX(10px) translateY(0) scaleX(1);
+              }
+              62% {
+                transform: translateX(6px) translateY(-3px) scaleX(-1);
+              }
+              75% {
+                transform: translateX(0) translateY(0) scaleX(-1);
+              }
+              87% {
+                transform: translateX(-6px) translateY(-3px) scaleX(-1);
+              }
+              100% {
+                transform: translateX(-10px) translateY(0) scaleX(1);
+              }
+            }
+            .cat-token-walk:hover img {
+              animation: cat-walk 1.2s ease-in-out infinite;
+            }
+
+            @keyframes boat-rock {
+              0%, 100% {
+                transform: translateY(0) rotate(0deg);
+              }
+              25% {
+                transform: translateY(-4px) rotate(-6deg);
+              }
+              50% {
+                transform: translateY(-2px) rotate(0deg);
+              }
+              75% {
+                transform: translateY(-4px) rotate(6deg);
+              }
+            }
+            .boat-token-rock:hover img {
+              animation: boat-rock 1.6s ease-in-out infinite;
+              transform-origin: center bottom;
+            }
         `}
       </style>
 
@@ -207,7 +279,17 @@ export default function Lobby() {
                     <div
                       draggable
                       onDragStart={(e) => handleDragStart(e, token.id)}
-                      className="w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm"
+                      className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${
+                          token.id === "dog"
+                            ? "dog-token-shake"
+                            : token.id === "shoe"
+                              ? "shoe-token-jump"
+                              : token.id === "cat"
+                                ? "cat-token-walk"
+                                : token.id === "boat"
+                                  ? "boat-token-rock"
+                                  : "hover:scale-110 transition-transform"
+                        }`}
                     >
                       <img
                         src={token.src}
