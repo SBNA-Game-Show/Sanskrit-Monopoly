@@ -104,12 +104,6 @@ export default function Game({ gameState }: GameProps) {
         </aside>
 
         <section className="flex flex-col">
-          <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
-            <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
-            <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
-              {gameState.lobbyCode || "—"}
-            </h2>
-          </div>
 
           <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
