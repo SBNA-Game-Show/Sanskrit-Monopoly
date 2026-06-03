@@ -146,31 +146,31 @@ export default function Lobby() {
 
             @keyframes cat-walk {
               0% {
-                transform: translateX(-10px) translateY(0) scaleX(1);
+                transform: translateX(10px) translateY(0) scaleX(1);
               }
               12% {
-                transform: translateX(-6px) translateY(-3px) scaleX(1);
+                transform: translateX(6px) translateY(-3px) scaleX(1);
               }
               25% {
                 transform: translateX(0) translateY(0) scaleX(1);
               }
               37% {
-                transform: translateX(6px) translateY(-3px) scaleX(1);
+                transform: translateX(-6px) translateY(-3px) scaleX(1);
               }
               50% {
-                transform: translateX(10px) translateY(0) scaleX(1);
+                transform: translateX(-10px) translateY(0) scaleX(1);
               }
               62% {
-                transform: translateX(6px) translateY(-3px) scaleX(-1);
+                transform: translateX(-6px) translateY(-3px) scaleX(-1);
               }
               75% {
                 transform: translateX(0) translateY(0) scaleX(-1);
               }
               87% {
-                transform: translateX(-6px) translateY(-3px) scaleX(-1);
+                transform: translateX(6px) translateY(-3px) scaleX(-1);
               }
               100% {
-                transform: translateX(-10px) translateY(0) scaleX(1);
+                transform: translateX(10px) translateY(0) scaleX(1);
               }
             }
             .cat-token-walk:hover img {
