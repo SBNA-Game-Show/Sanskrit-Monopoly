@@ -17,7 +17,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   lobbies[lobbyCode] = {
     lobbyCode: lobbyCode,
     status: "waiting",
-    gameStatus: "idling", // for mini-games. game is in an 'idle' state
+    gameStatus: null, // null since game hasn't started
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -126,7 +126,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   }
 
   lobby.status = "playing";
-  lobby.gameStatus = "idling"; // idling state
+  lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -171,7 +171,7 @@ export function rollDice(lobbyCode, uid) {
   }
 
   lobby.lastRoll = diceRoll;
-  lobby.gameStatus = "turnEnded"; // turn ended status after successful roll (for now)
+  lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
   if (passedStart) {
     lobby.status = "finished";
@@ -179,9 +179,6 @@ export function rollDice(lobbyCode, uid) {
 
     return { lobby, error: null };
   }
-
-  const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
-  lobby.currentPlayerIndex = nextTurnIndex;
 
   return { lobby, error: null };
 }
@@ -200,9 +197,24 @@ export function forceSkipTurn(lobbyCode) {
   const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
   lobby.currentPlayerIndex = nextTurnIndex;
 
-  lobby.gameStatus = "idling";
-
   return { lobby, error: null };
+}
+
+export function startNextTurn(lobby, io, broadcastGameState) {
+  // show startOfTurn overlay after 2 seconds have passed
+  setTimeout(() => {
+    const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
+    lobby.currentPlayerIndex = nextTurnIndex;
+    lobby.gameStatus = "startOfTurn";
+    broadcastGameState(io, lobby);
+
+    // change to idling after 2.5 seconds to make startOfTurn overlay disappear
+    setTimeout(() => {
+      lobby.gameStatus = "idling";
+      broadcastGameState(io, lobby);
+    }, 2500);
+
+  }, 2000);
 }
 
 export function kickPlayer(lobbyCode, uid) {
