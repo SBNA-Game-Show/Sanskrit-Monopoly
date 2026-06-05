@@ -17,6 +17,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   lobbies[lobbyCode] = {
     lobbyCode: lobbyCode,
     status: "waiting",
+    gameStatus: "idling", // for mini-games. game is in an 'idle' state
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -125,6 +126,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   }
 
   lobby.status = "playing";
+  lobby.gameStatus = "idling"; // idling state
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -169,6 +171,7 @@ export function rollDice(lobbyCode, uid) {
   }
 
   lobby.lastRoll = diceRoll;
+  lobby.gameStatus = "turnEnded"; // turn ended status after successful roll (for now)
 
   if (passedStart) {
     lobby.status = "finished";
@@ -196,6 +199,8 @@ export function forceSkipTurn(lobbyCode) {
 
   const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
   lobby.currentPlayerIndex = nextTurnIndex;
+
+  lobby.gameStatus = "idling";
 
   return { lobby, error: null };
 }
