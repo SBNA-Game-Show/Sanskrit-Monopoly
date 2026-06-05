@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
@@ -16,6 +16,7 @@ export default function Lobby() {
   const [isHost, setIsHost] = useState<boolean>(true);
   const [selectedEdition, setSelectedEdition] = useState<string | null>(null);
   const [startingMoney, setStartingMoney] = useState<number | null>(null);
+  const [availableEditions, setAvailableEditions] = useState<string[]>([]);
 
   // Native React Drop & Drag State
   const availableTokens = [
@@ -80,6 +81,28 @@ export default function Lobby() {
       socket.emit("start_game", { lobbyCode, selectedEdition, startingMoney });
     }
   };
+
+  // Fetch Editions form AdminGame when component loads
+  useEffect(() => {
+    const fetchEditions = async() => {
+      try {
+        const response = await fetch(""); // ADD URL
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch editions");
+        }
+
+        const data = await response.json();
+
+        setAvailableEditions(data.editions || []);
+      } catch (error) {
+        console.error("Error fetching editions:", error);
+        setAvailableEditions(["TEMPLE", "MORAL TEACHING", "BHAGAVAD GITA", "HISTORY"]); // Fallback editions
+      }
+    };
+
+    fetchEditions();
+  }, []);
 
   return (
     <main className="h-[calc(100vh-56px)] overflow-hidden bg-white font-jersey flex flex-col justify-between select-none">
