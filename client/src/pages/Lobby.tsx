@@ -236,7 +236,7 @@ export default function Lobby() {
                 Edition
               </span>
               <div className="flex flex-wrap gap-3 lg:gap-4">
-                {["TEMPLE", "MORAL TEACHING", "BHAGAVAD GITA", "HISTORY"].map(
+                {availableEditions.map(
                   (edition) => {
                     const isSelected = selectedEdition === edition;
                     return (
