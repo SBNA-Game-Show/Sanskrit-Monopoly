@@ -4,6 +4,7 @@ import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import ZimMonopolyBoard from "../components/zim/ZimMonopolyBoard";
 import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
+import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 
 type GameProps = {
   gameState: GameState;
@@ -51,7 +52,6 @@ export default function Game({ gameState }: GameProps) {
   return (
     <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
       <section className="grid min-h-screen grid-cols-1 xl:grid-cols-[340px_1fr_340px] gap-6 p-6">
-
         {/* Left: Players */}
         <aside className="max-h-[calc(100vh-48px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
           <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
@@ -109,7 +109,6 @@ export default function Game({ gameState }: GameProps) {
         </aside>
 
         <section className="flex flex-col">
-
           <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
@@ -118,6 +117,8 @@ export default function Game({ gameState }: GameProps) {
                 lastRoll={gameState.lastRoll}
               />
             </div>
+
+            <GameOverlayLayer gameState={gameState} />
           </div>
         </section>
 
@@ -137,17 +138,19 @@ export default function Game({ gameState }: GameProps) {
               <>
                 <button
                   onClick={handleRollDice}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                  disabled={gameState.gameStatus !== "idling"}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Force Roll
                 </button>
                 <button
                   onClick={handleSkipTurn}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
+                  disabled={gameState.gameStatus !== "idling"}
+                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Skip Turn
                 </button>
-                <button 
+                <button
                   onClick={handleEndGame}
                   className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
                 >
@@ -158,7 +161,7 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={currentPlayer.uid !== uid}
+                disabled={currentPlayer.uid !== uid || gameState.gameStatus !== "idling"}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice

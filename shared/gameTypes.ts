@@ -1,5 +1,17 @@
 export type GameStatus = "waiting" | "playing" | "finished";
 
+// seperate in-game phase field
+// will be used for the mini-games
+export type GamePhase =
+  | "startOfTurn"
+  | "idling"
+  | "rollingDice"
+  | "tokenAdvancing"
+  | "popQuiz"
+  | "verseChallenge"
+  | "penaltyActivity"
+  | "turnEnded";
+
 export type GameTileType =
   | "start"
   | "reward"
@@ -44,6 +56,7 @@ export type GameHost = {
 export type GameState = {
   lobbyCode: string;
   status: GameStatus;
+  gameStatus: GamePhase; // mini-games integration test
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
