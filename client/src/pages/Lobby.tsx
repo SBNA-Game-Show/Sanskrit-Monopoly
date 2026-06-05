@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
+import { db } from "../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 import boatImg from "../assets/monopoly_boat.png";
 import catImg from "../assets/monopoly_cat.png";
@@ -84,24 +86,24 @@ export default function Lobby() {
 
   // Fetch Editions form AdminGame when component loads
   useEffect(() => {
-    const fetchEditions = async() => {
-      try {
-        const response = await fetch("http://localhost:5173/admin"); // ADD URL
+    const editionsRef = collection(db, "game_editions");
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch editions");
-        }
+    const unsubscribe = onSnapshot(editionsRef, (snapshot) => { 
+      const liveEditions = snapshot.docs.map((doc) => doc.data().name);
+      setAvailableEditions(liveEditions);
+    }, (error) => {
+      console.warn("Firebase blocked. Pulling editions from local Admin cache...", error);
+      const stored = localStorage.getItem("default_game_editions");
 
-        const data = await response.json();
-
-        setAvailableEditions(data.editions || []);
-      } catch (error) {
-        console.error("Error fetching editions:", error);
-        setAvailableEditions(["TEMPLE", "MORAL TEACHING", "BHAGAVAD GITA", "HISTORY"]); // Fallback editions
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setAvailableEditions(parsed.map((ed: any) => ed.name));
+      } else {
+        setAvailableEditions(["Temple, Moral Teaching, Bhagavad Gita"]); // Fallback hardcoded editions
       }
-    };
+    });
 
-    fetchEditions();
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -224,7 +226,7 @@ export default function Lobby() {
         </div>
 
         {/* Game Setting Grid*/}
-        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-full max-h-none lg:max-h-[400px]">
+        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
           <h2 className="text-3xl lg:text-4xl text-center mb-8 lg:mb-2 tracking-widest text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             GAME SETTINGS
           </h2>
@@ -236,8 +238,7 @@ export default function Lobby() {
                 Edition
               </span>
               <div className="flex flex-wrap gap-3 lg:gap-4">
-                {availableEditions.map(
-                  (edition) => {
+                {availableEditions.map((edition) => {
                     const isSelected = selectedEdition === edition;
                     return (
                       <button
