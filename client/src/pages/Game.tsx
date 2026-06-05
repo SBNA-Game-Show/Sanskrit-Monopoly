@@ -4,6 +4,7 @@ import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import ZimMonopolyBoard from "../components/zim/ZimMonopolyBoard";
 import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
+import StartOfTurnModal from "../components/game/StartOfTurnModal";
 
 type GameProps = {
   gameState: GameState;
@@ -137,6 +138,7 @@ export default function Game({ gameState }: GameProps) {
               <>
                 <button
                   onClick={handleRollDice}
+                  disabled={gameState.gameStatus !== "idling"}
                   className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
                 >
                   Force Roll
@@ -158,7 +160,7 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={currentPlayer.uid !== uid}
+                disabled={currentPlayer.uid !== uid || gameState.gameStatus !== "idling"}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
@@ -167,6 +169,7 @@ export default function Game({ gameState }: GameProps) {
           </div>
         </aside>
       </section>
+      {gameState.gameStatus === "startOfTurn" && <StartOfTurnModal currentPlayer={currentPlayer}/>}
     </main>
   );
 }

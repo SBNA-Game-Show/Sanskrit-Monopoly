@@ -1,4 +1,5 @@
-export type GameStatus = "waiting" | "playing" | "finished";
+export type LobbyStatus = "waiting" | "playing" | "finished";
+export type GameStatus = "startOfTurn" | "idling" | "rolling"
 
 export type GameTileType =
   | "start"
@@ -43,7 +44,8 @@ export type GameHost = {
 
 export type GameState = {
   lobbyCode: string;
-  status: GameStatus;
+  status: LobbyStatus;
+  gameStatus: GameStatus | null;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;

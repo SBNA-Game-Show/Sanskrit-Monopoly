@@ -7,6 +7,7 @@ import {
   forceSkipTurn,
   kickPlayer,
   disconnectPlayer,
+  startNextTurn,
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
@@ -79,6 +80,11 @@ export function setupSocketEvents(io) {
         }
 
         broadcastGameState(io, result.lobby);
+
+        setTimeout(() => {
+          result.lobby.gameStatus = "idling";
+          broadcastGameState(io, result.lobby);
+        }, 2500);
       },
     );
 
@@ -95,6 +101,14 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+
+      // before starting the next turn
+      // check tile that player landed on 
+      // and do stuff
+      // like run the pop quiz minigame, update points, etc
+
+      //always run this LAST at the end of a turn
+      startNextTurn(result.lobby, io, broadcastGameState);
     });
 
     socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {

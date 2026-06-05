@@ -17,6 +17,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   lobbies[lobbyCode] = {
     lobbyCode: lobbyCode,
     status: "waiting",
+    gameStatus: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -125,6 +126,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   }
 
   lobby.status = "playing";
+  lobby.gameStatus = "startOfTurn"
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -138,6 +140,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
 export function rollDice(lobbyCode, uid) {
   const lobby = getLobby(lobbyCode);
   const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+  lobby.gameStatus = "rolling";
 
   if (!lobby) {
     return { lobby: null, error: "Lobby not found" };
@@ -176,10 +179,6 @@ export function rollDice(lobbyCode, uid) {
 
     return { lobby, error: null };
   }
-
-  const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
-  lobby.currentPlayerIndex = nextTurnIndex;
-
   return { lobby, error: null };
 }
 
@@ -238,3 +237,19 @@ export function disconnectPlayer(socketId) {
   }
   return { lobby: null, error: "Socket not found" };
 }
+
+export function startNextTurn(lobby, io, broadcastGameState) {
+  setTimeout(() => {
+    const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
+    lobby.currentPlayerIndex = nextTurnIndex;
+    lobby.gameStatus = "startOfTurn";
+    broadcastGameState(io, lobby);
+
+    setTimeout(() => {
+      lobby.gameStatus = "idling";
+      broadcastGameState(io, lobby);
+    }, 2500);
+
+  }, 2000);
+}
+
