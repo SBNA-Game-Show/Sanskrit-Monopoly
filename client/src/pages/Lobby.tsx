@@ -86,7 +86,7 @@ export default function Lobby() {
   useEffect(() => {
     const fetchEditions = async() => {
       try {
-        const response = await fetch(""); // ADD URL
+        const response = await fetch("http://localhost:5173/admin"); // ADD URL
 
         if (!response.ok) {
           throw new Error("Failed to fetch editions");
