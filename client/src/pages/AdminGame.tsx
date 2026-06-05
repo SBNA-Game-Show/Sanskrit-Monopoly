@@ -385,6 +385,7 @@ function AdminGame({ gameState }) {
                         Player {index + 1} — {player.name}
                       </p>
                       <p>धनम्: {player.money}</p>
+                      <p>Score: {player.score}</p>
                       <p>Position: {player.position}</p>
                       <p>Status: {player.status}</p>
                     </div>
@@ -491,11 +492,25 @@ function AdminGame({ gameState }) {
               </button>
 
               <button
-                onClick={() => socket.emit("end-game", { lobbyCode: gameState.lobbyCode })}
+                onClick={() => {
+                  const finalPlayers = gameState.players.map((player: any, index: number) => ({
+                    ...player,
+                    points: players[index]?.score ?? 0,
+                    money: players[index]?.money ?? 0,
+                    properties: players[index]?.properties ?? 0,
+                  }));
+
+                  socket.emit("end-game", {
+                    lobbyCode: gameState.lobbyCode,
+                    players: finalPlayers,
+                  });
+                }}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#b33a3a] text-lg font-bold text-white shadow-md hover:bg-[#d94a4a]"
               >
                 End Game
               </button>
+
+
             </div>
 
             <div className="mt-12 rounded-2xl bg-[#fff4dc] p-4 text-[18px] leading-tight shadow-inner">

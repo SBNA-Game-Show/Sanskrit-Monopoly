@@ -1,3 +1,7 @@
+import boatToken from "../assets/monopoly_boat.png";
+import catToken from "../assets/monopoly_cat.png";
+import shoeToken from "../assets/monopoly_shoe.png";
+import dogToken from "../assets/monopoly_dog.png";
 import { useNavigate } from "react-router-dom";
 
 
@@ -8,6 +12,7 @@ function Result({ gameState }: any) {
     );
 
     const winner = sortedPlayers[0];
+    const tokenImages = [boatToken, catToken, shoeToken, dogToken];
 
     return (
         <div className="result-page">
@@ -50,7 +55,7 @@ function Result({ gameState }: any) {
 
                                 <div className="token-box">
                                     <img
-                                        src={player.token || "/vite.svg"}
+                                        src={player.token || tokenImages[index]}
                                         alt={`${player.username} token`}
                                         className="player-token"
                                     />
@@ -75,7 +80,11 @@ function Result({ gameState }: any) {
                                         <div className="stat-box">
                                             <span className="stat-icon">🏠</span>
                                             <span className="stat-label">Properties/गृहाः</span>
-                                            <strong>{player.properties?.length || 0}</strong>
+                                            <strong>
+                                                {Array.isArray(player.properties)
+                                                    ? player.properties.length
+                                                    : player.properties ?? 0}
+                                            </strong>
                                         </div>
                                     </div>
                                 </div>
@@ -87,7 +96,7 @@ function Result({ gameState }: any) {
 
                         <button
                             className="restart-btn"
-                            onClick={() => navigate("/game")}
+                            onClick={() => navigate("/home")}
                         >
                             🎲 Restart Game
                             <span className="button-sanskrit">

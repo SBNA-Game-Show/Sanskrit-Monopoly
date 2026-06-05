@@ -12,7 +12,7 @@ type Player = {
   score: number;
 };
 
-function Game({gameState}) {
+function Game({ gameState }) {
   const [players, setPlayers] = useState<Player[]>([
     {
       id: 1,
@@ -186,7 +186,7 @@ function Game({gameState}) {
   return (
     <main className="min-h-screen w-full bg-[#161616] font-sans text-[#160f08]">
       <section className="flex min-h-screen w-full flex-col bg-[#fffaf0]">
-        
+
         {/* Main Content */}
         <section className="grid flex-1 grid-cols-[320px_1fr_330px] gap-6 bg-[#fffaf0] p-6 pt-8">
           {/* Players */}
@@ -200,11 +200,10 @@ function Game({gameState}) {
               {players.map((player, index) => (
                 <div
                   key={player.id}
-                  className={`relative min-h-[112px] rounded-2xl border-[6px] p-3 shadow-md ${
-                    index === currentPlayerIndex
-                      ? "border-[#6b3f1d] bg-[#ffd7a3]"
-                      : "border-[#ffa23b] bg-[#ffb45c]"
-                  }`}
+                  className={`relative min-h-[112px] rounded-2xl border-[6px] p-3 shadow-md ${index === currentPlayerIndex
+                    ? "border-[#6b3f1d] bg-[#ffd7a3]"
+                    : "border-[#ffa23b] bg-[#ffb45c]"
+                    }`}
                 >
                   <div className="w-[160px] text-[16px] leading-tight">
                     {index === 1 ? "YOU" : `Player ${index + 1}`} — {player.name}
@@ -227,10 +226,10 @@ function Game({gameState}) {
           {/* Board */}
           <section className="flex min-w-0 flex-col">
             <div className="mb-4 rounded-2xl bg-[#f5bd78] px-6 py-4 shadow-md">
-                <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
-                <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
-                    {gameState.lobbyCode}
-                </h2>
+              <p className="text-[16px] font-semibold text-[#6b3f1d]">Room Code</p>
+              <h2 className="text-[30px] font-extrabold tracking-wide text-[#160f08]">
+                {gameState.lobbyCode}
+              </h2>
             </div>
 
             <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
