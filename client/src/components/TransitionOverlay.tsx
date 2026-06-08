@@ -72,7 +72,6 @@ function WaveCurtain({ phase }: { phase: "in" | "out" }) {
           <path d="M0,60 C180,10 360,80 540,45 C720,10 900,75 1080,40 C1260,5 1380,65 1440,35 L1440,80 L0,80 Z" />
         </svg>
 
-        {/* Orange body colour*/}
         <div className="w-full h-full bg-[#F5A623]" />
       </div>
     </>
