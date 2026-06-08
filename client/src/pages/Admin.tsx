@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { db } from "../firebase"; 
 import { 
   collection, 
@@ -17,29 +17,32 @@ interface GameEdition {
 }
 
 function Admin() {
-  // ==========================================
-  // 1. STATE CONFIGURATIONS
-  // ==========================================
+
+  // 1.CONFIGURATIONS STATES
   const [currentView, setView] = useState<"dashboard" | "create" | "edit">("dashboard");
   const [editions, setEditions] = useState<GameEdition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<GameEdition | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
   // Form states
   const [newEditionName, setNewEditionName] = useState("");
   const [targetTileName, setTargetTileName] = useState("");
-  
-  // Exclusive Type Selector: "reward" | "penalty"
   const [tileType, setTileType] = useState<"reward" | "penalty">("reward");
   const [tileValue, setTileValue] = useState<number>(0);
+  // Inline Name Renaming Buffers
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [editNameValue, setEditNameValue] = useState<string>("");
 
-  // ==========================================
-  // 2. EXCLUSIVE FIRESTORE REAL-TIME STREAM
-  // ==========================================
+  // Keeps track of the active edition ID without triggering component re-renders
+  const selectedIdRef = useRef<string | null>(null);
+
+  // Sync the ref whenever the selected edition changes
+  useEffect(() => {
+    selectedIdRef.current = selectedEdition ? selectedEdition.id : null;
+  }, [selectedEdition]);
+
+  // 2. OPTIMIZED READ COUNTS IN FIRESTORE DATABASE
   useEffect(() => {
     const editionsCollectionRef = collection(db, "game_editions");
-    
-    // Direct link to the cloud document collections snapshot
     const unsubscribe = onSnapshot(editionsCollectionRef, (snapshot) => {
       const liveEditions = snapshot.docs.map((doc) => {
         const data = doc.data();
@@ -52,12 +55,11 @@ function Admin() {
       });
       
       setEditions(liveEditions);
-      
-      // Keep selected tracking pointer sync'd during updates
-      if (selectedEdition) {
-        const matchingCurrent = liveEditions.find(e => e.id === selectedEdition.id);
-        if (matchingCurrent) {
-          setSelectedEdition(matchingCurrent);
+      // Sync the active configuration screen efficiently using memory lookups
+      if (selectedIdRef.current) {
+        const currentMatch = liveEditions.find(e => e.id === selectedIdRef.current);
+        if (currentMatch) {
+          setSelectedEdition(currentMatch);
         }
       }
       
@@ -67,13 +69,10 @@ function Admin() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [selectedEdition]);
+    return () => unsubscribe(); 
+  }, []); // Empty array fixes the high read count issue completely!
 
-  // ==========================================
-  // 3. CORE WRITE OPERATIONS (FIRESTORE ONLY)
-  // ==========================================
-  
+   // 3. CORE WRITE OPERATIONS (FIRESTORE ONLY)
   const handleCreateEdition = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEditionName.trim()) return;
@@ -90,23 +89,34 @@ function Admin() {
       alert("Firestore Write Failed: " + err);
     }
   };
+  // Updates the Edition Name in the cloud
+  const handleUpdateEditionName = async () => {
+    if (!selectedEdition || !editNameValue.trim()) return;
+
+    try {
+      const editionDocRef = doc(db, "game_editions", selectedEdition.id);
+      await updateDoc(editionDocRef, {
+        name: editNameValue.trim()
+      });
+      setIsRenaming(false);
+    } catch (err) {
+      alert("Failed to update edition name: " + err);
+    }
+  };
 
   const handleSaveTileRules = async () => {
     if (!selectedEdition || !targetTileName.trim()) return;
 
     const tileKey = targetTileName.trim();
-    
-    // Create shallow copies of existing maps to perform modifications safely
     const updatedRewards = { ...selectedEdition.rewards };
     const updatedPenalties = { ...selectedEdition.penalties };
 
-    // REQUIREMENT 2: Enforce strict mutual exclusivity per tile name
     if (tileType === "reward") {
       updatedRewards[tileKey] = Number(tileValue);
-      delete updatedPenalties[tileKey]; // Clean up and erase any conflicting penalty link
+      delete updatedPenalties[tileKey]; 
     } else {
       updatedPenalties[tileKey] = Number(tileValue);
-      delete updatedRewards[tileKey]; // Clean up and erase any conflicting reward link
+      delete updatedRewards[tileKey]; 
     }
 
     try {
@@ -118,7 +128,6 @@ function Admin() {
 
       setTargetTileName("");
       setTileValue(0);
-      alert("Tile configuration saved directly to Firestore.");
     } catch (err) {
       alert("Firestore Update Failed: " + err);
     }
@@ -166,13 +175,12 @@ function Admin() {
     <main className="min-h-[calc(100vh-56px)] bg-[#FFF5E4] flex flex-col text-slate-800 select-none">
       <div className="p-6 flex-1 overflow-y-auto">
 
-        {/* VIEW 1: DASHBOARD PACKETS PANEL */}
+        {/* VIEW 1: DASHBOARD PANEL */}
         {currentView === "dashboard" && (
           <div className="bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-5 h-full flex flex-col shadow-sm max-w-4xl mx-auto w-full">
             <div className="flex justify-between items-center mb-5">
               <div>
                 <h3 className="text-xl font-extrabold text-slate-900">Game Configurations Panel</h3>
-                <p className="text-xs text-gray-500">Live Server Mode (LocalStorage Cache Disengaged).</p>
               </div>
               <button
                 onClick={() => setView("create")}
@@ -185,7 +193,7 @@ function Admin() {
             <div className="border-2 border-[#00ADFF] rounded-xl overflow-hidden bg-white shadow-sm">
               <div className="bg-slate-50 border-b-2 border-[#00ADFF] grid grid-cols-12 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <div className="col-span-6">Configuration (Editions)</div>
-                <div className="col-span-3">Active Rules Mapping</div>
+                <div className="col-span-3">Active Rules</div>
                 <div className="col-span-3 text-right">Actions</div>
               </div>
               <div className="divide-y divide-gray-100">
@@ -208,7 +216,11 @@ function Admin() {
                         </div>
                         <div className="col-span-3 flex justify-end gap-2">
                           <button
-                            onClick={() => { setSelectedEdition(item); setView("edit"); }}
+                            onClick={() => { 
+                              setSelectedEdition(item); 
+                              setEditNameValue(item.name); // Pre-seed rename buffer
+                              setView("edit"); 
+                            }}
                             className="bg-[#3B71CA] hover:bg-blue-600 text-white text-xs px-3.5 py-2 rounded-xl font-bold transition-colors shadow-sm"
                           >
                             Configure Rules
@@ -229,7 +241,7 @@ function Admin() {
           </div>
         )}
 
-        {/* VIEW 2: CREATE Packets VIEW */}
+        {/* VIEW 2: CREATE VIEW */}
         {currentView === "create" && (
           <div className="bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-6 shadow-sm max-w-lg mx-auto w-full">
             <h2 className="text-center text-lg font-black text-slate-800 uppercase tracking-wide mb-4">
@@ -268,16 +280,50 @@ function Admin() {
           </div>
         )}
 
-        {/* VIEW 3: DYNAMIC TILE PARAMETERS MAP VIEW */}
+        {/* VIEW 3: TILE PARAMETERS MAP VIEW */}
         {currentView === "edit" && selectedEdition && (
           <div className="max-w-4xl mx-auto w-full space-y-4">
+            
+            {/* Header Box Module */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">{selectedEdition.name}</h2>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Tile Economics Setup Matrix</span>
+                {/* REQUIREMENT 1 INTERFACE: Inline Edition Name Editor Toggle */}
+                {isRenaming ? (
+                  <div className="flex items-center gap-2 bg-[#FFF5E4] p-1.5 rounded-xl border border-orange-300">
+                    <input 
+                      type="text"
+                      value={editNameValue}
+                      onChange={(e) => setEditNameValue(e.target.value)}
+                      className="bg-white rounded-lg px-3 py-1 text-sm font-bold text-slate-900 focus:outline-none border border-orange-200"
+                    />
+                    <button 
+                      onClick={handleUpdateEditionName}
+                      className="bg-[#5CB85C] hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button 
+                      onClick={() => { setIsRenaming(false); setEditNameValue(selectedEdition.name); }}
+                      className="text-gray-500 text-xs font-bold px-2 hover:text-gray-700"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight">{selectedEdition.name}</h2>
+                    <button 
+                      onClick={() => setIsRenaming(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-bold underline bg-blue-50 px-2 py-0.5 rounded-md"
+                    >
+                      Edit Name
+                    </button>
+                  </div>
+                )}
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mt-1">Edition, Tiles, Reward, Penalty setup board</span>
               </div>
               <button 
-                onClick={() => { setView("dashboard"); setSelectedEdition(null); }}
+                onClick={() => { setView("dashboard"); setSelectedEdition(null); setIsRenaming(false); }}
                 className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors"
               >
                 Back to Dashboard
@@ -290,7 +336,7 @@ function Admin() {
               <div className="col-span-5 bg-[#FFC288] rounded-2xl p-4 border border-orange-300 shadow-sm space-y-4">
                 <div>
                   <span className="text-sm font-black text-slate-800 block">Configure Tile Rules</span>
-                  <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">Assign strict value types to specific tile titles</span>
+                  <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">Assign value types to specific tile titles</span>
                 </div>
 
                 <div className="space-y-4 text-xs">
@@ -305,7 +351,6 @@ function Admin() {
                     />
                   </div>
 
-                  {/* REQUIREMENT 2: Selector for Exclusive Rule Determination */}
                   <div>
                     <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
                     <div className="grid grid-cols-2 gap-2 bg-[#FFF5E4] p-1 rounded-xl border border-orange-300">
@@ -346,10 +391,10 @@ function Admin() {
                 </div>
               </div>
 
-              {/* Rules List Matrix Canvas */}
+              {/* Rules List  */}
               <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 space-y-2 shadow-sm">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2 mb-2">
-                  Mapped Tile Rules Matrix
+                  Tile Rules Matrix
                 </h4>
                 <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                   {Object.keys(selectedEdition.rewards || {}).length === 0 && Object.keys(selectedEdition.penalties || {}).length === 0 ? (
@@ -366,6 +411,7 @@ function Admin() {
                             </span>
                           </div>
                           <button 
+                            type="button"
                             onClick={() => handleRemoveTileRule(tile)}
                             className="text-red-600 hover:text-red-800 font-bold text-sm px-3 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors focus:outline-none"
                           >
@@ -384,6 +430,7 @@ function Admin() {
                             </span>
                           </div>
                           <button 
+                            type="button"
                             onClick={() => handleRemoveTileRule(tile)}
                             className="text-red-600 hover:text-red-800 font-bold text-sm px-3 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors focus:outline-none"
                           >
