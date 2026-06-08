@@ -78,6 +78,14 @@ export function setupSocketEvents(io) {
 
         lobby.activeQuiz.answers[uid] = optionId;
 
+        const answeredCount = Object.keys(lobby.activeQuiz.answers).length;
+        const playerCount = lobby.players.length;
+
+        if (answeredCount >= playerCount) {
+          finishPopQuiz(lobby, io);
+          return;
+        }
+
         broadcastGameState(io, lobby);
       },
     );
