@@ -22,6 +22,20 @@ function broadcastGameState(io, lobby) {
   io.to(lobby.lobbyCode).emit(GAME_EVENTS.GAME_UPDATED, lobby);
 }
 
+// pop-quiz helper
+function finishPopQuiz(lobby, io) {
+  if (!lobby.activeQuiz) return;
+  if (lobby.gameStatus !== "popQuiz") return;
+
+  lobby.activeQuiz.status = "closed";
+  lobby.activeQuiz = null;
+  lobby.gameStatus = "turnEnded";
+
+  broadcastGameState(io, lobby);
+
+  startNextTurn(lobby, io, broadcastGameState);
+}
+
 export function setupSocketEvents(io) {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
