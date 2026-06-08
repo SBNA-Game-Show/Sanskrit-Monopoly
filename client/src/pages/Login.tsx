@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { auth } from "../firebase";
 import {
   signInWithEmailAndPassword,
@@ -47,7 +48,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const { showToast } = useToast();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth!, email, password);
