@@ -109,7 +109,7 @@ export default function Game({ gameState }: GameProps) {
         </aside>
 
         <section className="flex flex-col">
-          <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
                 players={gameState.players}
