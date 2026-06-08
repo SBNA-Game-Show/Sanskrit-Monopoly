@@ -1,3 +1,4 @@
+import { submitScoresToLeaderboard } from "../services/leaderboardService.js";
 import {
   getLobby,
   joinLobby,
@@ -153,7 +154,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
     });
 
-    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, ({ lobbyCode }) => {
+    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, async ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
       if (!lobby || lobby.host.socketId !== socket.id) {
@@ -162,6 +163,10 @@ export function setupSocketEvents(io) {
       }
 
       lobby.status = "finished";
+      lobby.endTime = Date.now();
+
+      await submitScoresToLeaderboard(lobby);
+      
       broadcastGameState(io, lobby);
     });
 

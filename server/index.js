@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { setupServer } from "./serverConfig.js";
 import { setupSocketEvents } from "./socket/socketManager.js";
 import { createLobby } from "./services/gameService.js";
@@ -8,9 +9,9 @@ setupSocketEvents(io);
 
 app.post("/api/lobby-create", async (req, res) => {
   try {
-    const {hostUid, hostUsername} = req.body;
+    const { hostUid, hostUsername } = req.body;
     const lobby = createLobby(hostUid, hostUsername);
-    res.json({lobby});
+    res.json({ lobby });
   } catch (error) {
     console.log(error);
     res.status(500).json({

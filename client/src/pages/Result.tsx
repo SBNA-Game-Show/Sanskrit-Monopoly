@@ -88,7 +88,7 @@ function Result({ gameState }: any) {
 
                         <button
                             className="restart-btn"
-                            onClick={() => navigate("/game")}
+                            onClick={() => navigate("/home")}
                         >
                             🎲 Restart Game
                             <span className="button-sanskrit">
