@@ -2,31 +2,33 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { useNav } from "../components/TransitionOverlay";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNavigate();
+  const navigate = useNav();
 
   const handleLogout = async () => {
     if (!auth) return;
 
-    try {
-      await signOut(auth);
-      showToast({
-        variant: "success",
-        title: "Logged out",
-        message: "You have been logged out successfully.",
-      });
-      navigate("/login");
-    } catch {
-      showToast({
-        variant: "error",
-        title: "Logout failed",
-        message: "Could not log out. Please try again.",
-      });
-    }
+    navigate(() => {
+      signOut(auth)
+        .then(() => {
+          showToast({
+            variant: "success",
+            title: "Logged out",
+            message: "You have been logged out successfully.",
+          });
+        })
+        .catch(() => {
+          showToast({
+            variant: "error",
+            title: "Logout failed",
+            message: "Could not log out. Please try again.",
+          });
+        });
+    });
   };
 
   // Dynamic Header
