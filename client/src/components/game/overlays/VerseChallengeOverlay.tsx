@@ -1,10 +1,10 @@
+import { GameOverlayShell } from "./GameOverlayShell";
+
 export function VerseChallengeOverlay() {
   return (
-    <div className="game-overlay">
-      <div className="game-overlay__panel">
-        <h2>Verse Challenge</h2>
-        <p>Verse challenge placeholder.</p>
-      </div>
-    </div>
+    <GameOverlayShell>
+      <h2 className="text-2xl font-bold text-gray-800">Verse Challenge</h2>
+      <p className="mt-3 text-gray-600">Verse challenge placeholder.</p>
+    </GameOverlayShell>
   );
 }

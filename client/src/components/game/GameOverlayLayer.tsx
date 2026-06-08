@@ -1,20 +1,35 @@
 import type { GameState } from "../../types/game/gameTypes";
+import StartOfTurnOverlay from "./overlays/StartOfTurnOverlay";
 import { PopQuizOverlay } from "./overlays/PopQuizOverlay";
 import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
-import StartOfTurnOverlay from "./overlays/StartOfTurnOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  isHost: boolean;
+  onSubmitQuizAnswer: (optionId: string) => void;
 };
 
-export function GameOverlayLayer({ gameState }: GameOverlayLayerProps) {
+export function GameOverlayLayer({
+  gameState,
+  onSubmitQuizAnswer,
+  isHost,
+}: GameOverlayLayerProps) {
   switch (gameState.gameStatus) {
     case "startOfTurn":
       return <StartOfTurnOverlay gameState={gameState} />;
-      
+
     case "popQuiz":
-      return <PopQuizOverlay players={gameState.players} />;
+      if (!gameState.activeQuiz) return null;
+
+      return (
+        <PopQuizOverlay
+          quiz={gameState.activeQuiz}
+          players={gameState.players}
+          isHost={isHost}
+          onSubmitAnswer={onSubmitQuizAnswer}
+        />
+      );
 
     case "verseChallenge":
       return <VerseChallengeOverlay />;
