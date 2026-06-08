@@ -74,7 +74,10 @@ function Home() {
 
   const createRoom = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/lobby-create", {
+      const SERVER_URL = import.meta.env.DEV
+        ? "http://localhost:3000"
+        : "https://sanskrit-monopoly.onrender.com";
+      const response = await fetch(`${SERVER_URL}/api/lobby-create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostUid: uid, hostUsername: username }),
