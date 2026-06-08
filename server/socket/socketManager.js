@@ -170,6 +170,40 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, lobby);
     });
 
+    socket.on(GAME_EVENTS.GAME_HOST_RESTART_GAME, ({ lobbyCode }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby) {
+        emitGameError(socket, "Restart failed. Lobby not found.");
+        return;
+      }
+
+      if (lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can restart the game.");
+        return;
+      }
+
+      lobby.status = "playing";
+      lobby.gameStatus = "startOfTurn";
+      lobby.startTime = Date.now();
+      lobby.endTime = null;
+      lobby.currentPlayerIndex = 0;
+      lobby.lastRoll = null;
+      lobby.winnerUid = null;
+
+      lobby.players.forEach((player) => {
+        player.position = 0;
+        player.points = lobby.edition.startingPoints ?? 0;
+      });
+
+      broadcastGameState(io, lobby);
+
+      setTimeout(() => {
+        lobby.gameStatus = "idling";
+        broadcastGameState(io, lobby);
+      }, 2500);
+    });
+
     socket.on("disconnect", () => {
       const result = disconnectPlayer(socket.id);
 
