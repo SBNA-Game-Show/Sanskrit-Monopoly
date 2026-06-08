@@ -1,41 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Jersey+10&display=swap');
+/* =============================================================
+   =================== Root stylesheet =========================
+   ============================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap");
 @import "tailwindcss";
+@import "./styles/typography.css";
+@import "./styles/components.css";
+@import "./styles/animations.css";
 
 /* #region ------------ Global Defaults ------------ */
 
 html,
 body,
 #root {
+  width: 100%;
+  min-height: 100%;
   min-width: 320px;
   min-height: 100vh;
+  max-width: none;
   margin: 0;
+  border: 0;
+  text-align: left;
+  display: block;
 }
 
 body {
   background: #fff7ed;
 }
 
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100%;
-  margin: 0;
-}
-
-
-
-#root {
-  max-width: none;
-  border: 0;
-  text-align: left;
-  display: block;
-}
-
-/* #endregion ------------ Form Controls ------------ */
 /* #endregion ------------ Global Defaults ------------ */
-
-/* Font family for lobby workspace */
-.font-jersey {
-  font-family: 'Jersey 10', sans-serif;
-}
