@@ -2,15 +2,36 @@ import { useAuth } from "../context/AuthContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { useToast } = useToast();
 
   const handleLogout = async () => {
     if (!auth) return;
     await signOut(auth);
     navigate("/login");
+  };
+
+  const handleCopyCode = async () => {
+    if (!isLobbyPage || !lobbyCodeStr) return;
+
+    try {
+      await navigator.clipboard.writeText(lobbyCodeStr);
+      showToast({
+        variant: "success",
+        title: "Code Copied!",
+        message: `Game code ${lobbyCodeStr} copied to clipboard. Share it with your friends!`,
+    });
+    } catch (error) {
+      showToast({
+        variant: "error",
+        title: "Copy Failed",
+        message: "Failed to copy the game code. Please try again.",
+      });
+    }
   };
 
   return (
