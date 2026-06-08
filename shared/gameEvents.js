@@ -13,5 +13,6 @@ export const GAME_EVENTS = {
 
   GAME_UPDATED: "game:updated",
   GAME_ERROR: "game:error",
+
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 };
