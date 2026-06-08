@@ -173,8 +173,18 @@ export function setupSocketEvents(io) {
       // check tile that player landed on
       // and do stuff
       // like run the pop quiz minigame, update points, etc
-
       //always run this LAST at the end of a turn
+      broadcastGameState(io, result.lobby);
+
+      // close quiz after pop quiz timer haas passed
+      if (result.lobby.gameStatus === "popQuiz") {
+        setTimeout(() => {
+          finishPopQuiz(result.lobby, io);
+        }, POP_QUIZ_DURATION_MS);
+
+        return;
+      }
+
       startNextTurn(result.lobby, io, broadcastGameState);
     });
 
