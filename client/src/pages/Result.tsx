@@ -1,3 +1,5 @@
+import { socket } from "../socket";
+import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import { useNavigate } from "react-router-dom";
 import "../styles/results.css";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
@@ -88,7 +90,10 @@ function Result({ gameState }: any) {
 
                         <button
                             className="restart-btn"
-                            onClick={() => navigate("/game")}
+                            onClick={() => socket.emit(GAME_EVENTS.GAME_HOST_RESTART_GAME, {
+                                lobbyCode: gameState.lobbyCode,
+                            })
+                            }
                         >
                             🎲 Restart Game
                             <span className="button-sanskrit">

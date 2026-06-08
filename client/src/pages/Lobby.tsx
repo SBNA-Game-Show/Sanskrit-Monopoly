@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 import Game from "./Game";
 
@@ -15,6 +17,7 @@ export default function Lobby() {
   const [lobbyState, setLobbyState] = useState<GameState | null>(null);
   const [selectedEdition, setSelectedEdition] = useState<string | null>(null);
   const [startingMoney, setStartingMoney] = useState<number | null>(null);
+  const [availableEditions, setAvailableEditions] = useState<string[]>([]);
 
   const { lobbyCode } = useParams<{ lobbyCode: string }>();
   const { uid, username, authLoading } = useAuth();
@@ -93,6 +96,29 @@ export default function Lobby() {
     });
   };
 
+  // NOTE: move this useEffect into the LobbyWaiting component when refactoring
+  // as well as the availableEditions and startingMoney useState variables
+  // Fetch Editions form AdminGame when component loads
+  useEffect(() => {
+    const editionsRef = collection(db, "game_editions");
+
+    const unsubscribe = onSnapshot(editionsRef, (snapshot) => { 
+      const liveEditions = snapshot.docs.map((doc) => doc.data().name);
+      setAvailableEditions(liveEditions);
+    }, (error) => {
+      console.warn("Firebase blocked. Pulling editions from local Admin cache...", error);
+      const stored = localStorage.getItem("default_game_editions");
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setAvailableEditions(parsed.map((ed: any) => ed.name));
+      } else {
+        setAvailableEditions(["Temple", "Moral Teaching", "Bhagavad Gita"]); // Fallback hardcoded editions
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
   if (lobbyState && (lobbyState.status === "playing")) {
     return <Game gameState={lobbyState} />;
   }
@@ -146,31 +172,31 @@ export default function Lobby() {
 
             @keyframes cat-walk {
               0% {
-                transform: translateX(-10px) translateY(0) scaleX(1);
+                transform: translateX(10px) translateY(0) scaleX(1);
               }
               12% {
-                transform: translateX(-6px) translateY(-3px) scaleX(1);
+                transform: translateX(6px) translateY(-3px) scaleX(1);
               }
               25% {
                 transform: translateX(0) translateY(0) scaleX(1);
               }
               37% {
-                transform: translateX(6px) translateY(-3px) scaleX(1);
+                transform: translateX(-6px) translateY(-3px) scaleX(1);
               }
               50% {
-                transform: translateX(10px) translateY(0) scaleX(1);
+                transform: translateX(-10px) translateY(0) scaleX(1);
               }
               62% {
-                transform: translateX(6px) translateY(-3px) scaleX(-1);
+                transform: translateX(-6px) translateY(-3px) scaleX(-1);
               }
               75% {
                 transform: translateX(0) translateY(0) scaleX(-1);
               }
               87% {
-                transform: translateX(-6px) translateY(-3px) scaleX(-1);
+                transform: translateX(6px) translateY(-3px) scaleX(-1);
               }
               100% {
-                transform: translateX(-10px) translateY(0) scaleX(1);
+                transform: translateX(10px) translateY(0) scaleX(1);
               }
             }
             .cat-token-walk:hover img {
@@ -306,7 +332,8 @@ export default function Lobby() {
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-full max-h-none lg:max-h-100">
+        {/* Game Setting Grid*/}
+        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
           <h2 className="text-3xl lg:text-4xl text-center mb-8 lg:mb-2 tracking-widest text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             GAME SETTINGS
           </h2>
@@ -318,8 +345,7 @@ export default function Lobby() {
               </span>
 
               <div className="flex flex-wrap gap-3 lg:gap-4">
-                {["TEMPLE", "MORAL TEACHING", "BHAGAVAD GITA", "HISTORY"].map(
-                  (edition) => {
+                {availableEditions.map((edition) => {
                     const isSelected = selectedEdition === edition;
 
                     return (

@@ -24,6 +24,8 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     currentPlayerIndex: 0,
     lastRoll: null,
     winnerUid: null,
+    startTime: null,
+    endTime: null
   };
   console.log(lobbies);
   return lobbies[lobbyCode];
@@ -129,6 +131,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.lastRoll = null;
   lobby.winnerUid = null;
+  lobby.startTime = Date.now()
 
   lobby.players.forEach((player) => {
     player.position = 0;

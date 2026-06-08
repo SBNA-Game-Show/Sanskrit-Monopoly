@@ -1,3 +1,4 @@
+import { submitScoresToLeaderboard } from "../services/leaderboardService.js";
 import {
   getLobby,
   joinLobby,
@@ -153,7 +154,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
     });
 
-    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, ({ lobbyCode }) => {
+    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, async ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
       if (!lobby || lobby.host.socketId !== socket.id) {
@@ -162,7 +163,45 @@ export function setupSocketEvents(io) {
       }
 
       lobby.status = "finished";
+      lobby.endTime = Date.now();
+
+      await submitScoresToLeaderboard(lobby);
+      
       broadcastGameState(io, lobby);
+    });
+
+    socket.on(GAME_EVENTS.GAME_HOST_RESTART_GAME, ({ lobbyCode }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby) {
+        emitGameError(socket, "Restart failed. Lobby not found.");
+        return;
+      }
+
+      if (lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can restart the game.");
+        return;
+      }
+
+      lobby.status = "playing";
+      lobby.gameStatus = "startOfTurn";
+      lobby.startTime = Date.now();
+      lobby.endTime = null;
+      lobby.currentPlayerIndex = 0;
+      lobby.lastRoll = null;
+      lobby.winnerUid = null;
+
+      lobby.players.forEach((player) => {
+        player.position = 0;
+        player.points = lobby.edition.startingPoints ?? 0;
+      });
+
+      broadcastGameState(io, lobby);
+
+      setTimeout(() => {
+        lobby.gameStatus = "idling";
+        broadcastGameState(io, lobby);
+      }, 2500);
     });
 
     socket.on("disconnect", () => {
