@@ -12,6 +12,8 @@ import {
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
 
+const POP_QUIZ_DURATION_MS = 30000;
+
 function emitGameError(socket, message) {
   socket.emit(GAME_EVENTS.GAME_ERROR, { message });
 }
@@ -37,6 +39,21 @@ export function setupSocketEvents(io) {
 
         if (!lobby) {
           emitGameError(socket, "Lobby not found.");
+          return;
+        }
+
+        // prevent host from submitting their answer to the popup
+        if (lobby.host.uid === uid) {
+          emitGameError(socket, "Host cannot answer quiz questions.");
+
+          return;
+        }
+
+        const player = lobby.players.find((player) => player.uid === uid);
+
+        if (!player) {
+          emitGameError(socket, "Only players can answer quiz questions.");
+
           return;
         }
 
