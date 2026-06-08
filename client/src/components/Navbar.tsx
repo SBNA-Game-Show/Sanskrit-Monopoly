@@ -3,13 +3,11 @@ import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "../context/ToastContext";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const { useToast } = useToast();
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -60,14 +58,34 @@ function Navbar() {
 
   return (
     <header className="flex min-h-16 items-center justify-between bg-[#FFC17E] px-6 py-2 select-none font-jersey relative shadow-sm">
+      
+      {/* Pulsing Effect for Game Code */}
+      <style>
+        {`
+          @keyframes text-glow-pulse {
+            0%, 100% { text-shadow: 0 0 5px #F97316, 0 0 10px #F97316; }
+            50% { text-shadow: 0 0 10px #F97316, 0 0 20px #F97316, 0 0 30px #F97316; }
+          }
+          .animate-text-glow {
+            animation: text-glow-pulse 2.4s ease-in-out infinite;
+          }
+        `}
+      </style>
+
       <div className="flex items-center">
         <div className="bg-[#FFA545] border-2 border-white rounded-xl text-white text-xl px-4 py-0.5 tracking-wider shadow-sm cursor-default">
           Logo
         </div>
       </div>
-      
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-        <h1 className="text-3xl lg:text-4xl text-white tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] m-0 uppercase font-normal">
+
+      {/* Clickable Code */}    
+      <div 
+        onClick={isLobbyPage ? handleCopyCode : undefined}
+        title={isLobbyPage ? "Click to copy game code" : undefined}
+        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center transition-all duration-300 
+        ${isLobbyPage ? "cursor-pointer hover:scale-110 active:scale-95" : "pointer-events-none"}`}>
+        <h1 className={`text-3xl lg:text-4xl text-white tracking-widest m-0 uppercase font-normal transition-all duration-300 
+          ${isLobbyPage ? "animate-text-glow" : "drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"}`}>
           {displayTitle}
         </h1>
       </div>
