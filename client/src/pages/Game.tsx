@@ -129,7 +129,11 @@ export default function Game({ gameState }: GameProps) {
               />
             </div>
 
-            <GameOverlayLayer gameState={gameState} />
+            <GameOverlayLayer
+              gameState={gameState}
+              isHost={gameState.host.uid === uid}
+              onSubmitQuizAnswer={handleSubmitQuizAnswer}
+            />
           </div>
         </section>
 
@@ -172,7 +176,9 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={currentPlayer.uid !== uid || gameState.gameStatus !== "idling"}
+                disabled={
+                  currentPlayer.uid !== uid || gameState.gameStatus !== "idling"
+                }
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
