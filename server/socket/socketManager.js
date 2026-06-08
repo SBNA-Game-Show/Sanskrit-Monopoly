@@ -24,6 +24,33 @@ export function setupSocketEvents(io) {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
+    // server handler for quiz submission
+    socket.on(
+      GAME_EVENTS.QUIZ_SUBMIT_ANSWER,
+      ({ lobbyCode, uid, optionId }) => {
+        if (!lobbyCode || !uid || !optionId) {
+          emitGameError(socket, "Missing quiz answer data");
+          return;
+        }
+
+        const lobby = getLobby(lobbyCode);
+
+        if (!lobby) {
+          emitGameError(socket, "Lobby not found.");
+          return;
+        }
+
+        if (lobby.gameStatus !== "popQuiz" || !lobby.activeQuiz) {
+          emitGameError(socket, "No active quiz.");
+          return;
+        }
+
+        lobby.activeQuiz.answers[uid] = optionId;
+
+        broadcastGameState(io, lobby);
+      },
+    );
+
     socket.on(GAME_EVENTS.LOBBY_JOIN, ({ lobbyCode, player }) => {
       if (!lobbyCode || !player?.uid || !player?.username) {
         emitGameError(socket, "Missing lobby or player data");
@@ -104,7 +131,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
 
       // before starting the next turn
-      // check tile that player landed on 
+      // check tile that player landed on
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
