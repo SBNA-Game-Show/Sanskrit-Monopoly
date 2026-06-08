@@ -18,6 +18,17 @@ export default function Game({ gameState }: GameProps) {
 
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+  const handleSubmitQuizAnswer = (optionId: string) => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.QUIZ_SUBMIT_ANSWER, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+      optionId,
+    });
+  };
+
   const handleRollDice = () => {
     if (!gameState.lobbyCode || !uid) return;
 
