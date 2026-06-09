@@ -5,6 +5,7 @@ import {
   updatePlayerToken,
   startGame,
   rollDice,
+  showQuiz,
   forceSkipTurn,
   kickPlayer,
   disconnectPlayer,
@@ -12,6 +13,10 @@ import {
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
+
+const POP_QUIZ_DURATION_MS = 15000;
+
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 function emitGameError(socket, message) {
   socket.emit(GAME_EVENTS.GAME_ERROR, { message });
@@ -21,9 +26,73 @@ function broadcastGameState(io, lobby) {
   io.to(lobby.lobbyCode).emit(GAME_EVENTS.GAME_UPDATED, lobby);
 }
 
+// pop-quiz helper
+function finishPopQuiz(lobby, io) {
+  if (!lobby.activeQuiz) return;
+  if (lobby.gameStatus !== "popQuiz") return;
+
+  lobby.activeQuiz.status = "closed";
+  lobby.activeQuiz = null;
+  lobby.gameStatus = "turnEnded";
+
+  broadcastGameState(io, lobby);
+
+  startNextTurn(lobby, io, broadcastGameState);
+}
+
 export function setupSocketEvents(io) {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
+
+    // server handler for quiz submission
+    socket.on(
+      GAME_EVENTS.QUIZ_SUBMIT_ANSWER,
+      ({ lobbyCode, uid, optionId }) => {
+        if (!lobbyCode || !uid || !optionId) {
+          emitGameError(socket, "Missing quiz answer data");
+          return;
+        }
+
+        const lobby = getLobby(lobbyCode);
+
+        if (!lobby) {
+          emitGameError(socket, "Lobby not found.");
+          return;
+        }
+
+        // prevent host from submitting their answer to the popup
+        if (lobby.host.uid === uid) {
+          emitGameError(socket, "Host cannot answer quiz questions.");
+
+          return;
+        }
+
+        const player = lobby.players.find((player) => player.uid === uid);
+
+        if (!player) {
+          emitGameError(socket, "Only players can answer quiz questions.");
+
+          return;
+        }
+
+        if (lobby.gameStatus !== "popQuiz" || !lobby.activeQuiz) {
+          emitGameError(socket, "No active quiz.");
+          return;
+        }
+
+        lobby.activeQuiz.answers[uid] = optionId;
+
+        const answeredCount = Object.keys(lobby.activeQuiz.answers).length;
+        const playerCount = lobby.players.length;
+
+        if (answeredCount >= playerCount) {
+          finishPopQuiz(lobby, io);
+          return;
+        }
+
+        broadcastGameState(io, lobby);
+      },
+    );
 
     socket.on(GAME_EVENTS.LOBBY_JOIN, ({ lobbyCode, player }) => {
       if (!lobbyCode || !player?.uid || !player?.username) {
@@ -90,13 +159,13 @@ export function setupSocketEvents(io) {
       },
     );
 
-    socket.on(GAME_EVENTS.GAME_ROLL_DICE, ({ lobbyCode, uid }) => {
+    socket.on(GAME_EVENTS.GAME_ROLL_DICE, async ({ lobbyCode, uid }) => {
       if (!lobbyCode || !uid) {
         emitGameError(socket, "Missing roll dice data");
         return;
       }
 
-      const result = rollDice(lobbyCode, uid);
+      let result = rollDice(lobbyCode, uid);
       if (result.error) {
         emitGameError(socket, result.error);
         return;
@@ -105,11 +174,31 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
 
       // before starting the next turn
-      // check tile that player landed on 
+      // check tile that player landed on
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
+      await sleep(3000);
+
+      result = showQuiz(lobbyCode)
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+      broadcastGameState(io, result.lobby);
+
+
       //always run this LAST at the end of a turn
+
+      // close quiz after pop quiz timer haas passed
+      if (result.lobby.gameStatus === "popQuiz") {
+        setTimeout(() => {
+          finishPopQuiz(result.lobby, io);
+        }, POP_QUIZ_DURATION_MS);
+
+        return;
+      }
+
       startNextTurn(result.lobby, io, broadcastGameState);
     });
 

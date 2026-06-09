@@ -7,6 +7,8 @@ import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  isHost: boolean;
+  onSubmitQuizAnswer: (optionId: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -21,7 +23,7 @@ function getCurrentTile(gameState: GameState) {
   return gameState.edition.tiles[currentPlayer.position];
 }
 
-export function GameOverlayLayer({ gameState }: GameOverlayLayerProps) {
+export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
   const { uid } = useAuth();
 
   const currentPlayer = getCurrentPlayer(gameState);
@@ -59,8 +61,10 @@ export function GameOverlayLayer({ gameState }: GameOverlayLayerProps) {
     case "popQuiz":
       return (
         <PopQuizOverlay
-          gameState={gameState}
-          isActivePlayer={isActivePlayer}
+          quiz={gameState.activeQuiz}
+          players={gameState.players}
+          isHost={isHost}
+          onSubmitAnswer={onSubmitQuizAnswer}
         />
       );
 

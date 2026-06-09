@@ -1,4 +1,5 @@
 import { DEFAULT_EDITION } from "../../shared/defaultEdition.js";
+import { QUIZ_QUESTIONS } from "../../shared/quizQuestions.js";
 
 export const lobbies = {};
 
@@ -10,6 +11,40 @@ export function getLobby(lobbyCode) {
   return lobbies[lobbyCode] ?? null;
 }
 
+// helper function for quiz questions
+const POP_QUIZ_DURATION_MS = 15000;
+
+function getRandomQuizQuestion() {
+  const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
+  return QUIZ_QUESTIONS[index];
+}
+
+function createActiveQuiz() {
+  const question = getRandomQuizQuestion();
+
+  return {
+    id: `quiz-${Date.now()}`,
+    question: question.question,
+    options: question.options,
+    correctOptionId: question.correctOptionId,
+    answers: {},
+    status: "answering",
+    endsAt: Date.now() + POP_QUIZ_DURATION_MS,
+  };
+}
+
+export function showQuiz(lobbyCode) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  lobby.gameStatus = "popQuiz";
+  lobby.activeQuiz = createActiveQuiz();
+  return { lobby, error: null };
+}
+
 // function to create lobby
 export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   const lobbyCode = generateLobbyCode();
@@ -18,14 +53,13 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     lobbyCode: lobbyCode,
     status: "waiting",
     gameStatus: null, // null since game hasn't started
+    activeQuiz: null, // here he is
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
     currentPlayerIndex: 0,
     lastRoll: null,
     winnerUid: null,
-    startTime: null,
-    endTime: null
   };
   console.log(lobbies);
   return lobbies[lobbyCode];
@@ -129,9 +163,9 @@ export function startGame(lobbyCode, hostUid, options = {}) {
 
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
+  lobby.activeQuiz = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
-  lobby.startTime = Date.now()
 
   lobby.players.forEach((player) => {
     player.position = 0;
@@ -142,11 +176,12 @@ export function startGame(lobbyCode, hostUid, options = {}) {
 
 export function rollDice(lobbyCode, uid) {
   const lobby = getLobby(lobbyCode);
-  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
   if (!lobby) {
     return { lobby: null, error: "Lobby not found" };
   }
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
   if (lobby.status !== "playing") {
     return { lobby, error: "Game is not currently active" };
@@ -216,7 +251,6 @@ export function startNextTurn(lobby, io, broadcastGameState) {
       lobby.gameStatus = "idling";
       broadcastGameState(io, lobby);
     }, 2500);
-
   }, 2000);
 }
 
