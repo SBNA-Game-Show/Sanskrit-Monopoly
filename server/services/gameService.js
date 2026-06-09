@@ -201,7 +201,8 @@ export function rollDice(lobbyCode, uid) {
   //lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
   // quiz pop-up via hardcoded test
-  lobby.gameStatus = "popQuiz";
+  lobby.gameStatus = "miniGame"; //used to test rendering a Zim mini-game overlay
+  // lobby.gameStatus = "popQuiz";
   lobby.activeQuiz = createActiveQuiz();
 
   if (passedStart) {
