@@ -10,6 +10,7 @@ export type GamePhase =
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
+  | "miniGame"
   | "turnEnded";
 
 export type GameTileType =
