@@ -15,19 +15,19 @@ function getCurrentPlayer(gameState: GameState) {
   return gameState.players[gameState.currentPlayerIndex];
 }
 
-function getCurrentTile(gameState: GameState) {
-  const currentPlayer = getCurrentPlayer(gameState);
+// function getCurrentTile(gameState: GameState) {
+//   const currentPlayer = getCurrentPlayer(gameState);
 
-  if (!currentPlayer) return undefined;
+//   if (!currentPlayer) return undefined;
 
-  return gameState.edition.tiles[currentPlayer.position];
-}
+//   return gameState.edition.tiles[currentPlayer.position];
+// }
 
 export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
   const { uid } = useAuth();
 
   const currentPlayer = getCurrentPlayer(gameState);
-  const currentTile = getCurrentTile(gameState);
+  // const currentTile = getCurrentTile(gameState);
 
   if (!currentPlayer || !gameState.gameStatus) return null;
 
@@ -60,12 +60,15 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "popQuiz":
       return (
-        <PopQuizOverlay
-          quiz={gameState.activeQuiz}
-          players={gameState.players}
-          isHost={isHost}
-          onSubmitAnswer={onSubmitQuizAnswer}
-        />
+        //activeQuiz must not be null
+        gameState.activeQuiz && (
+          <PopQuizOverlay
+            quiz={gameState.activeQuiz}
+            players={gameState.players}
+            isHost={isHost}
+            onSubmitAnswer={onSubmitQuizAnswer}
+          />
+        )
       );
 
     case "verseChallenge":
