@@ -5,11 +5,13 @@ import type {
   ZimBoardController,
   ZimMonopolyBoardProps,
 } from "../../types/zim/zimBoardTypes";
+import type { GamePhase } from "../../types/game/gameTypes";
 
 export default function ZimMonopolyBoard({
   players,
   currentTurnUid,
   lastRoll,
+  gameStatus,
 }: ZimMonopolyBoardProps) {
   const holderIdRef = useRef(
     `zim-board-${Math.random().toString(36).slice(2)}`,
@@ -17,12 +19,36 @@ export default function ZimMonopolyBoard({
   const frameRef = useRef<zim.Frame | null>(null);
   const stageRef = useRef<zim.Stage | null>(null);
   const boardRef = useRef<ZimBoardController | null>(null);
-  const latestStateRef = useRef({ players, currentTurnUid, lastRoll });
+  const latestStateRef = useRef<ZimMonopolyBoardProps>({ players, currentTurnUid, lastRoll, gameStatus });
+  const prevGameStatusRef = useRef<GamePhase | undefined>(gameStatus);
+  const lastAnimatedRollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    latestStateRef.current = { players, currentTurnUid, lastRoll };
-    boardRef.current?.update(latestStateRef.current);
-  }, [players, currentTurnUid, lastRoll]);
+    if (lastRoll == null) {
+      lastAnimatedRollRef.current = null;
+    }
+
+    latestStateRef.current = { players, currentTurnUid, lastRoll, gameStatus };
+
+    const prevStatus = prevGameStatusRef.current;
+    prevGameStatusRef.current = gameStatus;
+
+    const enteredRollingPhase =
+      prevStatus !== "rollingDice" &&
+      gameStatus === "rollingDice" &&
+      lastRoll != null &&
+      lastRoll !== lastAnimatedRollRef.current;
+
+    if (enteredRollingPhase) {
+      lastAnimatedRollRef.current = lastRoll;
+      boardRef.current?.animateDiceRoll(lastRoll);
+      return;
+    }
+
+    if (gameStatus !== "rollingDice") {
+      boardRef.current?.update(latestStateRef.current);
+    }
+  }, [players, currentTurnUid, lastRoll, gameStatus]);
 
   useEffect(() => {
     frameRef.current = new zim.Frame({

@@ -1,4 +1,5 @@
 import type { PlayerState } from "../game/gameTypes";
+import type { GamePhase } from "../../types/game/gameTypes";
 
 export type TileCenter = {
   x: number;
@@ -23,6 +24,7 @@ export type ZimBoardState = {
   players: PlayerState[];
   currentTurnUid: string | null;
   lastRoll?: number | null;
+  gameStatus?: GamePhase;
 };
 
 export type ZimBoardController = {

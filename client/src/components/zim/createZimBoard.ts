@@ -9,6 +9,7 @@ import {
   TOKEN_OFFSETS,
 } from "../../constants/zim/board";
 import type { TileCenter, BoardTileDefinition, ZimBoardController, ZimBoardState } from "../../types/zim/zimBoardTypes";
+import { getDiceFaceUrl } from "../../constants/zim/diceFaces";
 
 function getTileCenter(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
@@ -193,12 +194,18 @@ function drawTile(
 //     align: "center",
 //   }).center(dice);
 // }
-const DICE_RESULT = { x: 620, y: 560, size: 110 };
+// const DICE_RESULT = { x: 620, y: 560, size: 110 };
+const DICE_RESULT = { x: 620, y: 560, size: 110 };   
+const DICE_ANIM = { x: 360, y: 360, size: 180 }; 
+
+const ROLL_CYCLES = 16;      
+const ROLL_INTERVAL_MS = 70; 
+const SETTLE_MS = 300;      
 
 function drawDiceLayer(diceLayer: zim.Container, diceValue: number | null | undefined) {
   diceLayer.removeAllChildren();
 
-  const dice = new zim.Container(DICE_RESULT.size, DICE_RESULT.size).pos(
+  const box = new zim.Container(DICE_RESULT.size, DICE_RESULT.size).pos(
     DICE_RESULT.x,
     DICE_RESULT.y,
     false,
@@ -213,16 +220,24 @@ function drawDiceLayer(diceLayer: zim.Container, diceValue: number | null | unde
     "#6b3f1d",
     5,
     18,
-  ).addTo(dice);
+  ).addTo(box);
 
-  new zim.Label({
-    text: diceValue ? String(diceValue) : "—",
-    size: 60,
-    bold: true,
-    color: "#2a1c12",
-    font: "Arial",
-    align: "center",
-  }).center(dice);
+  if (diceValue != null) {
+    new zim.Pic({
+      file: getDiceFaceUrl(diceValue),
+      width: DICE_RESULT.size - 16,
+      height: DICE_RESULT.size - 16,
+    }).center(box);
+  } else {
+    new zim.Label({
+      text: "—",
+      size: 60,
+      bold: true,
+      color: "#2a1c12",
+      font: "Arial",
+      align: "center",
+    }).center(box);
+  }
 }
 
 // function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
@@ -483,6 +498,74 @@ function drawPlayersLayer(
 //     },
 //   };
 // }
+function runDiceRollAnimation(
+  diceLayer: zim.Container,
+  stage: zim.Stage,
+  targetValue: number,
+  onComplete: () => void,
+) {
+  diceLayer.removeAllChildren();
+
+  const animBox = new zim.Container(DICE_ANIM.size, DICE_ANIM.size).pos(
+    DICE_ANIM.x,
+    DICE_ANIM.y,
+    false,
+    false,
+    diceLayer,
+  );
+
+  new zim.Rectangle(
+    DICE_ANIM.size,
+    DICE_ANIM.size,
+    "transparent",
+    "transparent",
+    0,
+    20,
+  ).addTo(animBox);
+
+  let currentPic: zim.Pic | null = null;
+  let frame = 0;
+
+  const showFace = (faceValue: number) => {
+    currentPic?.removeFrom();
+    currentPic = new zim.Pic({
+      file: getDiceFaceUrl(faceValue),
+      width: DICE_ANIM.size,
+      height: DICE_ANIM.size,
+    }).center(animBox);
+    stage.update();
+  };
+
+  const finish = () => {
+    drawDiceLayer(diceLayer, targetValue);
+    stage.update();
+    onComplete();
+  };
+
+  showFace(Math.floor(Math.random() * 6) + 1);
+
+  const timer = setInterval(() => {
+    frame += 1;
+
+    if (frame < ROLL_CYCLES) {
+      showFace(Math.floor(Math.random() * 6) + 1);
+      return;
+    }
+
+    clearInterval(timer);
+    showFace(targetValue);
+
+    animBox.animate({
+      props: { scale: 1.15 },
+      time: 0.1,
+      rewind: true,
+      call: () => {
+        setTimeout(finish, SETTLE_MS);
+      },
+    });
+  }, ROLL_INTERVAL_MS);
+}
+
 export function createZimBoard(
   stage: zim.Stage,
   initialState: ZimBoardState,
@@ -527,10 +610,9 @@ export function createZimBoard(
       if (isRolling) return;
       isRolling = true;
 
-      drawDiceLayer(diceLayer, value);
-      stage.update();
-
-      isRolling = false;
+      runDiceRollAnimation(diceLayer, stage, value, () => {
+        isRolling = false;
+      });
     },
 
     dispose() {

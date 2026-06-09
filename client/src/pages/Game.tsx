@@ -115,6 +115,7 @@ export default function Game({ gameState }: GameProps) {
                 players={gameState.players}
                 currentTurnUid={currentPlayer.uid}
                 lastRoll={gameState.lastRoll}
+                gameStatus={gameState.gameStatus}
               />
             </div>
 
