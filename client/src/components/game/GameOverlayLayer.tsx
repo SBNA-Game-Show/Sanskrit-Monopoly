@@ -3,6 +3,7 @@ import StartOfTurnOverlay from "./overlays/StartOfTurnOverlay";
 import { PopQuizOverlay } from "./overlays/PopQuizOverlay";
 import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
+import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -36,6 +37,9 @@ export function GameOverlayLayer({
 
     case "penaltyActivity":
       return <PenaltyActivityOverlay />;
+
+    case "miniGame":
+      return <MiniGameOverlay />;
 
     default:
       return null;
