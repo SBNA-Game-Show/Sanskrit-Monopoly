@@ -174,7 +174,14 @@ export function setupSocketEvents(io) {
       // and do stuff
       // like run the pop quiz minigame, update points, etc
       //always run this LAST at the end of a turn
-      broadcastGameState(io, result.lobby);
+
+      // added portion to gaurd against pop quizzes and minigames
+      if (
+        result.lobby.gameStatus !== "popQuiz" &&
+        result.lobby.gameStatus !== "miniGame"
+      ) {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
 
       // close quiz after pop quiz timer haas passed
       if (result.lobby.gameStatus === "popQuiz") {
