@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNav } from "../components/TransitionOverlay";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useToast } from "../context/ToastContext";
@@ -66,7 +66,7 @@ const decorative_imgs = [
 
 function Home() {
   const [lobbyCode, setLobbyCode] = useState("");
-  const navigate = useNavigate();
+  const navigate = useNav();
   const { uid, username } = useAuth();
   const { showToast } = useToast();
 

@@ -1,11 +1,11 @@
 import { socket } from "../socket";
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
-import { useNavigate } from "react-router-dom";
+import { useNav } from "../components/TransitionOverlay";
 import "../styles/results.css";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 
 function Result({ gameState }: any) {
-    const navigate = useNavigate();
+    const navigate = useNav();
     const sortedPlayers = [...gameState.players].sort(
         (a, b) => b.points - a.points
     );
