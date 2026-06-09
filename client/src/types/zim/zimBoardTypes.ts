@@ -27,6 +27,7 @@ export type ZimBoardState = {
 
 export type ZimBoardController = {
   update: (state: ZimBoardState) => void;
+  animateDiceRoll: (value: number) => void;
   dispose: () => void;
 };
 

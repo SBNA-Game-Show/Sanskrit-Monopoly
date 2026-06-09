@@ -180,9 +180,40 @@ function drawTile(
   if (side === "right") label.rot(-90);
 }
 
-function drawDice(board: zim.Container, diceValue: number | null | undefined) {
-  const dice = new zim.Container(110, 110).pos(620, 560, false, false, board);
-  new zim.Rectangle(110, 110, "#f4e8c8", "#6b3f1d", 5, 18).addTo(dice);
+// function drawDice(board: zim.Container, diceValue: number | null | undefined) {
+//   const dice = new zim.Container(110, 110).pos(620, 560, false, false, board);
+//   new zim.Rectangle(110, 110, "#f4e8c8", "#6b3f1d", 5, 18).addTo(dice);
+
+//   new zim.Label({
+//     text: diceValue ? String(diceValue) : "—",
+//     size: 60,
+//     bold: true,
+//     color: "#2a1c12",
+//     font: "Arial",
+//     align: "center",
+//   }).center(dice);
+// }
+const DICE_RESULT = { x: 620, y: 560, size: 110 };
+
+function drawDiceLayer(diceLayer: zim.Container, diceValue: number | null | undefined) {
+  diceLayer.removeAllChildren();
+
+  const dice = new zim.Container(DICE_RESULT.size, DICE_RESULT.size).pos(
+    DICE_RESULT.x,
+    DICE_RESULT.y,
+    false,
+    false,
+    diceLayer,
+  );
+
+  new zim.Rectangle(
+    DICE_RESULT.size,
+    DICE_RESULT.size,
+    "#f4e8c8",
+    "#6b3f1d",
+    5,
+    18,
+  ).addTo(dice);
 
   new zim.Label({
     text: diceValue ? String(diceValue) : "—",
@@ -194,13 +225,109 @@ function drawDice(board: zim.Container, diceValue: number | null | undefined) {
   }).center(dice);
 }
 
-function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
-  stage.removeAllChildren();
+// function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
+//   stage.removeAllChildren();
 
-  const board = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
+//   const board = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
 
+//   new zim.Rectangle(BOARD_SIZE, BOARD_SIZE, "#6b3f1d", "#3a2110", 6).addTo(
+//     board,
+//   );
+
+//   new zim.Rectangle(
+//     BOARD_SIZE - 30,
+//     BOARD_SIZE - 30,
+//     "#f4e8c8",
+//     "#3a2110",
+//     3,
+//   ).pos(15, 15, false, false, board);
+
+//   new zim.Rectangle(
+//     BOARD_SIZE - CORNER_SIZE * 2,
+//     BOARD_SIZE - CORNER_SIZE * 2,
+//     "#202733",
+//     "#3a2110",
+//     4,
+//   ).pos(CORNER_SIZE, CORNER_SIZE, false, false, board);
+
+//   new zim.Label({
+//     text: "संस्कृत\nMONOPOLY",
+//     size: 52,
+//     bold: true,
+//     color: "#f4e8c8",
+//     font: "Georgia",
+//     align: "center",
+//     lineHeight: 58,
+//   })
+//     .center(board)
+//     .rot(-18);
+
+//   drawCorner(
+//     board,
+//     DEFAULT_BOARD_TILES[0],
+//     BOARD_SIZE - CORNER_SIZE,
+//     BOARD_SIZE - CORNER_SIZE,
+//   );
+//   drawCorner(board, DEFAULT_BOARD_TILES[10], 0, BOARD_SIZE - CORNER_SIZE);
+//   drawCorner(board, DEFAULT_BOARD_TILES[20], 0, 0);
+//   drawCorner(board, DEFAULT_BOARD_TILES[30], BOARD_SIZE - CORNER_SIZE, 0);
+
+//   for (let i = 0; i < 9; i += 1) {
+//     drawTile(
+//       board,
+//       DEFAULT_BOARD_TILES[i + 1],
+//       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
+//       BOARD_SIZE - CORNER_SIZE,
+//       TILE_WIDTH,
+//       TILE_HEIGHT,
+//       "bottom",
+//     );
+//   }
+
+//   for (let i = 0; i < 9; i += 1) {
+//     drawTile(
+//       board,
+//       DEFAULT_BOARD_TILES[i + 11],
+//       0,
+//       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
+//       TILE_HEIGHT,
+//       TILE_WIDTH,
+//       "left",
+//     );
+//   }
+
+//   for (let i = 0; i < 9; i += 1) {
+//     drawTile(
+//       board,
+//       DEFAULT_BOARD_TILES[i + 21],
+//       CORNER_SIZE + i * TILE_WIDTH,
+//       0,
+//       TILE_WIDTH,
+//       TILE_HEIGHT,
+//       "top",
+//     );
+//   }
+
+//   for (let i = 0; i < 9; i += 1) {
+//     drawTile(
+//       board,
+//       DEFAULT_BOARD_TILES[i + 31],
+//       BOARD_SIZE - CORNER_SIZE,
+//       CORNER_SIZE + i * TILE_WIDTH,
+//       TILE_HEIGHT,
+//       TILE_WIDTH,
+//       "right",
+//     );
+//   }
+
+//   drawDice(board, state.lastRoll);
+
+//   return board;
+// }
+
+function drawStaticLayer(staticLayer: zim.Container) {
   new zim.Rectangle(BOARD_SIZE, BOARD_SIZE, "#6b3f1d", "#3a2110", 6).addTo(
-    board,
+    staticLayer,
   );
 
   new zim.Rectangle(
@@ -209,7 +336,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
     "#f4e8c8",
     "#3a2110",
     3,
-  ).pos(15, 15, false, false, board);
+  ).pos(15, 15, false, false, staticLayer);
 
   new zim.Rectangle(
     BOARD_SIZE - CORNER_SIZE * 2,
@@ -217,7 +344,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
     "#202733",
     "#3a2110",
     4,
-  ).pos(CORNER_SIZE, CORNER_SIZE, false, false, board);
+  ).pos(CORNER_SIZE, CORNER_SIZE, false, false, staticLayer);
 
   new zim.Label({
     text: "संस्कृत\nMONOPOLY",
@@ -228,22 +355,22 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
     align: "center",
     lineHeight: 58,
   })
-    .center(board)
+    .center(staticLayer)
     .rot(-18);
 
   drawCorner(
-    board,
+    staticLayer,
     DEFAULT_BOARD_TILES[0],
     BOARD_SIZE - CORNER_SIZE,
     BOARD_SIZE - CORNER_SIZE,
   );
-  drawCorner(board, DEFAULT_BOARD_TILES[10], 0, BOARD_SIZE - CORNER_SIZE);
-  drawCorner(board, DEFAULT_BOARD_TILES[20], 0, 0);
-  drawCorner(board, DEFAULT_BOARD_TILES[30], BOARD_SIZE - CORNER_SIZE, 0);
+  drawCorner(staticLayer, DEFAULT_BOARD_TILES[10], 0, BOARD_SIZE - CORNER_SIZE);
+  drawCorner(staticLayer, DEFAULT_BOARD_TILES[20], 0, 0);
+  drawCorner(staticLayer, DEFAULT_BOARD_TILES[30], BOARD_SIZE - CORNER_SIZE, 0);
 
   for (let i = 0; i < 9; i += 1) {
     drawTile(
-      board,
+      staticLayer,
       DEFAULT_BOARD_TILES[i + 1],
       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
       BOARD_SIZE - CORNER_SIZE,
@@ -255,7 +382,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
 
   for (let i = 0; i < 9; i += 1) {
     drawTile(
-      board,
+      staticLayer,
       DEFAULT_BOARD_TILES[i + 11],
       0,
       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
@@ -267,7 +394,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
 
   for (let i = 0; i < 9; i += 1) {
     drawTile(
-      board,
+      staticLayer,
       DEFAULT_BOARD_TILES[i + 21],
       CORNER_SIZE + i * TILE_WIDTH,
       0,
@@ -279,7 +406,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
 
   for (let i = 0; i < 9; i += 1) {
     drawTile(
-      board,
+      staticLayer,
       DEFAULT_BOARD_TILES[i + 31],
       BOARD_SIZE - CORNER_SIZE,
       CORNER_SIZE + i * TILE_WIDTH,
@@ -288,10 +415,6 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
       "right",
     );
   }
-
-  drawDice(board, state.lastRoll);
-
-  return board;
 }
 
 function drawPlayers(
@@ -325,29 +448,94 @@ function drawPlayers(
   });
 }
 
+function drawPlayersLayer(
+  playersLayer: zim.Container,
+  players: ZimBoardState["players"],
+  currentTurnUid: string | null,
+) {
+  playersLayer.removeAllChildren();
+  drawPlayers(playersLayer, players, currentTurnUid);
+}
+
+// export function createZimBoard(
+//   stage: zim.Stage,
+//   initialState: ZimBoardState,
+// ): ZimBoardController {
+//   let board: zim.Container | null = null;
+
+//   function draw(state: ZimBoardState) {
+//     board = drawStaticBoard(stage, state);
+//     drawPlayers(board, state.players, state.currentTurnUid);
+//     stage.update();
+//   }
+
+//   draw(initialState);
+
+//   return {
+//     update(nextState: ZimBoardState) {
+//       draw(nextState);
+//     },
+
+//     dispose() {
+//       stage.removeAllChildren();
+//       stage.update();
+//       board = null;
+//     },
+//   };
+// }
 export function createZimBoard(
   stage: zim.Stage,
   initialState: ZimBoardState,
 ): ZimBoardController {
-  let board: zim.Container | null = null;
+  let staticLayer: zim.Container;
+  let diceLayer: zim.Container;
+  let playersLayer: zim.Container;
+  let isRolling = false;
 
-  function draw(state: ZimBoardState) {
-    board = drawStaticBoard(stage, state);
-    drawPlayers(board, state.players, state.currentTurnUid);
-    stage.update();
-  }
+  stage.removeAllChildren();
 
-  draw(initialState);
+  const boardRoot = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
+
+  staticLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(boardRoot);
+  diceLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(boardRoot);
+  playersLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(boardRoot);
+
+  drawStaticLayer(staticLayer);
+  drawDiceLayer(diceLayer, initialState.lastRoll);
+  drawPlayersLayer(
+    playersLayer,
+    initialState.players,
+    initialState.currentTurnUid,
+  );
+
+  stage.update();
 
   return {
     update(nextState: ZimBoardState) {
-      draw(nextState);
+      if (isRolling) return;
+
+      drawPlayersLayer(
+        playersLayer,
+        nextState.players,
+        nextState.currentTurnUid,
+      );
+      drawDiceLayer(diceLayer, nextState.lastRoll);
+      stage.update();
+    },
+
+    animateDiceRoll(value: number) {
+      if (isRolling) return;
+      isRolling = true;
+
+      drawDiceLayer(diceLayer, value);
+      stage.update();
+
+      isRolling = false;
     },
 
     dispose() {
       stage.removeAllChildren();
       stage.update();
-      board = null;
     },
   };
 }
