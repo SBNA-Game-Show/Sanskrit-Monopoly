@@ -1,4 +1,5 @@
 import type { GameState } from "../../../types/game/gameTypes";
+import { GameOverlayShell } from "./GameOverlayShell";
 
 type PenaltyActivityOverlayProps = {
   gameState: GameState;
@@ -67,33 +68,31 @@ export function PenaltyActivityOverlay({
     }
 
     return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/45 p-6">
-        <div className="w-full max-w-[560px] rounded-[28px] border-[8px] border-[#ffa23b] bg-[#f5bd78] p-7 text-center shadow-2xl">
-          <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
-            Turn Result
+      <GameOverlayShell>
+        <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
+          Turn Result
+        </p>
+
+        <h2 className="text-[30px] font-extrabold text-[#160f08]">
+          {currentPlayer?.username} landed on
+        </h2>
+
+        <p className="mt-3 text-[30px] font-extrabold text-[#6b3f1d]">
+          {tileName}
+        </p>
+
+        <div className="mt-5 rounded-2xl bg-[#fff4dc] px-5 py-4 shadow-inner">
+          <p className="text-lg font-bold text-[#160f08]">{tileTitle}</p>
+
+          <p className="mt-2 text-base font-semibold text-[#6b3f1d]">
+            {tileDescription}
           </p>
 
-          <h2 className="text-[30px] font-extrabold text-[#160f08]">
-            {currentPlayer?.username} landed on
-          </h2>
-
-          <p className="mt-3 text-[30px] font-extrabold text-[#6b3f1d]">
-            {tileName}
+          <p className={`mt-3 text-[24px] font-extrabold ${resultColor}`}>
+            {resultText}
           </p>
-
-          <div className="mt-5 rounded-2xl bg-[#fff4dc] px-5 py-4 shadow-inner">
-            <p className="text-lg font-bold text-[#160f08]">{tileTitle}</p>
-
-            <p className="mt-2 text-base font-semibold text-[#6b3f1d]">
-              {tileDescription}
-            </p>
-
-            <p className={`mt-3 text-[24px] font-extrabold ${resultColor}`}>
-              {resultText}
-            </p>
-          </div>
         </div>
-      </div>
+      </GameOverlayShell>
     );
   }
 

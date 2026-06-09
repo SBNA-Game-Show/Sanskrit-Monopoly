@@ -251,7 +251,7 @@ export function startNextTurn(lobby, io, broadcastGameState) {
       lobby.gameStatus = "idling";
       broadcastGameState(io, lobby);
     }, 2500);
-  }, 2000);
+  }, 3500);
 }
 
 export function kickPlayer(lobbyCode, uid) {
