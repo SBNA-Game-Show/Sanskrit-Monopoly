@@ -131,8 +131,8 @@ export default function Lobby() {
   if (!lobbyState || lobbyState.status !== "waiting") {
     return (
       <main className="h-[calc(100vh-56px)] bg-white font-jersey flex items-center justify-center">
-        <p className="text-3xl text-[#FF8C00] tracking-wider">
-          Loading lobby...
+        <p className="text-3xl text-[#F97316] tracking-wider">
+          Loading Lobby...
         </p>
       </main>
     );

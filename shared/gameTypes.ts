@@ -35,6 +35,26 @@ export type GameEdition = {
   tiles: GameTile[];
 };
 
+export type QuizOption = {
+  id: string;
+  text: string;
+};
+
+export type ActiveQuiz = {
+  id: string;
+  question: string;
+  options: QuizOption[];
+
+  // Keep optional because clients may not need to know the answer until reveal phase
+  correctOptionId?: string;
+
+  // player uid -> option id
+  answers: Record<string, string>;
+
+  status: "answering" | "revealing" | "closed";
+  endsAt: number;
+};
+
 export type PlayerState = {
   uid: string;
   username: string;
@@ -57,6 +77,7 @@ export type GameState = {
   lobbyCode: string;
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
+  activeQuiz: ActiveQuiz | null; // quiz testing
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
