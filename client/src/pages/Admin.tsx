@@ -9,11 +9,19 @@ import {
   deleteDoc 
 } from "firebase/firestore";
 
+interface PopQuizActivity {
+  id: string;
+  question: string;
+  options: string[];      //mcq options array
+  correctAnswer: string;  // correct answer
+}
+
 interface GameEdition {
   id: string;
   name: string;
   rewards: Record<string, number>;    // Maps unique tile name to point rewards
   penalties: Record<string, number>;  // Maps unique tile name to point penalties
+  activities?: PopQuizActivity[]; // Pop quiz array
 }
 
 function Admin() {
@@ -23,17 +31,24 @@ function Admin() {
   const [editions, setEditions] = useState<GameEdition[]>([]);
   const [selectedEdition, setSelectedEdition] = useState<GameEdition | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
   // Form states
   const [newEditionName, setNewEditionName] = useState("");
   const [targetTileName, setTargetTileName] = useState("");
-  const [tileType, setTileType] = useState<"reward" | "penalty">("reward");
+  const [tileType, setTileType] = useState<"reward" | "penalty"| "jail" | "parking" | "community" >("reward");
   const [tileValue, setTileValue] = useState<number>(0);
+
   // Inline Name Renaming Buffers
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
   const [editNameValue, setEditNameValue] = useState<string>("");
 
   // Keeps track of the active edition ID without triggering component re-renders
   const selectedIdRef = useRef<string | null>(null);
+
+  // Pop Quiz MCQ Builder Form State Buffers
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [currentOptions, setCurrentOptions] = useState<string[]>(["", "", "", ""]); // 4 options slots
+  const [correctAnswerStr, setCorrectAnswerStr] = useState("");
 
   // Sync the ref whenever the selected edition changes
   useEffect(() => {
@@ -51,6 +66,7 @@ function Admin() {
           name: data.name || "Unnamed Edition",
           rewards: data.rewards || {},
           penalties: data.penalties || {},
+          activities: data.activities || []
         } as GameEdition;
       });
       
@@ -111,14 +127,18 @@ function Admin() {
     const updatedRewards = { ...selectedEdition.rewards };
     const updatedPenalties = { ...selectedEdition.penalties };
 
+
     if (tileType === "reward") {
       updatedRewards[tileKey] = Number(tileValue);
       delete updatedPenalties[tileKey]; 
-    } else {
+    } else if (tileType === "penalty"){
       updatedPenalties[tileKey] = Number(tileValue);
       delete updatedRewards[tileKey]; 
+    } else {
+        const typeMappingCodes = { jail: -1, parking: -2, community: -3 };
+        updatedPenalties[tileKey] = typeMappingCodes[tileType];
+        delete updatedRewards[tileKey];
     }
-
     try {
       const editionDocRef = doc(db, "game_editions", selectedEdition.id);
       await updateDoc(editionDocRef, {
@@ -162,6 +182,65 @@ function Admin() {
       alert("Firestore Purge Failed: " + err);
     }
   };
+
+  const handleAddPopQuizActivity = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!selectedEdition || !quizQuestion.trim() || !correctAnswerStr) return;
+
+  // Filter out any blank slots the admin didn't fill
+  const filteredOptions = currentOptions.map(opt => opt.trim()).filter(Boolean);
+  if (filteredOptions.length < 2) {
+    alert("Please provide at least 2 choice options.");
+    return;
+  }
+
+  const newQuizObj: PopQuizActivity = {
+    id: "quiz_" + Date.now(), // Unique runtime ID
+    question: quizQuestion.trim(),
+    options: filteredOptions,
+    correctAnswer: correctAnswerStr
+  };
+
+  // Build the updated array containing the old items plus our new one
+  const updatedActivities = [...(selectedEdition.activities || []), newQuizObj];
+
+  try {
+    const editionDocRef = doc(db, "game_editions", selectedEdition.id);
+    await updateDoc(editionDocRef, {
+      activities: updatedActivities
+    });
+
+    // Clear local form buffers on success
+    setQuizQuestion("");
+    setCurrentOptions(["", "", "", ""]);
+    setCorrectAnswerStr("");
+  } catch (err) {
+    alert("Failed to save quiz: " + err);
+  }
+};
+
+// Handler to delete an individual question out of the array pool
+const handleRemoveActivityItem = async (activityIdToRemove: string) => {
+  if (!selectedEdition || !selectedEdition.activities) return;
+
+  const updatedActivities = selectedEdition.activities.filter(act => act.id !== activityIdToRemove);
+
+  try {
+    const editionDocRef = doc(db, "game_editions", selectedEdition.id);
+    await updateDoc(editionDocRef, {
+      activities: updatedActivities
+    });
+  } catch (err) {
+    alert("Failed to remove quiz item: " + err);
+  }
+};
+
+// Simple helper to handle text input keystrokes for individual options locally
+const handleOptionChangeLocally = (index: number, val: string) => {
+  const nextOptions = [...currentOptions];
+  nextOptions[index] = val;
+  setCurrentOptions(nextOptions);
+};
 
   if (loading) {
     return (
@@ -329,6 +408,7 @@ function Admin() {
                 Back to Dashboard
               </button>
             </div>
+            
 
             <div className="grid grid-cols-12 gap-5 items-start">
               
@@ -354,20 +434,20 @@ function Admin() {
                   <div>
                     <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
                     <div className="grid grid-cols-2 gap-2 bg-[#FFF5E4] p-1 rounded-xl border border-orange-300">
-                      <button
-                        type="button"
-                        onClick={() => setTileType("reward")}
-                        className={`py-2 rounded-lg font-bold transition-all text-center ${tileType === "reward" ? "bg-[#5CB85C] text-white shadow-sm" : "text-slate-600 hover:bg-white/40"}`}
-                      >
-                        Reward (+ धनम्)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTileType("penalty")}
-                        className={`py-2 rounded-lg font-bold transition-all text-center ${tileType === "penalty" ? "bg-[#DC4C64] text-white shadow-sm" : "text-slate-600 hover:bg-white/40"}`}
-                      >
-                        Penalty (- धनम्)
-                      </button>
+                      <select
+                        value={tileType}
+                        onChange={(e) => {
+                          setTileType(e.target.value as any);
+                          setTileValue(0); // Reset numeric fields when switching types
+                        }}
+                        className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-bold text-slate-800 focus:outline-none text-xs">
+                        <option value="reward">Reward</option>
+                        <option value="penalty">Penalty</option>
+                        <option value="jail">Go to Jail</option>
+                        <option value="parking">Free Parking</option>
+                        <option value="community">Community</option>
+                        // Can Add more option in drop down menu
+                      </select>
                     </div>
                   </div>
 
@@ -378,6 +458,7 @@ function Admin() {
                       min="0"
                       value={tileValue}
                       onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
+                      disabled={tileType !== "reward" && tileType !== "penalty"}
                       className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-base"
                     />
                   </div>
@@ -421,12 +502,34 @@ function Admin() {
                       ))}
 
                       {/* Render Penalties sub-tree */}
-                      {Object.keys(selectedEdition.penalties || {}).map((tile) => (
+                      {Object.keys(selectedEdition.penalties || {}).map((tile) => {
+                        const points = selectedEdition.penalties[tile];
+                        const value = selectedEdition.penalties[tile];
+                        const isSpecialTile = value <=0;                   
+                        // Inverse Mapping Code Dictionary Lookups
+                        let tileLabelText = `Penalty Action: -${value} Points / धनम्`;
+                        let badgeColorClass = "text-red-500 bg-red-50 border-red-200";
+
+                        if (value === -1) {
+                          tileLabelText = "Go to Jail (कारागारः)";
+                          badgeColorClass = "text-purple-600 bg-purple-50 border-purple-200";
+                        } else if (value === -2) {
+                          tileLabelText = "Free Parking (विश्रामस्थलम्)";
+                          badgeColorClass = "text-blue-600 bg-blue-50 border-blue-200";
+                        } else if (value === -3) {
+                          tileLabelText = "Community Chest (सङ्घकोषः)";
+                          badgeColorClass = "text-amber-600 bg-amber-50 border-amber-200";
+                        } else if (value === 0) {
+                          tileLabelText = "Specialized Utility Event";
+                          badgeColorClass = "text-gray-600 bg-gray-50 border-gray-200";
+                        }
+
+                        return (
                         <div key={`pen-${tile}`} className="bg-white border border-orange-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 flex justify-between items-center shadow-sm">
                           <div className="flex flex-col">
                             <span className="text-base text-slate-900 font-bold">{tile}</span>
-                            <span className="text-xs font-bold mt-0.5 text-red-500 bg-red-50 px-2 py-0.5 rounded-md w-max">
-                              Penalty Action: -{selectedEdition.penalties[tile]} Points / धनम्
+                            <span className={`text-xs font-bold mt-1 px-2 py-0.5 rounded-md border w-max ${badgeColorClass}`}>
+                              {tileLabelText}
                             </span>
                           </div>
                           <button 
@@ -437,14 +540,119 @@ function Admin() {
                             Remove
                           </button>
                         </div>
-                      ))}
+                      );
+                      })}
                     </>
                   )}
                 </div>
               </div>
 
             </div>
+            {/* SECTION: POP QUIZ MCQ CREATION MODULE */}
+            <div className="grid grid-cols-12 gap-5 items-start border-t-2 border-orange-200/40 pt-4 mt-6">
+              
+              {/* Left Panel Form: MCQ Builder */}
+              <div className="col-span-5 bg-[#CBE6FF] border border-[#A4D2FF] rounded-2xl p-4 shadow-sm space-y-3">
+                <div>
+                  <span className="text-sm font-black text-slate-800 block">Configure Pop Quiz Activities</span>
+                  <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">Build unassigned multiple-choice questions</span>
+                </div>
+
+                <form onSubmit={handleAddPopQuizActivity} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Question Text</label>
+                    <textarea 
+                      rows={2}
+                      placeholder="e.g., What language is the root of the word Monopoly?"
+                      value={quizQuestion}
+                      onChange={(e) => setQuizQuestion(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white border border-blue-300 font-medium text-slate-900 focus:outline-none resize-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block font-bold text-slate-700">Configure Choices</label>
+                    {currentOptions.map((opt, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="font-bold text-blue-700 w-4">{String.fromCharCode(97 + i)}.)</span>
+                        <input 
+                          type="text"
+                          placeholder={`Option ${String.fromCharCode(97 + i).toUpperCase()}`}
+                          value={opt}
+                          onChange={(e) => handleOptionChangeLocally(i, e.target.value)}
+                          className="flex-1 p-2 rounded-lg bg-white border border-blue-200 focus:outline-none font-medium"
+                          required={i < 2} // Requires at least options A and B
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Designate Correct Answer</label>
+                    <select
+                      value={correctAnswerStr}
+                      onChange={(e) => setCorrectAnswerStr(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white border border-blue-300 font-bold text-slate-800 focus:outline-none"
+                      required
+                    >
+                      <option value="">-- Choose Correct Option --</option>
+                      {currentOptions.filter(Boolean).map((opt, index) => (
+                        <option key={index} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#3B71CA] hover:bg-blue-600 text-white font-bold p-2.5 rounded-xl transition-all shadow-sm mt-2"
+                  >
+                    Append Pop Quiz to Edition
+                  </button>
+                </form>
+              </div>
+
+              {/* Right Panel List: Active Question Register */}
+              <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 shadow-sm space-y-3">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2">
+                  Quiz MCQ Registers
+                </h4>
+                <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                  {!selectedEdition.activities || selectedEdition.activities.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-6 text-center">No quiz questionnaires created under this edition yet.</p>
+                  ) : (
+                    selectedEdition.activities.map((act, index) => (
+                      <div key={act.id} className="bg-white border border-blue-100 rounded-xl p-3 text-xs shadow-sm space-y-2 relative">
+                        <div className="flex justify-between items-start pr-16">
+                          <span className="font-bold text-sm text-slate-900">{index + 1}. {act.question}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveActivityItem(act.id)}
+                            className="text-red-500 hover:text-red-700 font-bold text-[11px] absolute top-3 right-3 bg-red-50 px-2 py-0.5 rounded-md transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1.5 pl-4 text-slate-600 font-medium">
+                          {act.options.map((opt, oIdx) => (
+                            <div 
+                              key={oIdx} 
+                              className={`p-1.5 rounded-lg border ${opt === act.correctAnswer ? "bg-green-50 border-green-300 text-green-800 font-bold" : "border-gray-100 bg-gray-50/50"}`}
+                            >
+                              {String.fromCharCode(97 + oIdx)}.) {opt} {opt === act.correctAnswer && "✓"}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
           </div>
+          
         )}
 
       </div>
