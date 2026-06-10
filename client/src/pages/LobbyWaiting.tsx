@@ -85,7 +85,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     socket.emit(GAME_EVENTS.GAME_START, {
       lobbyCode,
       hostUid: uid,
-      edition: selectedEdition, 
+      edition: lobbyState.edition, 
       startingPoints: startingMoney ?? 0,
     });
   };
