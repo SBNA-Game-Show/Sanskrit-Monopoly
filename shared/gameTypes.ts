@@ -15,11 +15,14 @@ export type GamePhase =
 
 export type GameTileType =
   | "start"
-  | "reward"
-  | "penalty"
-  | "property"
   | "corner"
-  | "special";
+  | "property"
+  | "special"
+  | "tax"
+  | "railroad"
+  | "utility"
+  | "penalty"
+  | "reward";
 
 export type GameTile = {
   id: string;
