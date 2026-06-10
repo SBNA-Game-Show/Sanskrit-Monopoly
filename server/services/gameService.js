@@ -45,6 +45,17 @@ export function showQuiz(lobbyCode) {
   return { lobby, error: null };
 }
 
+export function showMiniGame(lobbyCode) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  lobby.gameStatus = "miniGame";
+  return { lobby, error: null };
+}
+
 // function to create lobby
 export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
   const lobbyCode = generateLobbyCode();

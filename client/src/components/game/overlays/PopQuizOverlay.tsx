@@ -38,6 +38,9 @@ export function PopQuizOverlay({
     onSubmitAnswer(optionId);
   };
 
+  // commented out but retained in case needed for the future
+  // console.log("quiz.endsAt:", quiz.endsAt, typeof quiz.endsAt);
+  // console.log("quiz:", quiz);
   return (
     <GameOverlayShell>
       <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
