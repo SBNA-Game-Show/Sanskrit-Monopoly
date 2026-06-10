@@ -1,68 +1,36 @@
-import { useEffect, useRef } from "react";
-import * as zim from "zimjs";
+import { useMemo } from "react";
+import { ZimSceneHost } from "./ZimSceneHost";
 import { createZimBoard } from "./createZimBoard";
-import type {
-  ZimBoardController,
-  ZimMonopolyBoardProps,
-} from "../../types/zim/zimBoardTypes";
+import type { PlayerState } from "../../types/game/gameTypes";
+import type { ZimBoardState } from "../../types/zim/zimBoardTypes";
 
-export default function ZimMonopolyBoard({
+type ZimMonopolyBoardProps = {
+  players: PlayerState[];
+  currentTurnUid: string | null;
+  lastRoll: number | null;
+};
+
+export function ZimMonopolyBoard({
   players,
   currentTurnUid,
   lastRoll,
 }: ZimMonopolyBoardProps) {
-  const holderIdRef = useRef(
-    `zim-board-${Math.random().toString(36).slice(2)}`,
+  const boardState = useMemo<ZimBoardState>(
+    () => ({
+      players,
+      currentTurnUid,
+      lastRoll,
+    }),
+    [players, currentTurnUid, lastRoll],
   );
-  const frameRef = useRef<zim.Frame | null>(null);
-  const stageRef = useRef<zim.Stage | null>(null);
-  const boardRef = useRef<ZimBoardController | null>(null);
-  const latestStateRef = useRef({ players, currentTurnUid, lastRoll });
-
-  useEffect(() => {
-    latestStateRef.current = { players, currentTurnUid, lastRoll };
-    boardRef.current?.update(latestStateRef.current);
-  }, [players, currentTurnUid, lastRoll]);
-
-  useEffect(() => {
-    frameRef.current = new zim.Frame({
-      scaling: holderIdRef.current,
-      width: 900,
-      height: 900,
-      color: "#202733",
-      ready: () => {
-        if (!frameRef.current) return;
-
-        stageRef.current = frameRef.current.stage;
-        boardRef.current = createZimBoard(
-          frameRef.current.stage,
-          latestStateRef.current,
-        );
-      },
-    });
-
-    return () => {
-      boardRef.current?.dispose();
-      frameRef.current?.dispose?.();
-
-      boardRef.current = null;
-      stageRef.current = null;
-      frameRef.current = null;
-
-      const holder = document.getElementById(holderIdRef.current);
-
-      if (holder) {
-        holder.innerHTML = "";
-      }
-    };
-  }, []);
 
   return (
-    <div className="h-full w-full">
-      <div
-        id={holderIdRef.current}
-        className="h-full w-full [&>canvas]:!h-full [&>canvas]:!w-full"
-      />
-    </div>
+    <ZimSceneHost
+      state={boardState}
+      createScene={createZimBoard}
+      width={900}
+      height={900}
+      backgroundColor="#202733"
+    />
   );
 }

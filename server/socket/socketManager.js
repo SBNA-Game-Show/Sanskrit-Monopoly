@@ -6,6 +6,7 @@ import {
   startGame,
   rollDice,
   showQuiz,
+  showMiniGame,
   forceSkipTurn,
   kickPlayer,
   disconnectPlayer,
@@ -178,6 +179,7 @@ export function setupSocketEvents(io) {
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
+      // 3000ms pause before activity or minigame
       await sleep(3000);
 
       result = showQuiz(lobbyCode)
@@ -185,7 +187,21 @@ export function setupSocketEvents(io) {
         emitGameError(socket, result.error);
         return;
       }
+      // OR uncomment this out if you want to play the zim minigame
+      // result = showMiniGame(lobbyCode)
+      // if (result.error) {
+      //   emitGameError(socket, result.error);
+      //   return;
+      // }
       broadcastGameState(io, result.lobby);
+
+      // added portion to gaurd against pop quizzes and minigames
+      if (
+        result.lobby.gameStatus !== "popQuiz" &&
+        result.lobby.gameStatus !== "miniGame"
+      ) {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
 
 
       //always run this LAST at the end of a turn
