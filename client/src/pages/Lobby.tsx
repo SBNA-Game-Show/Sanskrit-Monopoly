@@ -26,6 +26,7 @@ export default function Lobby() {
       setLobbyState(nextState);
     };
 
+    // modified error handler to show toast with error message
     const handleGameError = (error: { message?: string } | string) => {
       console.log("Game socket error:", error);
     };
@@ -45,17 +46,21 @@ export default function Lobby() {
       socket.off(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
     };
-  }, [authLoading]);
+  }, [authLoading, lobbyCode, uid, username]);
 
   const host = lobbyState?.host;
   const players = lobbyState?.players ?? [];
   const isHost = host?.uid === uid;
 
+  // prevent from starting the game if no tokens are selected
+  const allPlayersHaveTokens =
+    players.length > 0 && players.every((player) => Boolean(player.token));
+
   const canStart =
     isHost &&
     selectedEdition !== null &&
     startingMoney !== null &&
-    players.length > 0; // we can keep it like this for testing so that only one player is required to start the game
+    allPlayersHaveTokens; // Test -> start requires at least 1 player and all players need tokens
 
   const handleDragStart = (e: React.DragEvent, tokenId: string) => {
     e.dataTransfer.setData("tokenId", tokenId);
@@ -93,14 +98,14 @@ export default function Lobby() {
     });
   };
 
-  if (lobbyState && (lobbyState.status === "playing")) {
+  if (lobbyState && lobbyState.status === "playing") {
     return <Game gameState={lobbyState} />;
   }
 
   // todo (jyotirmoy): make the results screen render game data
   if (lobbyState && lobbyState.status === "finished") {
-    return <Result gameState={lobbyState}/>
-  } 
+    return <Result gameState={lobbyState} />;
+  }
 
   if (!lobbyState || lobbyState.status !== "waiting") {
     return (
@@ -280,16 +285,16 @@ export default function Lobby() {
                       draggable
                       onDragStart={(e) => handleDragStart(e, token.id)}
                       className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${
-                          token.id === "dog"
-                            ? "dog-token-shake"
-                            : token.id === "shoe"
-                              ? "shoe-token-jump"
-                              : token.id === "cat"
-                                ? "cat-token-walk"
-                                : token.id === "boat"
-                                  ? "boat-token-rock"
-                                  : "hover:scale-110 transition-transform"
-                        }`}
+                        token.id === "dog"
+                          ? "dog-token-shake"
+                          : token.id === "shoe"
+                            ? "shoe-token-jump"
+                            : token.id === "cat"
+                              ? "cat-token-walk"
+                              : token.id === "boat"
+                                ? "boat-token-rock"
+                                : "hover:scale-110 transition-transform"
+                      }`}
                     >
                       <img
                         src={token.src}
@@ -378,7 +383,6 @@ export default function Lobby() {
                 </p>
               </div>
             </div>
-            
           </div>
         </div>
       </div>

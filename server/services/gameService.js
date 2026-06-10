@@ -149,6 +149,16 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     return { lobby, error: "Cannot start a game with no players" };
   }
 
+  // players must pick a token for game to proceed
+  const playersWithoutTokens = lobby.players.filter((player) => !player.token);
+
+  if (playersWithoutTokens.length > 0) {
+    return {
+      lobby,
+      error: "All players must select a token before starting the game",
+    };
+  }
+
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
@@ -200,9 +210,12 @@ export function rollDice(lobbyCode, uid) {
   lobby.lastRoll = diceRoll;
   //lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
+  // TEMP: forced mini-game trigger for testing overlay + ZIM scene flow.
+  // Later it could depend on something like landedTile.type or something along those lines
+  //lobby.gameStatus = "miniGame"; //used to test rendering a Zim mini-game overlay
+
   // quiz pop-up via hardcoded test
-  lobby.gameStatus = "miniGame"; //used to test rendering a Zim mini-game overlay
-  // lobby.gameStatus = "popQuiz";
+  lobby.gameStatus = "popQuiz";
   lobby.activeQuiz = createActiveQuiz();
 
   if (passedStart) {
