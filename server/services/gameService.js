@@ -215,8 +215,11 @@ export function rollDice(lobbyCode, uid) {
   //lobby.gameStatus = "miniGame"; //used to test rendering a Zim mini-game overlay
 
   // quiz pop-up via hardcoded test
-  lobby.gameStatus = "popQuiz";
-  lobby.activeQuiz = createActiveQuiz();
+  // lobby.gameStatus = "popQuiz";
+  // lobby.activeQuiz = createActiveQuiz();
+
+  lobby.gameStatus = "turnEnded";
+  lobby.activeQuiz = null;
 
   if (passedStart) {
     lobby.status = "finished";

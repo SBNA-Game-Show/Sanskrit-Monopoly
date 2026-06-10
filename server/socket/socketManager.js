@@ -175,20 +175,16 @@ export function setupSocketEvents(io) {
       // like run the pop quiz minigame, update points, etc
       //always run this LAST at the end of a turn
 
-      // added portion to gaurd against pop quizzes and minigames
-      if (
-        result.lobby.gameStatus !== "popQuiz" &&
-        result.lobby.gameStatus !== "miniGame"
-      ) {
-        startNextTurn(result.lobby, io, broadcastGameState);
+      // removed forced mini-game and pop-quiz to implement real game loop
+      if (result.lobby.status === "finished") {
+        return;
       }
 
-      // close quiz after pop quiz timer haas passed
       if (result.lobby.gameStatus === "popQuiz") {
-        setTimeout(() => {
-          finishPopQuiz(result.lobby, io);
-        }, POP_QUIZ_DURATION_MS);
+        return;
+      }
 
+      if (result.lobby.gameStatus === "miniGame") {
         return;
       }
 
@@ -198,7 +194,8 @@ export function setupSocketEvents(io) {
     socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
-      if (!lobbyCode) {
+      // avoid crash if lobby is undefined
+      if (!lobby) {
         emitGameError(socket, "Lobby not found.");
         return;
       }
