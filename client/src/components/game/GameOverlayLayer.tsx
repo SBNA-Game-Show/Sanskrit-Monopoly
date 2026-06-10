@@ -5,6 +5,7 @@ import { PopQuizOverlay } from "./overlays/PopQuizOverlay";
 import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
+import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -44,14 +45,7 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
       );
 
     case "rollingDice":
-      return (
-        // Change this to its own seperate dice roll overlay later
-        <StartOfTurnOverlay
-          gameState={gameState}
-          isActivePlayer={isActivePlayer}
-          mode="rollingDice"
-        />
-      );
+      return <DiceRollOverlay gameState={gameState} />;
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
