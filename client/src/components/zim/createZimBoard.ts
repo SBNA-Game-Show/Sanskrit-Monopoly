@@ -225,9 +225,8 @@ function drawDiceLayer(diceLayer: zim.Container, diceValue: number | null | unde
   if (diceValue != null) {
     new zim.Pic({
       file: getDiceFaceUrl(diceValue),
-      width: DICE_RESULT.size - 16,
-      height: DICE_RESULT.size - 16,
-    }).center(box);
+    }).siz(DICE_RESULT.size - 16)
+      .center(box);
   } else {
     new zim.Label({
       text: "—",
@@ -530,9 +529,8 @@ function runDiceRollAnimation(
     currentPic?.removeFrom();
     currentPic = new zim.Pic({
       file: getDiceFaceUrl(faceValue),
-      width: DICE_ANIM.size,
-      height: DICE_ANIM.size,
-    }).center(animBox);
+    }).siz(DICE_ANIM.size)
+      .center(animBox);
     stage.update();
   };
 
