@@ -16,11 +16,17 @@ interface PopQuizActivity {
   correctAnswer: string;  // correct answer
 }
 
+interface MonopolyTile {
+  id: string;
+  name: string;
+  type: "reward" | "penalty" | "jail" | "parking" | "community";
+  points: string; // Kept as a string format matching your database panel blueprint
+}
+
 interface GameEdition {
   id: string;
   name: string;
-  rewards: Record<string, number>;    // Maps unique tile name to point rewards
-  penalties: Record<string, number>;  // Maps unique tile name to point penalties
+  tiles: MonopolyTile[];              // Array of tile objects with type and point details
   activities?: PopQuizActivity[]; // Pop quiz array
 }
 
@@ -37,6 +43,7 @@ function Admin() {
   const [targetTileName, setTargetTileName] = useState("");
   const [tileType, setTileType] = useState<"reward" | "penalty"| "jail" | "parking" | "community" >("reward");
   const [tileValue, setTileValue] = useState<number>(0);
+  const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
 
   // Inline Name Renaming Buffers
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
@@ -56,6 +63,7 @@ function Admin() {
   }, [selectedEdition]);
 
   // 2. OPTIMIZED READ COUNTS IN FIRESTORE DATABASE
+  // 2. OPTIMIZED READ COUNTS IN FIRESTORE DATABASE
   useEffect(() => {
     const editionsCollectionRef = collection(db, "game_editions");
     const unsubscribe = onSnapshot(editionsCollectionRef, (snapshot) => {
@@ -64,13 +72,13 @@ function Admin() {
         return {
           id: doc.id,
           name: data.name || "Unnamed Edition",
-          rewards: data.rewards || {},
-          penalties: data.penalties || {},
+          tiles: data.tiles || [], // 💡 FIXED: Pulls the 40-tile layout array cleanly from Firestore
           activities: data.activities || []
         } as GameEdition;
       });
       
       setEditions(liveEditions);
+      
       // Sync the active configuration screen efficiently using memory lookups
       if (selectedIdRef.current) {
         const currentMatch = liveEditions.find(e => e.id === selectedIdRef.current);
@@ -93,11 +101,29 @@ function Admin() {
     e.preventDefault();
     if (!newEditionName.trim()) return;
 
+    // 💡 GENERATE 40 BASELINE PLACEHOLDER TILES (INDEXES 0 TO 39)
+    const baselineTiles: MonopolyTile[] = Array.from({ length: 40 }, (_, index) => {
+      // Custom generic Monopoly space naming patterns based on index values
+      let spaceName = `Tile ${index + 1}`;
+      let spaceType: MonopolyTile["type"] = "reward";
+      
+      if (index === 0) { spaceName = "आरम्भः (Go)"; spaceType = "reward"; }
+      else if (index === 10) { spaceName = "कारागारः (Jail)"; spaceType = "jail"; }
+      else if (index === 20) { spaceName = "विश्रामस्थलम् (Parking)"; spaceType = "parking"; }
+
+      return {
+        id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, // System-friendly runtime code ID string
+        name: spaceName,
+        type: spaceType,
+        points: "0"
+      };
+    });
+
     try {
       await addDoc(collection(db, "game_editions"), {
         name: newEditionName.trim(),
-        rewards: {},
-        penalties: {}
+        tiles: baselineTiles, // 💡 Seeds the full 40-item layout structure at once
+        activities: []
       });
       setNewEditionName("");
       setView("dashboard");
@@ -105,6 +131,7 @@ function Admin() {
       alert("Firestore Write Failed: " + err);
     }
   };
+
   // Updates the Edition Name in the cloud
   const handleUpdateEditionName = async () => {
     if (!selectedEdition || !editNameValue.trim()) return;
@@ -114,62 +141,49 @@ function Admin() {
       await updateDoc(editionDocRef, {
         name: editNameValue.trim()
       });
+      
+      // ✅ Soft update our local state so the screen reflects the new title instantly
+      setSelectedEdition({
+        ...selectedEdition,
+        name: editNameValue.trim()
+      });
+      
       setIsRenaming(false);
     } catch (err) {
       alert("Failed to update edition name: " + err);
     }
   };
 
-  const handleSaveTileRules = async () => {
-    if (!selectedEdition || !targetTileName.trim()) return;
+  const handleSaveTileRules = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevents page reload on form submit
+    
+    // Safety check: ensure we actually have an active tile loaded into the editor
+    if (!selectedEdition || !selectedEdition.tiles || editingTileIndex === null) return;
 
-    const tileKey = targetTileName.trim();
-    const updatedRewards = { ...selectedEdition.rewards };
-    const updatedPenalties = { ...selectedEdition.penalties };
+    // 1. Create a safe copy of the 40-tile layout array
+    const updatedTiles = [...selectedEdition.tiles];
 
+    // 2. Update the properties at our selected index position
+    updatedTiles[editingTileIndex] = {
+      id: updatedTiles[editingTileIndex].id, // Keeps the original stable random ID intact
+      name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
+      type: tileType,
+      points: tileType === "reward" || tileType === "penalty" ? String(tileValue) : "0"
+    };
 
-    if (tileType === "reward") {
-      updatedRewards[tileKey] = Number(tileValue);
-      delete updatedPenalties[tileKey]; 
-    } else if (tileType === "penalty"){
-      updatedPenalties[tileKey] = Number(tileValue);
-      delete updatedRewards[tileKey]; 
-    } else {
-        const typeMappingCodes = { jail: -1, parking: -2, community: -3 };
-        updatedPenalties[tileKey] = typeMappingCodes[tileType];
-        delete updatedRewards[tileKey];
-    }
     try {
       const editionDocRef = doc(db, "game_editions", selectedEdition.id);
       await updateDoc(editionDocRef, {
-        rewards: updatedRewards,
-        penalties: updatedPenalties
+        tiles: updatedTiles // Commits entire board state in a single optimized write package
       });
 
+      // 3. Clear all input states and close the editing panel on success
       setTargetTileName("");
       setTileValue(0);
+      setEditingTileIndex(null); 
+      alert("Changes successfully committed to Firestore!");
     } catch (err) {
       alert("Firestore Update Failed: " + err);
-    }
-  };
-
-  const handleRemoveTileRule = async (tileKeyToRemove: string) => {
-    if (!selectedEdition) return;
-
-    const updatedRewards = { ...selectedEdition.rewards };
-    const updatedPenalties = { ...selectedEdition.penalties };
-    
-    delete updatedRewards[tileKeyToRemove];
-    delete updatedPenalties[tileKeyToRemove];
-
-    try {
-      const editionDocRef = doc(db, "game_editions", selectedEdition.id);
-      await updateDoc(editionDocRef, {
-        rewards: updatedRewards,
-        penalties: updatedPenalties
-      });
-    } catch (err) {
-      alert("Firestore Deletion Failed: " + err);
     }
   };
 
@@ -280,10 +294,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   <div className="p-8 text-center text-sm text-gray-400 font-medium">No cloud configurations detected.</div>
                 ) : (
                   editions.map((item) => {
-                    const totalRulesCount = new Set([
-                      ...Object.keys(item.rewards || {}),
-                      ...Object.keys(item.penalties || {})
-                    ]).size;
+                    const totalRulesCount = (item.tiles || []).length;
 
                     return (
                       <div key={item.id} className="grid grid-cols-12 px-4 py-4 items-center text-sm text-slate-700 font-semibold hover:bg-orange-50/30 transition-colors">
@@ -361,12 +372,11 @@ const handleOptionChangeLocally = (index: number, val: string) => {
 
         {/* VIEW 3: TILE PARAMETERS MAP VIEW */}
         {currentView === "edit" && selectedEdition && (
-          <div className="max-w-4xl mx-auto w-full space-y-4">
+          <div className="max-w-5xl mx-auto w-full space-y-4">
             
-            {/* Header Box Module */}
+            {/* Header Box Module with Inline Renaming functionality */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex justify-between items-center">
               <div>
-                {/* REQUIREMENT 1 INTERFACE: Inline Edition Name Editor Toggle */}
                 {isRenaming ? (
                   <div className="flex items-center gap-2 bg-[#FFF5E4] p-1.5 rounded-xl border border-orange-300">
                     <input 
@@ -376,12 +386,14 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                       className="bg-white rounded-lg px-3 py-1 text-sm font-bold text-slate-900 focus:outline-none border border-orange-200"
                     />
                     <button 
+                      type="button"
                       onClick={handleUpdateEditionName}
                       className="bg-[#5CB85C] hover:bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                     >
                       Save
                     </button>
                     <button 
+                      type="button"
                       onClick={() => { setIsRenaming(false); setEditNameValue(selectedEdition.name); }}
                       className="text-gray-500 text-xs font-bold px-2 hover:text-gray-700"
                     >
@@ -389,165 +401,197 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <h2 className="text-xl font-black text-slate-800 tracking-tight">{selectedEdition.name}</h2>
                     <button 
-                      onClick={() => setIsRenaming(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-bold underline bg-blue-50 px-2 py-0.5 rounded-md"
+                      type="button"
+                      onClick={() => { setIsRenaming(true); setEditNameValue(selectedEdition.name); }}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-bold underline bg-blue-50 px-2.5 py-1 rounded-lg transition-colors shadow-sm"
                     >
-                      Edit Name
+                      Rename Edition
                     </button>
                   </div>
                 )}
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mt-1">Edition, Tiles, Reward, Penalty setup board</span>
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mt-1">
+                  Edition, Tiles, Reward, Penalty setup board
+                </span>
               </div>
               <button 
-                onClick={() => { setView("dashboard"); setSelectedEdition(null); setIsRenaming(false); }}
+                onClick={() => { setView("dashboard"); setSelectedEdition(null); setIsRenaming(false); setEditingTileIndex(null); }}
                 className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors"
               >
                 Back to Dashboard
               </button>
             </div>
-            
 
+            {/* GRID LAYER: COLUMNS INVERTED */}
             <div className="grid grid-cols-12 gap-5 items-start">
               
-              {/* Form Config Control Sidebar */}
-              <div className="col-span-5 bg-[#FFC288] rounded-2xl p-4 border border-orange-300 shadow-sm space-y-4">
-                <div>
-                  <span className="text-sm font-black text-slate-800 block">Configure Tile Rules</span>
-                  <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">Assign value types to specific tile titles</span>
-                </div>
-
-                <div className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Target Tile Title Name</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g., शब्द-परीक्षा" 
-                      value={targetTileName}
-                      onChange={(e) => setTargetTileName(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-medium text-slate-900 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
-                    <div className="grid grid-cols-2 gap-2 bg-[#FFF5E4] p-1 rounded-xl border border-orange-300">
-                      <select
-                        value={tileType}
-                        onChange={(e) => {
-                          setTileType(e.target.value as any);
-                          setTileValue(0); // Reset numeric fields when switching types
-                        }}
-                        className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-bold text-slate-800 focus:outline-none text-xs">
-                        <option value="reward">Reward</option>
-                        <option value="penalty">Penalty</option>
-                        <option value="jail">Go to Jail</option>
-                        <option value="parking">Free Parking</option>
-                        <option value="community">Community</option>
-                        // Can Add more option in drop down menu
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Point Modifier Absolute Magnitude</label>
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={tileValue}
-                      onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
-                      disabled={tileType !== "reward" && tileType !== "penalty"}
-                      className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-base"
-                    />
-                  </div>
-
-                  <button
-                    onClick={handleSaveTileRules}
-                    className="w-full bg-[#5CB85C] hover:bg-green-600 text-white font-bold p-3 rounded-xl transition-all shadow-sm transform active:scale-[0.98] text-sm"
-                  >
-                    Bind Configuration to Tile
-                  </button>
-                </div>
-              </div>
-
-              {/* Rules List  */}
+              {/* ✅ Left Column: Scrollable Tile Matrix List (Takes 7/12 width) */}
               <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 space-y-2 shadow-sm">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2 mb-2">
-                  Tile Rules Matrix
+                  Active Board Spaces Map (40 Tiles Total)
                 </h4>
-                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                  {Object.keys(selectedEdition.rewards || {}).length === 0 && Object.keys(selectedEdition.penalties || {}).length === 0 ? (
-                    <p className="text-xs text-gray-400 py-4 text-center">No custom parameters bound to this database matrix path yet.</p>
+                
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {!selectedEdition.tiles || selectedEdition.tiles.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-4 text-center">No structural indices detected.</p>
                   ) : (
-                    <>
-                      {/* Render Rewards sub-tree */}
-                      {Object.keys(selectedEdition.rewards || {}).map((tile) => (
-                        <div key={`rew-${tile}`} className="bg-white border border-orange-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 flex justify-between items-center shadow-sm">
-                          <div className="flex flex-col">
-                            <span className="text-base text-slate-900 font-bold">{tile}</span>
-                            <span className="text-xs font-bold mt-0.5 text-green-600 bg-green-50 px-2 py-0.5 rounded-md w-max">
-                              Reward Action: +{selectedEdition.rewards[tile]} Points / धनम्
+                    selectedEdition.tiles.map((tile, idx) => {
+                      let badgeColor = "text-red-600 bg-red-50 border-red-200";
+                      if (tile.type === "reward") badgeColor = "text-green-600 bg-green-50 border-green-200";
+                      else if (tile.type === "jail") badgeColor = "text-purple-600 bg-purple-50 border-purple-200";
+                      else if (tile.type === "parking") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
+                      else if (tile.type === "community") badgeColor = "text-amber-600 bg-amber-50 border-amber-200";
+
+                      const isCurrentlyEditingThis = editingTileIndex === idx;
+
+                      return (
+                        <div 
+                          key={tile.id || idx} 
+                          className={`border rounded-xl px-4 py-3 flex justify-between items-center shadow-sm transition-all ${
+                            isCurrentlyEditingThis 
+                              ? "bg-orange-50 border-orange-400 ring-2 ring-orange-200" 
+                              : "bg-white border-orange-100 hover:border-orange-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-xs font-bold text-slate-400 bg-slate-100 w-7 h-7 rounded-lg flex items-center justify-center border border-slate-200 shadow-inner">
+                              {idx}
                             </span>
+                            <div className="flex flex-col">
+                              <span className="text-base text-slate-900 font-extrabold tracking-tight">{tile.name}</span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>
+                                  {tile.type}
+                                </span>
+                                {(tile.type === "reward" || tile.type === "penalty") && (
+                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">
+                                    Magnitude: {tile.points} Points
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveTileRule(tile)}
-                            className="text-red-600 hover:text-red-800 font-bold text-sm px-3 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors focus:outline-none"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
 
-                      {/* Render Penalties sub-tree */}
-                      {Object.keys(selectedEdition.penalties || {}).map((tile) => {
-                        const points = selectedEdition.penalties[tile];
-                        const value = selectedEdition.penalties[tile];
-                        const isSpecialTile = value <=0;                   
-                        // Inverse Mapping Code Dictionary Lookups
-                        let tileLabelText = `Penalty Action: -${value} Points / धनम्`;
-                        let badgeColorClass = "text-red-500 bg-red-50 border-red-200";
-
-                        if (value === -1) {
-                          tileLabelText = "Go to Jail (कारागारः)";
-                          badgeColorClass = "text-purple-600 bg-purple-50 border-purple-200";
-                        } else if (value === -2) {
-                          tileLabelText = "Free Parking (विश्रामस्थलम्)";
-                          badgeColorClass = "text-blue-600 bg-blue-50 border-blue-200";
-                        } else if (value === -3) {
-                          tileLabelText = "Community Chest (सङ्घकोषः)";
-                          badgeColorClass = "text-amber-600 bg-amber-50 border-amber-200";
-                        } else if (value === 0) {
-                          tileLabelText = "Specialized Utility Event";
-                          badgeColorClass = "text-gray-600 bg-gray-50 border-gray-200";
-                        }
-
-                        return (
-                        <div key={`pen-${tile}`} className="bg-white border border-orange-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 flex justify-between items-center shadow-sm">
-                          <div className="flex flex-col">
-                            <span className="text-base text-slate-900 font-bold">{tile}</span>
-                            <span className={`text-xs font-bold mt-1 px-2 py-0.5 rounded-md border w-max ${badgeColorClass}`}>
-                              {tileLabelText}
+                          {idx === 0 ? (
+                            <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl border italic select-none">
+                              STARTING POINT
                             </span>
-                          </div>
-                          <button 
-                            type="button"
-                            onClick={() => handleRemoveTileRule(tile)}
-                            className="text-red-600 hover:text-red-800 font-bold text-sm px-3 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors focus:outline-none"
-                          >
-                            Remove
-                          </button>
+                          ) : (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setEditingTileIndex(idx);
+                                setTargetTileName(tile.name);
+                                setTileType(tile.type as any);
+                                setTileValue(Number(tile.points) || 0);
+                              }}
+                              className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${
+                                isCurrentlyEditingThis
+                                  ? "bg-orange-500 text-white cursor-default"
+                                  : "bg-[#5CB85C] hover:bg-green-600 text-white"
+                              }`}
+                            >
+                              {isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}
+                            </button>
+                          )}
                         </div>
                       );
-                      })}
-                    </>
+                    })
                   )}
                 </div>
               </div>
 
+              {/* ✅ Right Column: Sticky "Update Specific Space" Input Box (Takes 5/12 width) */}
+              <div className="col-span-5 bg-[#FFC288] rounded-2xl p-4 border border-orange-300 shadow-sm space-y-4 sticky top-4">
+                {editingTileIndex !== null ? (
+                  <form onSubmit={handleSaveTileRules} className="space-y-4 text-xs">
+                    <div>
+                      <span className="text-sm font-black text-slate-800 block">
+                        Update Space Index #{editingTileIndex}
+                      </span>
+                      <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">
+                        Modifying: "{selectedEdition.tiles[editingTileIndex]?.name}"
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">New Target Space Title Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g., cool street / शब्द-परीक्षा" 
+                        value={targetTileName}
+                        onChange={(e) => setTargetTileName(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-white border border-orange-300 font-medium text-slate-900 focus:outline-none"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
+                      <div className="bg-white p-1 rounded-xl border border-orange-300">
+                        <select
+                          value={tileType}
+                          onChange={(e) => {
+                            setTileType(e.target.value as any);
+                            setTileValue(0); 
+                          }}
+                          className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
+                        >
+                          <option value="reward">Reward</option>
+                          <option value="penalty">Penalty</option>
+                          <option value="jail">Go to Jail</option>
+                          <option value="parking">Free Parking</option>
+                          <option value="community">Community Chest</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Point Modifier Value</label>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={tileValue}
+                        onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
+                        disabled={tileType !== "reward" && tileType !== "penalty"}
+                        className={`w-full p-2.5 rounded-xl border font-bold focus:outline-none text-base transition-all ${
+                          tileType === "reward" || tileType === "penalty"
+                            ? "bg-white border-orange-300 text-slate-900 shadow-sm"
+                            : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed select-none"
+                        }`}
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-[#5CB85C] hover:bg-green-600 text-white font-bold p-2.5 rounded-xl transition-all shadow-sm text-center text-sm"
+                      >
+                        Apply Settings
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingTileIndex(null); setTargetTileName(""); setTileValue(0); }}
+                        className="bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="py-12 text-center space-y-2">
+                    <span className="text-sm font-black text-slate-700 block">No Active Tile Selected</span>
+                    <p className="text-xs text-orange-900 max-w-[200px] mx-auto leading-relaxed">
+                      Click the green <strong>"Edit Tile"</strong> button on any board space on the left to load its configuration.
+                    </p>
+                  </div>
+                )}
+              </div>
+
             </div>
+          
             {/* SECTION: POP QUIZ MCQ CREATION MODULE */}
             <div className="grid grid-cols-12 gap-5 items-start border-t-2 border-orange-200/40 pt-4 mt-6">
               
@@ -589,7 +633,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Designate Correct Answer</label>
+                    <label className="block font-bold text-slate-700 mb-1">Correct Answer</label>
                     <select
                       value={correctAnswerStr}
                       onChange={(e) => setCorrectAnswerStr(e.target.value)}
@@ -612,23 +656,23 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                 </form>
               </div>
 
-              {/* Right Panel List: Active Question Register */}
+              {/* ✅ FIXED UI INTERFACE BLOCK: Dynamically builds the quiz elements from state */}
               <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 shadow-sm space-y-3">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2">
                   Quiz MCQ Registers
                 </h4>
                 <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
                   {!selectedEdition.activities || selectedEdition.activities.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-6 text-center">No quiz questionnaires created under this edition yet.</p>
+                    <p className="text-xs text-gray-400 py-6 text-center">No quiz question created under this edition yet.</p>
                   ) : (
                     selectedEdition.activities.map((act, index) => (
-                      <div key={act.id} className="bg-white border border-blue-100 rounded-xl p-3 text-xs shadow-sm space-y-2 relative">
+                      <div key={act.id} className="bg-white border border-blue-100 rounded-xl p-3 text-xs shadow-sm space-y-2 relative animate-fade-in">
                         <div className="flex justify-between items-start pr-16">
                           <span className="font-bold text-sm text-slate-900">{index + 1}. {act.question}</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveActivityItem(act.id)}
-                            className="text-red-500 hover:text-red-700 font-bold text-[11px] absolute top-3 right-3 bg-red-50 px-2 py-0.5 rounded-md transition-colors"
+                            className="text-red-500 hover:text-red-700 font-bold text-[11px] absolute top-3 right-3 bg-red-50 px-2 py-0.5 rounded-md transition-colors focus:outline-none"
                           >
                             Delete
                           </button>
