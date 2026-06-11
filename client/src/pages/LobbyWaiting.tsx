@@ -26,11 +26,16 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
   const players = lobbyState.players ?? [];
   const isHost = host?.uid === uid;
 
+  // prevent from starting the game if no tokens are selected
+  const allPlayersHaveTokens =
+    players.length > 0 && players.every((player) => Boolean(player.token));
+
   const canStart =
     isHost &&
     selectedEdition !== null &&
     startingMoney !== null &&
-    players.length > 0; 
+    players.length > 0 && 
+    allPlayersHaveTokens; 
 
   // Fetch Editions from Firebase
   useEffect(() => {

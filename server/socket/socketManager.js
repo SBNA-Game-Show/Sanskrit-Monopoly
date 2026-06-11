@@ -179,39 +179,23 @@ export function setupSocketEvents(io) {
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
-      // 3000ms pause before activity or minigame
-      await sleep(3000);
+      await sleep(4500);
 
-      result = showQuiz(lobbyCode)
-      if (result.error) {
-        emitGameError(socket, result.error);
-        return;
-      }
-      // OR uncomment this out if you want to play the zim minigame
-      // result = showMiniGame(lobbyCode)
-      // if (result.error) {
-      //   emitGameError(socket, result.error);
-      //   return;
-      // }
+      result.lobby.gameStatus = "turnEnded";
       broadcastGameState(io, result.lobby);
 
-      // added portion to gaurd against pop quizzes and minigames
-      if (
-        result.lobby.gameStatus !== "popQuiz" &&
-        result.lobby.gameStatus !== "miniGame"
-      ) {
-        startNextTurn(result.lobby, io, broadcastGameState);
+      await sleep(1000);
+
+      // check tile that player landed on before advancing turn
+      if (result.lobby.status === "finished") {
+        return;
       }
 
-
-      //always run this LAST at the end of a turn
-
-      // close quiz after pop quiz timer haas passed
       if (result.lobby.gameStatus === "popQuiz") {
-        setTimeout(() => {
-          finishPopQuiz(result.lobby, io);
-        }, POP_QUIZ_DURATION_MS);
+        return;
+      }
 
+      if (result.lobby.gameStatus === "miniGame") {
         return;
       }
 
@@ -221,7 +205,8 @@ export function setupSocketEvents(io) {
     socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
-      if (!lobbyCode) {
+      // avoid crash if lobby is undefined
+      if (!lobby) {
         emitGameError(socket, "Lobby not found.");
         return;
       }
