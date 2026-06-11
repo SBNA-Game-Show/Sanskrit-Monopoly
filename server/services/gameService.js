@@ -172,6 +172,16 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     return { lobby, error: "Cannot start a game with no players" };
   }
 
+  // players must pick a token for game to proceed
+  const playersWithoutTokens = lobby.players.filter((player) => !player.token);
+
+  if (playersWithoutTokens.length > 0) {
+    return {
+      lobby,
+      error: "All players must select a token before starting the game",
+    };
+  }
+
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
