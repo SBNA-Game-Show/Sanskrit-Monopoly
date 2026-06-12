@@ -12,7 +12,7 @@ export function getLobby(lobbyCode) {
 }
 
 // helper function for quiz questions
-const POP_QUIZ_DURATION_MS = 30000;
+const POP_QUIZ_DURATION_MS = 15000;
 
 function getRandomQuizQuestion() {
   const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
@@ -31,6 +31,29 @@ function createActiveQuiz() {
     status: "answering",
     endsAt: Date.now() + POP_QUIZ_DURATION_MS,
   };
+}
+
+export function showQuiz(lobbyCode) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  lobby.gameStatus = "popQuiz";
+  lobby.activeQuiz = createActiveQuiz();
+  return { lobby, error: null };
+}
+
+export function showMiniGame(lobbyCode) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  lobby.gameStatus = "miniGame";
+  return { lobby, error: null };
 }
 
 // function to create lobby
@@ -179,7 +202,6 @@ export function rollDice(lobbyCode, uid) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  // read current player after checking lobby exists (avoids crash)
   const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
   if (lobby.status !== "playing") {
@@ -208,18 +230,7 @@ export function rollDice(lobbyCode, uid) {
   }
 
   lobby.lastRoll = diceRoll;
-  //lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
-
-  // TEMP: forced mini-game trigger for testing overlay + ZIM scene flow.
-  // Later it could depend on something like landedTile.type or something along those lines
-  //lobby.gameStatus = "miniGame"; //used to test rendering a Zim mini-game overlay
-
-  // quiz pop-up via hardcoded test
-  // lobby.gameStatus = "popQuiz";
-  // lobby.activeQuiz = createActiveQuiz();
-
-  lobby.gameStatus = "turnEnded";
-  lobby.activeQuiz = null;
+  lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
   if (passedStart) {
     lobby.status = "finished";
@@ -261,7 +272,7 @@ export function startNextTurn(lobby, io, broadcastGameState) {
       lobby.gameStatus = "idling";
       broadcastGameState(io, lobby);
     }, 2500);
-  }, 2000);
+  }, 3500);
 }
 
 export function kickPlayer(lobbyCode, uid) {

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNav } from "../components/TransitionOverlay";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useToast } from "../context/ToastContext";
@@ -66,7 +66,7 @@ const decorative_imgs = [
 
 function Home() {
   const [lobbyCode, setLobbyCode] = useState("");
-  const navigate = useNavigate();
+  const navigate = useNav();
   const { uid, username } = useAuth();
   const { showToast } = useToast();
 
@@ -74,7 +74,10 @@ function Home() {
 
   const createRoom = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/lobby-create", {
+      const SERVER_URL = import.meta.env.DEV
+        ? "http://localhost:3000"
+        : "https://sanskrit-monopoly.onrender.com";
+      const response = await fetch(`${SERVER_URL}/api/lobby-create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostUid: uid, hostUsername: username }),

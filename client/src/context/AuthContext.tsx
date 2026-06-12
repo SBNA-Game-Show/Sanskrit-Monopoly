@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"
 import { auth, db } from "../firebase"
@@ -13,7 +14,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export default function AuthProvider({ children }) {
+export default function AuthProvider({ children }: { children: ReactNode }) {
   const [uid, setUid] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);

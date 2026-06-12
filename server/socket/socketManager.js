@@ -1,9 +1,12 @@
+import { submitScoresToLeaderboard } from "../services/leaderboardService.js";
 import {
   getLobby,
   joinLobby,
   updatePlayerToken,
   startGame,
   rollDice,
+  showQuiz,
+  showMiniGame,
   forceSkipTurn,
   kickPlayer,
   disconnectPlayer,
@@ -12,7 +15,9 @@ import {
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
 
-const POP_QUIZ_DURATION_MS = 30000;
+const POP_QUIZ_DURATION_MS = 15000;
+
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 function emitGameError(socket, message) {
   socket.emit(GAME_EVENTS.GAME_ERROR, { message });
@@ -155,13 +160,13 @@ export function setupSocketEvents(io) {
       },
     );
 
-    socket.on(GAME_EVENTS.GAME_ROLL_DICE, ({ lobbyCode, uid }) => {
+    socket.on(GAME_EVENTS.GAME_ROLL_DICE, async ({ lobbyCode, uid }) => {
       if (!lobbyCode || !uid) {
         emitGameError(socket, "Missing roll dice data");
         return;
       }
 
-      const result = rollDice(lobbyCode, uid);
+      let result = rollDice(lobbyCode, uid);
       if (result.error) {
         emitGameError(socket, result.error);
         return;
@@ -173,9 +178,15 @@ export function setupSocketEvents(io) {
       // check tile that player landed on
       // and do stuff
       // like run the pop quiz minigame, update points, etc
-      //always run this LAST at the end of a turn
 
-      // removed forced mini-game and pop-quiz to implement real game loop
+      await sleep(4500);
+
+      result.lobby.gameStatus = "turnEnded";
+      broadcastGameState(io, result.lobby);
+
+      await sleep(1000);
+
+      // check tile that player landed on before advancing turn
       if (result.lobby.status === "finished") {
         return;
       }
@@ -233,7 +244,7 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
     });
 
-    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, ({ lobbyCode }) => {
+    socket.on(GAME_EVENTS.GAME_HOST_END_GAME, async ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
       if (!lobby || lobby.host.socketId !== socket.id) {
@@ -242,7 +253,45 @@ export function setupSocketEvents(io) {
       }
 
       lobby.status = "finished";
+      lobby.endTime = Date.now();
+
+      await submitScoresToLeaderboard(lobby);
+      
       broadcastGameState(io, lobby);
+    });
+
+    socket.on(GAME_EVENTS.GAME_HOST_RESTART_GAME, ({ lobbyCode }) => {
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby) {
+        emitGameError(socket, "Restart failed. Lobby not found.");
+        return;
+      }
+
+      if (lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can restart the game.");
+        return;
+      }
+
+      lobby.status = "playing";
+      lobby.gameStatus = "startOfTurn";
+      lobby.startTime = Date.now();
+      lobby.endTime = null;
+      lobby.currentPlayerIndex = 0;
+      lobby.lastRoll = null;
+      lobby.winnerUid = null;
+
+      lobby.players.forEach((player) => {
+        player.position = 0;
+        player.points = lobby.edition.startingPoints ?? 0;
+      });
+
+      broadcastGameState(io, lobby);
+
+      setTimeout(() => {
+        lobby.gameStatus = "idling";
+        broadcastGameState(io, lobby);
+      }, 2500);
     });
 
     socket.on("disconnect", () => {
