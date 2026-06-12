@@ -9,6 +9,7 @@ import {
   TOKEN_OFFSETS,
 } from "../../constants/zim/board";
 import type { TileCenter, BoardTileDefinition, ZimBoardController, ZimBoardState } from "../../types/zim/zimBoardTypes";
+import { TOKEN_IMAGE_BY_ID } from "../../constants/game/tokenOptions";
 
 function getTileCenter(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
@@ -302,26 +303,37 @@ function drawPlayers(
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
     const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+    const x = center.x + offset.dx;
+    const y = center.y + offset.dy;
+    const isCurrentTurn = player.uid === currentTurnUid;
+    const TOKEN_SIZE = 34; 
+    const TOKEN_SIZE_ACTIVE = 42; 
+    const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
 
-    const token = new zim.Circle(
-      player.uid === currentTurnUid ? 19 : 15,
-      PLAYER_COLORS[playerIndex] ?? "#000",
-      "#111",
-      3,
-    );
+    const tokenUrl =
+      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
 
-    token.x = center.x + offset.dx;
-    token.y = center.y + offset.dy;
-    token.addTo(board);
+    if (tokenUrl) {
+      new zim.Pic({ file: tokenUrl })
+        .siz(size)
+        .loc(x, y, board);
+    } else {
+      new zim.Circle(
+        isCurrentTurn ? 19 : 15,
+        PLAYER_COLORS[playerIndex] ?? "#000",
+        "#111",
+        3,
+      ).loc(x, y, board);
 
-    new zim.Label({
-      text: `${playerIndex + 1}`,
-      size: 13,
-      bold: true,
-      color: "#fff",
-      font: "Arial",
-      align: "center",
-    }).loc(token.x, token.y, board);
+      new zim.Label({
+        text: `${playerIndex + 1}`,
+        size: 13,
+        bold: true,
+        color: "#fff",
+        font: "Arial",
+        align: "center",
+      }).loc(x, y, board);
+    }
   });
 }
 
