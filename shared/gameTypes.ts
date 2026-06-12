@@ -6,6 +6,7 @@ export type GamePhase =
   | "startOfTurn"
   | "idling"
   | "rollingDice"
+  | "chance"
   | "tokenAdvancing"
   | "popQuiz"
   | "verseChallenge"
@@ -74,11 +75,19 @@ export type GameHost = {
   socketId: string | null;
 };
 
+export type ActiveCard = {
+  id: string;
+  title: string;
+  message: string;
+  points: number;
+};
+
 export type GameState = {
   lobbyCode: string;
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
+  activeCard: ActiveCard | null;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;

@@ -14,9 +14,35 @@ export function getLobby(lobbyCode) {
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
+const CHANCE_CARDS = [
+  {
+    id: "chance-bonus-100",
+    title: "Lucky Bonus",
+    message: "You found a hidden treasure. Gain 100 points.",
+    points: 100,
+  },
+  {
+    id: "chance-penalty-50",
+    title: "Small Penalty",
+    message: "You missed a Sanskrit challenge. Lose 50 points.",
+    points: -50,
+  },
+  {
+    id: "chance-good-karma",
+    title: "Good Karma",
+    message: "You helped another player. Gain 75 points.",
+    points: 75,
+  },
+];
+
 function getRandomQuizQuestion() {
   const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
   return QUIZ_QUESTIONS[index];
+}
+
+function getRandomChanceCard() {
+  const index = Math.floor(Math.random() * CHANCE_CARDS.length);
+  return CHANCE_CARDS[index];
 }
 
 function createActiveQuiz() {
@@ -65,6 +91,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
+    activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -185,6 +212,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
+  lobby.activeCard = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -228,8 +256,17 @@ export function rollDice(lobbyCode, uid) {
   if (typeof landedTile?.points === "number") {
     currentPlayer.points += landedTile.points;
   }
-
   lobby.lastRoll = diceRoll;
+
+  const chanceCard = getRandomChanceCard();
+
+  currentPlayer.points += chanceCard.points;
+
+  lobby.activeCard = chanceCard;
+  lobby.gameStatus = "chance";
+
+  return { lobby, error: null };
+
   lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
   if (passedStart) {

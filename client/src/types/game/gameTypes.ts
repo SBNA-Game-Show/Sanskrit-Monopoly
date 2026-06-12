@@ -8,5 +8,6 @@ export type {
   GameTileType,
   PlayerState,
   ActiveQuiz, // uh oh
+  ActiveCard,
   QuizOption, // im in truble
 } from "../../../../shared/gameTypes";
