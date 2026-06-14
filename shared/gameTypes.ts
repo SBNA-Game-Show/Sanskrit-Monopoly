@@ -11,7 +11,9 @@ export type GamePhase =
   | "verseChallenge"
   | "penaltyActivity"
   | "miniGame"
-  | "turnEnded";
+  | "turnEnded"
+  | "communityChest";
+
 
 export type GameTileType =
   | "start"
@@ -56,6 +58,13 @@ export type ActiveQuiz = {
   endsAt: number;
 };
 
+export type ActiveCard = {
+  id: string;
+  title: string;
+  message: string;
+  points: number;
+};
+
 export type PlayerState = {
   uid: string;
   username: string;
@@ -79,6 +88,7 @@ export type GameState = {
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
+  activeCard: ActiveCard | null;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;

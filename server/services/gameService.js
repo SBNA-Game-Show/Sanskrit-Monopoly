@@ -14,9 +14,34 @@ export function getLobby(lobbyCode) {
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
+const COMMUNITY_CHEST_CARDS = [
+  {
+    id: "chest-wisdom-100",
+    title: "Wisdom Reward",
+    message: "You shared knowledge with others. Gain 100 points.",
+    points: 100,
+  },
+  {
+    id: "chest-donation-50",
+    title: "Temple Donation",
+    message: "You donated to the temple. Lose 50 points.",
+    points: -50,
+  },
+  {
+    id: "chest-blessing-75",
+    title: "Blessing Received",
+    message: "You received a blessing. Gain 75 points.",
+    points: 75,
+  },
+];
+
 function getRandomQuizQuestion() {
   const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
   return QUIZ_QUESTIONS[index];
+}
+function getRandomCommunityChestCard() {
+  const index = Math.floor(Math.random() * COMMUNITY_CHEST_CARDS.length);
+  return COMMUNITY_CHEST_CARDS[index];
 }
 
 function createActiveQuiz() {
@@ -65,6 +90,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
+    activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -185,6 +211,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
+  lobby.activeCard = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
 
@@ -230,7 +257,15 @@ export function rollDice(lobbyCode, uid) {
   }
 
   lobby.lastRoll = diceRoll;
-  lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
+  //lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
+  const communityChestCard = getRandomCommunityChestCard();
+
+  currentPlayer.points += communityChestCard.points;
+
+  lobby.activeCard = communityChestCard;
+  lobby.gameStatus = "communityChest";
+
+  return { lobby, error: null };
 
   if (passedStart) {
     lobby.status = "finished";
