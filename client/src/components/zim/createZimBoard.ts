@@ -316,14 +316,15 @@ function drawPlayers(
     if (tokenUrl) {
       new zim.Pic({ file: tokenUrl })
         .siz(size)
-        .loc(x, y, board);
+        .loc(x - size / 2, y - size / 2, board);
     } else {
+      const radius = isCurrentTurn ? 19 : 15;
       new zim.Circle(
-        isCurrentTurn ? 19 : 15,
+        radius,
         PLAYER_COLORS[playerIndex] ?? "#000",
         "#111",
         3,
-      ).loc(x, y, board);
+      ).loc(x - radius, y - radius, board);
 
       new zim.Label({
         text: `${playerIndex + 1}`,
@@ -332,7 +333,7 @@ function drawPlayers(
         color: "#fff",
         font: "Arial",
         align: "center",
-      }).loc(x, y, board);
+      }).loc(x - 7, y - 8, board);
     }
   });
 }
