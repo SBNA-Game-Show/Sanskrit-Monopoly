@@ -46,12 +46,56 @@ export const BOARD_TILES = [
   { name: "संस्कृतम्", type: "property", color: "#214f7a" },
 ];
 
+const TILE_ECONOMY = {
+  1: { group: "brown", price: 60, rent: 2 },
+  3: { group: "brown", price: 60, rent: 4 },
+
+  4: { amount: 200 },
+
+  5: { group: "railroad", price: 200 },
+  6: { group: "lightBlue", price: 100, rent: 6 },
+  8: { group: "lightBlue", price: 100, rent: 6 },
+  9: { group: "lightBlue", price: 120, rent: 8 },
+
+  11: { group: "pink", price: 140, rent: 10 },
+  12: { group: "utility", price: 150 },
+  13: { group: "pink", price: 140, rent: 10 },
+  14: { group: "pink", price: 160, rent: 12 },
+
+  15: { group: "railroad", price: 200 },
+  16: { group: "orange", price: 180, rent: 14 },
+  18: { group: "orange", price: 180, rent: 14 },
+  19: { group: "orange", price: 200, rent: 16 },
+
+  21: { group: "red", price: 220, rent: 18 },
+  23: { group: "red", price: 220, rent: 18 },
+  24: { group: "red", price: 240, rent: 20 },
+
+  25: { group: "railroad", price: 200 },
+  26: { group: "yellow", price: 260, rent: 22 },
+  27: { group: "yellow", price: 260, rent: 22 },
+  28: { group: "utility", price: 150 },
+  29: { group: "yellow", price: 280, rent: 24 },
+
+  31: { group: "green", price: 300, rent: 26 },
+  32: { group: "green", price: 300, rent: 26 },
+  34: { group: "green", price: 320, rent: 28 },
+
+  35: { group: "railroad", price: 200 },
+  37: { group: "darkBlue", price: 350, rent: 35 },
+
+  38: { amount: 100 },
+
+  39: { group: "darkBlue", price: 400, rent: 50 },
+};
+
 export const DEFAULT_EDITION = {
   id: "default",
   name: "Default Sanskrit Monopoly",
-  startingPoints: 0,
+  startingPoints: 1500,
   tiles: BOARD_TILES.map((tile, index) => ({
     id: `tile-${index}`,
     ...tile,
+    ...(TILE_ECONOMY[index] ?? {}),
   })),
 };
