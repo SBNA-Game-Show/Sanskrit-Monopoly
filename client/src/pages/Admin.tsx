@@ -19,7 +19,7 @@ interface PopQuizActivity {
 interface MonopolyTile {
   id: string;
   name: string;
-  type: "reward" | "penalty" | "jail" | "parking" | "community";
+  type: "property" | "tax" | "jail" | "chance" | "community" | "minigame" | "quiz";
   points: string; // Kept as a string format matching your database panel blueprint
 }
 
@@ -41,7 +41,7 @@ function Admin() {
   // Form states
   const [newEditionName, setNewEditionName] = useState("");
   const [targetTileName, setTargetTileName] = useState("");
-  const [tileType, setTileType] = useState<"reward" | "penalty"| "jail" | "parking" | "community" >("reward");
+  const [tileType, setTileType] = useState<"property" | "tax" | "jail" | "chance" | "community" | "minigame" | "quiz">("property");
   const [tileValue, setTileValue] = useState<number>(0);
   const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
 
@@ -62,7 +62,6 @@ function Admin() {
     selectedIdRef.current = selectedEdition ? selectedEdition.id : null;
   }, [selectedEdition]);
 
-  // 2. OPTIMIZED READ COUNTS IN FIRESTORE DATABASE
   // 2. OPTIMIZED READ COUNTS IN FIRESTORE DATABASE
   useEffect(() => {
     const editionsCollectionRef = collection(db, "game_editions");
@@ -101,28 +100,24 @@ function Admin() {
     e.preventDefault();
     if (!newEditionName.trim()) return;
 
-    // 💡 GENERATE 40 BASELINE PLACEHOLDER TILES (INDEXES 0 TO 39)
+    // ✅ FIXED: Generates a neutral, clean 40-element layout with zero pre-assigned rules
     const baselineTiles: MonopolyTile[] = Array.from({ length: 40 }, (_, index) => {
-      // Custom generic Monopoly space naming patterns based on index values
-      let spaceName = `Tile ${index + 1}`;
-      let spaceType: MonopolyTile["type"] = "reward";
-      
-      if (index === 0) { spaceName = "आरम्भः (Go)"; spaceType = "reward"; }
-      else if (index === 10) { spaceName = "कारागारः (Jail)"; spaceType = "jail"; }
-      else if (index === 20) { spaceName = "विश्रामस्थलम् (Parking)"; spaceType = "parking"; }
+      // Sets the title strictly to "Tile " followed by its true visual index board number (e.g., Tile 1, Tile 2)
+      // Index 0 renders neutrally as "Tile 0" to maintain matching string patterns across the grid
+      const neutralSpaceName = `Tile ${index}`;
 
       return {
-        id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, // System-friendly runtime code ID string
-        name: spaceName,
-        type: spaceType,
-        points: "0"
+        id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
+        name: neutralSpaceName,
+        type: "property", // Safe base string fallback required by your type schema
+        points: "0"       // Flat baseline values
       };
     });
 
     try {
       await addDoc(collection(db, "game_editions"), {
         name: newEditionName.trim(),
-        tiles: baselineTiles, // 💡 Seeds the full 40-item layout structure at once
+        tiles: baselineTiles, 
         activities: []
       });
       setNewEditionName("");
@@ -168,7 +163,8 @@ function Admin() {
       id: updatedTiles[editingTileIndex].id, // Keeps the original stable random ID intact
       name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
       type: tileType,
-      points: tileType === "reward" || tileType === "penalty" ? String(tileValue) : "0"
+      // ✅ FIXED: Saves custom point values for Property Costs, Quiz stakes, or Minigames
+      points: tileType === "property" || tileType === "minigame" || tileType === "quiz" ? String(tileValue) : "0"
     };
 
     try {
@@ -430,7 +426,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
               {/* ✅ Left Column: Scrollable Tile Matrix List (Takes 7/12 width) */}
               <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 space-y-2 shadow-sm">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2 mb-2">
-                  Active Board Spaces Map (40 Tiles Total)
+                  Active Board Map (40 Tiles Total)
                 </h4>
                 
                 <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
@@ -438,11 +434,32 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                     <p className="text-xs text-gray-400 py-4 text-center">No structural indices detected.</p>
                   ) : (
                     selectedEdition.tiles.map((tile, idx) => {
-                      let badgeColor = "text-red-600 bg-red-50 border-red-200";
-                      if (tile.type === "reward") badgeColor = "text-green-600 bg-green-50 border-green-200";
-                      else if (tile.type === "jail") badgeColor = "text-purple-600 bg-purple-50 border-purple-200";
-                      else if (tile.type === "parking") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-                      else if (tile.type === "community") badgeColor = "text-amber-600 bg-amber-50 border-amber-200";
+                      // ✅ FIXED: Cleanly maps styling classes dynamically across all updated types
+                      let badgeColor = "text-gray-600 bg-gray-50 border-gray-200";
+                      let displayLabel = tile.type.toUpperCase();
+
+                      if (tile.type === "property") {
+                        badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
+                        // displayLabel = `Property • Cost: ${tile.points} pts`;
+                      } else if (tile.type === "quiz") {
+                        badgeColor = "text-green-600 bg-green-50 border-green-200";
+                        displayLabel = `Quiz • +/- ${tile.points} pts`;
+                      } else if (tile.type === "minigame") {
+                        badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                        displayLabel = `Minigame • +/- ${tile.points} pts`;
+                      } else if (tile.type === "tax") {
+                        badgeColor = "text-red-600 bg-red-50 border-red-200";
+                        displayLabel = "Tax • 200 pts";
+                      } else if (tile.type === "jail") {
+                        badgeColor = "text-purple-600 bg-purple-50 border-purple-200";
+                        displayLabel = "Jail";
+                      } else if (tile.type === "chance") {
+                        badgeColor = "text-indigo-600 bg-indigo-50 border-indigo-200";
+                        displayLabel = "Chance Card";
+                      } else if (tile.type === "community") {
+                        badgeColor = "text-amber-600 bg-amber-50 border-amber-200";
+                        displayLabel = "Community Chest";
+                      }
 
                       const isCurrentlyEditingThis = editingTileIndex === idx;
 
@@ -465,9 +482,9 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>
                                   {tile.type}
                                 </span>
-                                {(tile.type === "reward" || tile.type === "penalty") && (
+                                  {(tile.type === "property" || tile.type === "minigame" || tile.type === "quiz") && (
                                   <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">
-                                    Magnitude: {tile.points} Points
+                                    {tile.type === "property" ? `Cost: ${tile.points} Pts` : `Stakes: ${tile.points} Pts`}
                                   </span>
                                 )}
                               </div>
@@ -509,7 +526,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   <form onSubmit={handleSaveTileRules} className="space-y-4 text-xs">
                     <div>
                       <span className="text-sm font-black text-slate-800 block">
-                        Update Space Index #{editingTileIndex}
+                        Update Space for Tile #{editingTileIndex}
                       </span>
                       <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wide">
                         Modifying: "{selectedEdition.tiles[editingTileIndex]?.name}"
@@ -535,29 +552,35 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                           value={tileType}
                           onChange={(e) => {
                             setTileType(e.target.value as any);
-                            setTileValue(0); 
+                            setTileValue(0); // Safely resets value back to 0 on swap
                           }}
                           className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
                         >
-                          <option value="reward">Reward</option>
-                          <option value="penalty">Penalty</option>
-                          <option value="jail">Go to Jail</option>
-                          <option value="parking">Free Parking</option>
+                          <option value="property">Property</option>
+                          <option value="quiz">Quiz</option>
+                          <option value="minigame">Minigame</option>
+                          <option value="tax">Tax </option>
+                          <option value="jail">Jail</option>
+                          <option value="chance">Chance</option>
                           <option value="community">Community Chest</option>
                         </select>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Point Modifier Value</label>
+                      {/*Dynamic context label based on selection */}
+                      <label className="block font-bold text-slate-700 mb-1">
+                        {tileType === "property" ? "Property Cost / Price" : "Point Modifier Value (Gain/Loss)"}
+                      </label>
                       <input 
                         type="number" 
                         min="0"
                         value={tileValue}
                         onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
-                        disabled={tileType !== "reward" && tileType !== "penalty"}
+                        // UPDATED: Only unlocks inputs for  Minigame, and Quiz tiles
+                        disabled={tileType !== "minigame" && tileType !== "quiz"}
                         className={`w-full p-2.5 rounded-xl border font-bold focus:outline-none text-base transition-all ${
-                          tileType === "reward" || tileType === "penalty"
+                          tileType === "minigame" || tileType === "quiz"
                             ? "bg-white border-orange-300 text-slate-900 shadow-sm"
                             : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed select-none"
                         }`}
@@ -584,7 +607,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   <div className="py-12 text-center space-y-2">
                     <span className="text-sm font-black text-slate-700 block">No Active Tile Selected</span>
                     <p className="text-xs text-orange-900 max-w-[200px] mx-auto leading-relaxed">
-                      Click the green <strong>"Edit Tile"</strong> button on any board space on the left to load its configuration.
+                      Click the green <strong>"Edit Tile"</strong> button on any to load its configuration.
                     </p>
                   </div>
                 )}
@@ -599,7 +622,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
               <div className="col-span-5 bg-[#CBE6FF] border border-[#A4D2FF] rounded-2xl p-4 shadow-sm space-y-3">
                 <div>
                   <span className="text-sm font-black text-slate-800 block">Configure Pop Quiz Activities</span>
-                  <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">Build unassigned multiple-choice questions</span>
+                  <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">Multiple-choice questions</span>
                 </div>
 
                 <form onSubmit={handleAddPopQuizActivity} className="space-y-3 text-xs">
@@ -616,7 +639,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block font-bold text-slate-700">Configure Choices</label>
+                    <label className="block font-bold text-slate-700">Correct Answer</label>
                     {currentOptions.map((opt, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <span className="font-bold text-blue-700 w-4">{String.fromCharCode(97 + i)}.)</span>
@@ -677,11 +700,10 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                             Delete
                           </button>
                         </div>
-
                         <div className="grid grid-cols-2 gap-1.5 pl-4 text-slate-600 font-medium">
                           {act.options.map((opt, oIdx) => (
-                            <div 
-                              key={oIdx} 
+                            <div
+                              key={oIdx}
                               className={`p-1.5 rounded-lg border ${opt === act.correctAnswer ? "bg-green-50 border-green-300 text-green-800 font-bold" : "border-gray-100 bg-gray-50/50"}`}
                             >
                               {String.fromCharCode(97 + oIdx)}.) {opt} {opt === act.correctAnswer && "✓"}
@@ -693,12 +715,9 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                   )}
                 </div>
               </div>
-
             </div>
-          </div>
-          
+          </div>  
         )}
-
       </div>
     </main>
   );
