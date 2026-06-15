@@ -9,4 +9,6 @@ export type {
   PlayerState,
   ActiveQuiz, // uh oh
   QuizOption, // im in truble
+  PendingAction,
+  LastAction,
 } from "../../../../shared/gameTypes";
