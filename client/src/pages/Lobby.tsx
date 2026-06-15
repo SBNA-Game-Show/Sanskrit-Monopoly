@@ -41,7 +41,7 @@ export default function Lobby() {
       socket.off(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
     };
-  }, [authLoading, lobbyCode, uid, username]);
+  }, [authLoading]);
 
   // --- TRAFFIC CONTROLLER ROUTING ---
 
