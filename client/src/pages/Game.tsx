@@ -10,6 +10,13 @@ type GameProps = {
   gameState: GameState;
 };
 
+// mini-function that changes how the money is formatted
+// previously, when money went below 0, it would render ₩-106
+// this just makes it look -₩106 so it's more visually correct
+function formatMoney(amount: number) {
+  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
+}
+
 export default function Game({ gameState }: GameProps) {
   //for debugging (KEEP THIS)
   console.log(gameState);
@@ -35,6 +42,37 @@ export default function Game({ gameState }: GameProps) {
     socket.emit(GAME_EVENTS.GAME_ROLL_DICE, {
       lobbyCode: gameState.lobbyCode,
       uid,
+    });
+  };
+
+  // handler for buying properties
+  const handleBuyProperty = () => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_BUY_PROPERTY, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
+
+  // handler for declining properties
+  const handleDeclineProperty = () => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_DECLINE_PROPERTY, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
+
+  // handler for resolving bankruptcy
+  const handleResolveBankruptcy = (bankruptPlayerUid: string) => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY, {
+      lobbyCode: gameState.lobbyCode,
+      hostUid: uid,
+      bankruptPlayerUid,
     });
   };
 
@@ -68,17 +106,25 @@ export default function Game({ gameState }: GameProps) {
           <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
             Players
           </h2>
+          {gameState.lastAction && (
+            <div className="mb-5 rounded-2xl border-2 border-[#d9a441] bg-[#fff4dc] px-5 py-3 text-sm font-extrabold text-[#6b3f1d] shadow-md">
+              {gameState.lastAction.message}
+            </div>
+          )}
 
           <div className="space-y-5">
             {gameState.players.map((player, index) => {
-              const isCurrentTurn = player.uid === currentPlayer.uid;
+              const isCurrentTurn = player.uid === currentPlayer?.uid;
+
               return (
                 <div
                   key={player.uid}
                   className={`rounded-2xl border-[6px] p-4 shadow-md ${
-                    isCurrentTurn
-                      ? "border-[#6b3f1d] bg-[#ffd7a3]"
-                      : "border-[#ffa23b] bg-[#ffb45c]"
+                    player.isEliminated
+                      ? "border-[#7a5c42] bg-[#b89775] opacity-60 grayscale"
+                      : isCurrentTurn
+                        ? "border-[#6b3f1d] bg-[#ffd7a3]"
+                        : "border-[#ffa23b] bg-[#ffb45c]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -87,7 +133,33 @@ export default function Game({ gameState }: GameProps) {
                         Player {index + 1} — {player.username}
                       </p>
                       <p>Position: {player.position}</p>
-                      <p>Points: {player.points}</p>
+                      {/* Modified to use 'Money' for now. Will create edition-related logic later */}
+                      <p>Money: {formatMoney(player.money ?? 0)}</p>
+                      <p>Properties: {player.properties.length}</p>
+                      {player.needsBankruptcyResolution &&
+                        !player.isEliminated && (
+                          <p className="mt-1 text-xs font-extrabold text-red-700">
+                            Bankruptcy pending
+                          </p>
+                        )}
+                      {player.isEliminated && (
+                        <p className="mt-1 text-xs font-extrabold text-red-800">
+                          Eliminated
+                        </p>
+                      )}
+                      {/* TESTING PURPOSES: Show owned tile names per player */}
+                      Tile names:{" "}
+                      {player.properties.length > 0 && (
+                        <ul className="mt-2 space-y-1 text-xs font-semibold text-[#6b3f1d]">
+                          {player.properties.map((tileId) => {
+                            const tile = gameState.edition.tiles.find(
+                              (currentTile) => currentTile.id === tileId,
+                            );
+
+                            return <li key={tileId}>{tile?.name ?? tileId}</li>;
+                          })}
+                        </ul>
+                      )}
                     </div>
 
                     {player.token && TOKEN_IMAGE_BY_ID[player.token] ? (
@@ -103,16 +175,19 @@ export default function Game({ gameState }: GameProps) {
                     )}
                   </div>
 
-                  {isHost && (
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={() => handleKickPlayer(player.uid)}
-                        className="rounded-full bg-[#b33a3a] px-4 py-2 text-xs font-bold text-white shadow"
-                      >
-                        Kick
-                      </button>
-                    </div>
-                  )}
+                  {isHost &&
+                    gameState.status !== "finished" &&
+                    player.uid !== uid &&
+                    !player.isEliminated && (
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => handleKickPlayer(player.uid)}
+                          className="rounded-full bg-[#b33a3a] px-4 py-2 text-xs font-bold text-white shadow"
+                        >
+                          Kick
+                        </button>
+                      </div>
+                    )}
                 </div>
               );
             })}
@@ -124,7 +199,7 @@ export default function Game({ gameState }: GameProps) {
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
                 players={gameState.players}
-                currentTurnUid={currentPlayer.uid}
+                currentTurnUid={currentPlayer?.uid ?? null}
                 lastRoll={gameState.lastRoll}
               />
             </div>
@@ -133,6 +208,9 @@ export default function Game({ gameState }: GameProps) {
               gameState={gameState}
               isHost={gameState.host.uid === uid}
               onSubmitQuizAnswer={handleSubmitQuizAnswer}
+              onBuyProperty={handleBuyProperty}
+              onDeclineProperty={handleDeclineProperty}
+              onResolveBankruptcy={handleResolveBankruptcy}
             />
           </div>
         </section>
@@ -176,7 +254,10 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={currentPlayer.uid !== uid || gameState.gameStatus !== "idling"}
+                disabled={
+                  currentPlayer?.uid !== uid ||
+                  gameState.gameStatus !== "idling"
+                }
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
