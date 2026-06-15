@@ -475,7 +475,7 @@ export function rollDice(lobbyCode, uid) {
 
   // DEV ONLY: force near tax tiles for faster bankruptcy testing
   // REMOVE / COMMENT OUT before normal playtesting
-  currentPlayer.position = 3;
+  // currentPlayer.position = 3;
 
   if (lobby.status !== "playing") {
     return { lobby, error: "Game is not currently active" };
