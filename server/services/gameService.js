@@ -213,8 +213,7 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: "It is not your turn" };
   }
 
-  const diceRoll = 30; //I PUT THIS AS 30 FOR TESTING PURPOSES TO LAND ON JAIL. CHANGE BACK TO 1-6 WHEN DONE TESTING
-  // const diceRoll = Math.floor(Math.random() * 6) + 1;
+  const diceRoll = Math.floor(Math.random() * 6) + 1 //Change this to required index (30 to test Jail tile)
   const tileCount = lobby.edition.tiles.length;
 
   const previousPosition = currentPlayer.position;
