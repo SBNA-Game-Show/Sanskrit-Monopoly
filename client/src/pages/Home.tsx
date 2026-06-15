@@ -1,4 +1,4 @@
-import { useNav } from "../components/game/TransitionOverlay";
+import { useNav } from "../components/TransitionOverlay";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useToast } from "../context/ToastContext";

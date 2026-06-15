@@ -1,6 +1,6 @@
 import { socket } from "../socket";
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
-import { useNav } from "../components/game/TransitionOverlay";
+import { useNav } from "../components/TransitionOverlay";
 import "../styles/results.css";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 
