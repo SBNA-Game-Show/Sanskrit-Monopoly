@@ -26,53 +26,12 @@ export default function Game({ gameState }: GameProps) {
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
 
-  const handleSubmitQuizAnswer = (optionId: string) => {
-    if (!gameState.lobbyCode || !uid) return;
-
-    socket.emit(GAME_EVENTS.QUIZ_SUBMIT_ANSWER, {
-      lobbyCode: gameState.lobbyCode,
-      uid,
-      optionId,
-    });
-  };
-
   const handleRollDice = () => {
     if (!gameState.lobbyCode || !uid) return;
 
     socket.emit(GAME_EVENTS.GAME_ROLL_DICE, {
       lobbyCode: gameState.lobbyCode,
       uid,
-    });
-  };
-
-  // handler for buying properties
-  const handleBuyProperty = () => {
-    if (!gameState.lobbyCode || !uid) return;
-
-    socket.emit(GAME_EVENTS.GAME_BUY_PROPERTY, {
-      lobbyCode: gameState.lobbyCode,
-      uid,
-    });
-  };
-
-  // handler for declining properties
-  const handleDeclineProperty = () => {
-    if (!gameState.lobbyCode || !uid) return;
-
-    socket.emit(GAME_EVENTS.GAME_DECLINE_PROPERTY, {
-      lobbyCode: gameState.lobbyCode,
-      uid,
-    });
-  };
-
-  // handler for resolving bankruptcy
-  const handleResolveBankruptcy = (bankruptPlayerUid: string) => {
-    if (!gameState.lobbyCode || !uid) return;
-
-    socket.emit(GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY, {
-      lobbyCode: gameState.lobbyCode,
-      hostUid: uid,
-      bankruptPlayerUid,
     });
   };
 
@@ -201,11 +160,8 @@ export default function Game({ gameState }: GameProps) {
 
             <GameOverlayLayer
               gameState={gameState}
+              uid={uid}
               isHost={gameState.host.uid === uid}
-              onSubmitQuizAnswer={handleSubmitQuizAnswer}
-              onBuyProperty={handleBuyProperty}
-              onDeclineProperty={handleDeclineProperty}
-              onResolveBankruptcy={handleResolveBankruptcy}
             />
           </div>
         </section>
