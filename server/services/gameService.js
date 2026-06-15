@@ -129,10 +129,11 @@ function setBankruptcyActionIfNeeded(lobby, player) {
   }
 
   lobby.pendingAction = createBankruptcyAction(player);
-  lobby.lastAction = {
-    type: "bankruptcy",
-    message: `${player.username} is below ₩0 and needs bankruptcy resolution.`,
-  };
+  addLog(lobby.lobbyCode, {
+    uid: player.uid,
+    username: player.username,
+    message: "is below ₩0 and needs bankruptcy resolution.",
+  });
 
   return true;
 }
@@ -185,22 +186,22 @@ export function resolveLandingAction(lobby) {
 
     // charge tax if player is not currently bankrupt
     if (!wentBankrupt) {
-      lobby.lastAction = {
-        type: "payTax",
-        message: `${currentPlayer.username} paid ₩${taxAmount} tax on ${landedTile.name}.`,
-      };
+      addLog(lobby.lobbyCode, {
+        uid: currentPlayer.uid,
+        username: currentPlayer.username,
+        message: `paid ₩${taxAmount} tax on ${landedTile.name}.`,
+      });
     }
 
     return { lobby, error: null };
   }
 
   if (!isBuyableTile(landedTile)) {
-    if (!lobby.lastAction || lobby.lastAction.type !== "passStart") {
-      lobby.lastAction = {
-        type: "landedTile",
-        message: `${currentPlayer.username} landed on ${landedTile.name}.`,
-      };
-    }
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `landed on ${landedTile.name}.`,
+    });
 
     return { lobby, error: null };
   }
@@ -210,20 +211,22 @@ export function resolveLandingAction(lobby) {
   if (!owner) {
     lobby.pendingAction = createBuyPropertyAction(currentPlayer, landedTile);
 
-    lobby.lastAction = {
-      type: "buyProperty",
-      message: `${currentPlayer.username} can buy ${landedTile.name}.`,
-    };
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `can buy ${landedTile.name}.`,
+    });
 
     return { lobby, error: null };
   }
 
   // check if current player landed on their own property
   if (owner.uid === currentPlayer.uid) {
-    lobby.lastAction = {
-      type: "buyProperty",
-      message: `${currentPlayer.username} landed on their own property: ${landedTile.name}.`,
-    };
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `landed on their own property: ${landedTile.name}.`,
+    });
 
     return { lobby, error: null };
   }
@@ -243,10 +246,11 @@ export function resolveLandingAction(lobby) {
 
   // collect rent if player is not currently bankrupt
   if (!wentBankrupt) {
-    lobby.lastAction = {
-      type: "payRent",
-      message: `${currentPlayer.username} paid ₩${rentAmount} rent to ${owner.username} for ${landedTile.name}.`,
-    };
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `paid ₩${rentAmount} rent to ${owner.username} for ${landedTile.name}.`,
+    });
   }
 
   return { lobby, error: null };
@@ -289,7 +293,6 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
     pendingAction: null,
-    lastAction: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -417,7 +420,6 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.lastRoll = null;
   lobby.winnerUid = null;
   lobby.pendingAction = null;
-  lobby.lastAction = null;
   lobby.startTime = Date.now();
   lobby.endTime = null;
 
@@ -508,10 +510,11 @@ export function rollDice(lobbyCode, uid) {
     currentPlayer.money += PASS_START_BONUS;
     updateBankruptcyStatus(currentPlayer);
 
-    lobby.lastAction = {
-      type: "passStart",
-      message: `${currentPlayer.username} collected ₩${PASS_START_BONUS} for passing आरम्भः.`,
-    };
+    addLog(lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `collected ₩${PASS_START_BONUS} for passing आरम्भः.`,
+    });
   }
 
   return { lobby, error: null };
@@ -567,10 +570,11 @@ export function buyPendingProperty(lobbyCode, uid) {
   updateBankruptcyStatus(player);
 
   lobby.pendingAction = null;
-  lobby.lastAction = {
-    type: "buyProperty",
-    message: `${player.username} bought ${tile.name} for ₩${price}.`,
-  };
+  addLog(lobby.lobbyCode, {
+    uid: player.uid,
+    username: player.username,
+    message: `bought ${tile.name} for ₩${price}.`,
+  });
   lobby.gameStatus = "turnEnded";
 
   return { lobby, error: null };
@@ -597,10 +601,13 @@ export function declinePendingProperty(lobbyCode, uid) {
   }
 
   lobby.pendingAction = null;
-  lobby.lastAction = {
-    type: "declineProperty",
-    message: `${lobby.players.find((player) => player.uid === uid)?.username ?? "The player"} declined to buy ${action.tileName}.`,
-  };
+  const decliningPlayer = lobby.players.find((player) => player.uid === uid);
+
+  addLog(lobby.lobbyCode, {
+    uid,
+    username: decliningPlayer?.username ?? "The player",
+    message: `declined to buy ${action.tileName}.`,
+  });
   lobby.gameStatus = "turnEnded";
 
   return { lobby, error: null };
@@ -671,10 +678,11 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     lobby.currentPlayerIndex = 0;
   }
 
-  lobby.lastAction = {
-    type: "bankruptcy",
-    message: `${bankruptPlayer.username} was eliminated after bankruptcy.`,
-  };
+  addLog(lobby.lobbyCode, {
+    uid: bankruptPlayer.uid,
+    username: bankruptPlayer.username,
+    message: "was eliminated after bankruptcy.",
+  });
 
   // check if only one active player is left
   // end game and declare player as winner
@@ -688,10 +696,11 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     lobby.winnerUid = winner.uid;
     lobby.endTime = Date.now();
 
-    lobby.lastAction = {
-      type: "bankruptcy",
-      message: `${bankruptPlayer.username} was eliminated. ${winner.username} wins.`,
-    };
+    addLog(lobby.lobbyCode, {
+      uid: winner.uid,
+      username: winner.username,
+      message: `wins after ${bankruptPlayer.username} was eliminated.`,
+    });
 
     return { lobby, error: null };
   }

@@ -1,5 +1,6 @@
 import { submitScoresToLeaderboard } from "../services/leaderboardService.js";
 import {
+  addLog,
   getLobby,
   joinLobby,
   updatePlayerToken,
@@ -355,13 +356,14 @@ export function setupSocketEvents(io) {
       lobby.winnerUid = null;
       lobby.endTime = Date.now();
 
-      lobby.lastAction = {
-        type: "landedTile",
-        message: "The host ended the game.",
-      };
+      addLog(lobbyCode, {
+        uid: lobby.host.uid,
+        username: lobby.host.username,
+        message: "ended the game.",
+      });
 
-      // removed this for standard monopoly edition
-      // host ending the game means that there is no winner
+      // temporarily commented out
+      // may submit incorrect scores (points-based instead of money-based)
       // await submitScoresToLeaderboard(lobby);
 
       broadcastGameState(io, lobby);
@@ -389,7 +391,6 @@ export function setupSocketEvents(io) {
       lobby.winnerUid = null;
 
       lobby.pendingAction = null;
-      lobby.lastAction = null;
 
       lobby.players.forEach((player) => {
         player.position = 0;
@@ -398,6 +399,12 @@ export function setupSocketEvents(io) {
         player.properties = [];
         player.isEliminated = false;
         player.needsBankruptcyResolution = false;
+      });
+
+      addLog(lobbyCode, {
+        uid: lobby.players[lobby.currentPlayerIndex].uid,
+        username: lobby.players[lobby.currentPlayerIndex].username,
+        message: "started their turn.",
       });
 
       broadcastGameState(io, lobby);
