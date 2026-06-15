@@ -14,6 +14,27 @@ export function getLobby(lobbyCode) {
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
+const CHANCE_CARDS = [
+  {
+    id: "chance-bonus-100",
+    title: "Lucky Bonus",
+    message: "You found a hidden treasure. Gain 100 points.",
+    points: 100,
+  },
+  {
+    id: "chance-penalty-50",
+    title: "Small Penalty",
+    message: "You missed a Sanskrit challenge. Lose 50 points.",
+    points: -50,
+  },
+  {
+    id: "chance-good-karma",
+    title: "Good Karma",
+    message: "You helped another player. Gain 75 points.",
+    points: 75,
+  },
+];
+
 const COMMUNITY_CHEST_CARDS = [
   {
     id: "chest-wisdom-100",
@@ -38,6 +59,10 @@ const COMMUNITY_CHEST_CARDS = [
 function getRandomQuizQuestion() {
   const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
   return QUIZ_QUESTIONS[index];
+}
+function getRandomChanceCard() {
+  const index = Math.floor(Math.random() * CHANCE_CARDS.length);
+  return CHANCE_CARDS[index];
 }
 function getRandomCommunityChestCard() {
   const index = Math.floor(Math.random() * COMMUNITY_CHEST_CARDS.length);
@@ -258,6 +283,19 @@ export function rollDice(lobbyCode, uid) {
 
   lobby.lastRoll = diceRoll;
   //lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
+  const shouldShowChance = diceRoll <= 3;
+
+  if (shouldShowChance) {
+    const chanceCard = getRandomChanceCard();
+
+    currentPlayer.points += chanceCard.points;
+
+    lobby.activeCard = chanceCard;
+    lobby.gameStatus = "chance";
+
+    return { lobby, error: null };
+  }
+
   const communityChestCard = getRandomCommunityChestCard();
 
   currentPlayer.points += communityChestCard.points;
@@ -326,8 +364,6 @@ export function kickPlayer(lobbyCode, uid) {
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
   }
-
-  return { lobby, error: null };
 }
 
 export function disconnectPlayer(socketId) {
