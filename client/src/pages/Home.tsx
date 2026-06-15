@@ -265,7 +265,7 @@ function Home() {
             />
           </div>
         ))}
-      </div>{" "}
+      </div>
       {/* Middle Container */}
       {/* Buttons */}
       <div className="z-10 flex flex-col items-center justify-center space-y-6 max-w-xl w-full px-4 flex-grow mx-auto">
@@ -295,7 +295,7 @@ function Home() {
               className="w-full h-full bg-transparent text-center text-2xl text-orange-900 tracking-widest font-jersey font-normal outline-none placeholder-orange-300 border-none px-2 uppercase flex items-center justify-center"
             />
           </div>
-        </div>{" "}
+        </div>
         {/* Top Row */}
         {/* Enter Lobby Btn*/}
         <div className="w-full flex justify-center">
@@ -315,7 +315,7 @@ function Home() {
           </button>
         </div>
         {/* Enter Lobby Btn */}
-      </div>{" "}
+      </div>
       {/* Buttons*/}
       {/* Footer */}
       <div className="w-full bg-[#FFC17E] h-20 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)]"></div>
