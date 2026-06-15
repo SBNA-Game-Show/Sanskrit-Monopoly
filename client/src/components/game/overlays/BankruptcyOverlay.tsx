@@ -1,20 +1,32 @@
 import type { GameState } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
+import { socket } from "../../../socket";
+import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 
 type BankruptcyOverlayProps = {
   gameState: GameState;
   isHost: boolean;
-  onResolveBankruptcy: (bankruptPlayerUid: string) => void;
+  uid: string | null;
 };
 
 export function BankruptcyOverlay({
   gameState,
   isHost,
-  onResolveBankruptcy,
+  uid,
 }: BankruptcyOverlayProps) {
   const action = gameState.pendingAction;
 
   if (!action || action.type !== "bankruptcy") return null;
+
+  const handleResolveBankruptcy = (bankruptPlayerUid: string) => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY, {
+      lobbyCode: gameState.lobbyCode,
+      hostUid: uid,
+      bankruptPlayerUid,
+    });
+  };
 
   return (
     <GameOverlayShell>
@@ -39,7 +51,7 @@ export function BankruptcyOverlay({
       {isHost ? (
         <button
           type="button"
-          onClick={() => onResolveBankruptcy(action.playerUid)}
+          onClick={() => handleResolveBankruptcy(action.playerUid)}
           className="mt-7 rounded-full bg-[#b33a3a] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#d9534f]"
         >
           Eliminate Player

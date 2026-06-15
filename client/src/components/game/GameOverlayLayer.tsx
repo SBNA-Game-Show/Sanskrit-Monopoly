@@ -11,11 +11,8 @@ import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  uid: string | null;
   isHost: boolean;
-  onSubmitQuizAnswer: (optionId: string) => void;
-  onBuyProperty: () => void;
-  onDeclineProperty: () => void;
-  onResolveBankruptcy: (bankruptPlayerUid: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -33,13 +30,8 @@ function getCurrentPlayer(gameState: GameState) {
 export function GameOverlayLayer({
   gameState,
   isHost,
-  onSubmitQuizAnswer,
-  onBuyProperty,
-  onDeclineProperty,
-  onResolveBankruptcy,
+  uid,
 }: GameOverlayLayerProps) {
-  const { uid } = useAuth();
-
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
 
@@ -50,11 +42,7 @@ export function GameOverlayLayer({
   // check if pending action is currently "bankruptcy"
   if (gameState.pendingAction?.type === "bankruptcy") {
     return (
-      <BankruptcyOverlay
-        gameState={gameState}
-        isHost={isHost}
-        onResolveBankruptcy={onResolveBankruptcy}
-      />
+      <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
     );
   }
 
@@ -64,8 +52,7 @@ export function GameOverlayLayer({
       <BuyPropertyOverlay
         gameState={gameState}
         isActivePlayer={gameState.pendingAction.playerUid === uid}
-        onBuyProperty={onBuyProperty}
-        onDeclineProperty={onDeclineProperty}
+        uid={uid}
       />
     );
   }
@@ -94,7 +81,8 @@ export function GameOverlayLayer({
             quiz={gameState.activeQuiz}
             players={gameState.players}
             isHost={isHost}
-            onSubmitAnswer={onSubmitQuizAnswer}
+            lobbyCode={gameState.lobbyCode}
+            uid={uid}
           />
         )
       );

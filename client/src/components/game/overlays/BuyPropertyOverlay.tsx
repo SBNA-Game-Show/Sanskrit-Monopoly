@@ -1,18 +1,18 @@
 import type { GameState } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
+import { socket } from "../../../socket";
+import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 
 type BuyPropertyOverlayProps = {
   gameState: GameState;
   isActivePlayer: boolean;
-  onBuyProperty: () => void;
-  onDeclineProperty: () => void;
+  uid: string | null;
 };
 
 export function BuyPropertyOverlay({
   gameState,
   isActivePlayer,
-  onBuyProperty,
-  onDeclineProperty,
+  uid,
 }: BuyPropertyOverlayProps) {
   const action = gameState.pendingAction;
 
@@ -21,6 +21,24 @@ export function BuyPropertyOverlay({
   const currentPlayer = gameState.players.find(
     (player) => player.uid === action.playerUid,
   );
+
+  const handleBuyProperty = () => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_BUY_PROPERTY, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
+
+  const handleDeclineProperty = () => {
+    if (!gameState.lobbyCode || !uid) return;
+
+    socket.emit(GAME_EVENTS.GAME_DECLINE_PROPERTY, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
 
   return (
     <GameOverlayShell>
@@ -54,7 +72,7 @@ export function BuyPropertyOverlay({
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <button
             type="button"
-            onClick={onBuyProperty}
+            onClick={handleBuyProperty}
             disabled={!action.canAfford}
             className="rounded-full bg-[#e84a15] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -63,7 +81,7 @@ export function BuyPropertyOverlay({
 
           <button
             type="button"
-            onClick={onDeclineProperty}
+            onClick={handleDeclineProperty}
             className="rounded-full bg-[#6b3f1d] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#8a5428]"
           >
             Decline
