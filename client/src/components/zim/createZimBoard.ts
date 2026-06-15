@@ -8,7 +8,12 @@ import {
   PLAYER_COLORS,
   TOKEN_OFFSETS,
 } from "../../constants/zim/board";
-import type { TileCenter, BoardTileDefinition, ZimBoardController, ZimBoardState } from "../../types/zim/zimBoardTypes";
+import type {
+  TileCenter,
+  BoardTileDefinition,
+  ZimBoardController,
+  ZimBoardState,
+} from "../../types/zim/zimBoardTypes";
 
 function getTileCenter(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
@@ -74,6 +79,44 @@ function getTileCenter(tileIndex: number): TileCenter {
     x: BOARD_SIZE - CORNER_SIZE / 2,
     y: CORNER_SIZE + i * TILE_WIDTH + TILE_WIDTH / 2,
   };
+}
+
+function getTileIndexFromId(tileId: string) {
+  const rawIndex = tileId.replace("tile-", "");
+  const parsedIndex = Number(rawIndex);
+
+  return Number.isInteger(parsedIndex) ? parsedIndex : null;
+}
+
+function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
+  const center = getTileCenter(tileIndex);
+  const normalizedIndex = tileIndex % 40;
+
+  if (normalizedIndex >= 1 && normalizedIndex <= 9) {
+    return { x: center.x, y: center.y + 28 };
+  }
+
+  if (normalizedIndex >= 11 && normalizedIndex <= 19) {
+    return { x: center.x - 28, y: center.y };
+  }
+
+  if (normalizedIndex >= 21 && normalizedIndex <= 29) {
+    return { x: center.x, y: center.y - 28 };
+  }
+
+  if (normalizedIndex >= 31 && normalizedIndex <= 39) {
+    return { x: center.x + 28, y: center.y };
+  }
+
+  return center;
+}
+
+function isOwnableBoardTile(tile: BoardTileDefinition | undefined) {
+  return (
+    tile?.type === "property" ||
+    tile?.type === "railroad" ||
+    tile?.type === "utility"
+  );
 }
 
 function drawCorner(
@@ -294,6 +337,32 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   return board;
 }
 
+function drawOwnershipMarkers(
+  board: zim.Container,
+  ownedTiles: ZimBoardState["ownedTiles"],
+) {
+  if (!ownedTiles) return;
+
+  Object.entries(ownedTiles).forEach(([tileId, ownerPlayerIndex]) => {
+    const tileIndex = getTileIndexFromId(tileId);
+
+    if (tileIndex === null) return;
+
+    const tile = DEFAULT_BOARD_TILES[tileIndex];
+
+    if (!isOwnableBoardTile(tile)) return;
+
+    const markerPosition = getOwnershipMarkerPosition(tileIndex);
+    const ownerColor = PLAYER_COLORS[ownerPlayerIndex] ?? "#000";
+
+    new zim.Circle(8, ownerColor, "#111", 2).loc(
+      markerPosition.x,
+      markerPosition.y,
+      board,
+    );
+  });
+}
+
 function drawPlayers(
   board: zim.Container,
   players: ZimBoardState["players"],
@@ -332,7 +401,14 @@ export function createZimBoard(
   let board: zim.Container | null = null;
 
   function draw(state: ZimBoardState) {
+    if (board) {
+      board.removeFrom();
+
+      board = null;
+    }
+
     board = drawStaticBoard(stage, state);
+    drawOwnershipMarkers(board, state.ownedTiles);
     drawPlayers(board, state.players, state.currentTurnUid);
     stage.update();
   }
