@@ -47,7 +47,7 @@ export function PenaltyActivityOverlay({
     } else if (isPenaltyTile) {
       tileTitle = "Penalty Tile";
       tileDescription = "Penalty activity will be shown.";
-      resultText = points < 0 ? `${points} points` : "Penalty activity";
+      resultText = points < 0 ? `₩{points} points` : "Penalty activity";
       resultColor = "text-[#b33a3a]";
     } else if (isSiteTile) {
       tileTitle = "Cultural Site";
@@ -88,7 +88,7 @@ export function PenaltyActivityOverlay({
             {tileDescription}
           </p>
 
-          <p className={`mt-3 text-[24px] font-extrabold ${resultColor}`}>
+          <p className={`mt-3 text-[24px] font-extrabold ₩{resultColor}`}>
             {resultText}
           </p>
         </div>
@@ -103,9 +103,7 @@ export function PenaltyActivityOverlay({
           Penalty Activity
         </p>
 
-        <h2 className="text-[34px] font-extrabold text-[#160f08]">
-          Mini Game
-        </h2>
+        <h2 className="text-[34px] font-extrabold text-[#160f08]">Mini Game</h2>
 
         <p className="mt-2 text-base font-semibold text-[#6b3f1d]">
           {currentPlayer?.username} must complete this quick challenge.
@@ -144,7 +142,8 @@ export function PenaltyActivityOverlay({
 
         {!isActivePlayer && (
           <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
-            Everyone can see the activity, but only the current player can participate.
+            Everyone can see the activity, but only the current player can
+            participate.
           </p>
         )}
       </div>

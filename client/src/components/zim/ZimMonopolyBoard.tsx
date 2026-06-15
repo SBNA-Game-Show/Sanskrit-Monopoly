@@ -15,13 +15,33 @@ export function ZimMonopolyBoard({
   currentTurnUid,
   lastRoll,
 }: ZimMonopolyBoardProps) {
+  const activePlayers = useMemo(
+    () => players.filter((player) => !player.isEliminated),
+    [players],
+  );
+
+  const ownedTiles = useMemo(() => {
+    const ownershipByTileId: Record<string, string> = {};
+
+    players.forEach((player) => {
+      if (!player.token) return;
+
+      player.properties.forEach((tileId) => {
+        ownershipByTileId[tileId] = player.token;
+      });
+    });
+
+    return ownershipByTileId;
+  }, [players]);
+
   const boardState = useMemo<ZimBoardState>(
     () => ({
-      players,
+      players: activePlayers,
       currentTurnUid,
       lastRoll,
+      ownedTiles,
     }),
-    [players, currentTurnUid, lastRoll],
+    [activePlayers, currentTurnUid, lastRoll, ownedTiles],
   );
 
   return (

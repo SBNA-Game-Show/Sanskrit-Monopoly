@@ -6,11 +6,13 @@ import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
+import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
+import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  uid: string | null;
   isHost: boolean;
-  onSubmitQuizAnswer: (optionId: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -25,15 +27,35 @@ function getCurrentPlayer(gameState: GameState) {
 //   return gameState.edition.tiles[currentPlayer.position];
 // }
 
-export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
-  const { uid } = useAuth();
-
+export function GameOverlayLayer({
+  gameState,
+  isHost,
+  uid,
+}: GameOverlayLayerProps) {
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
 
   if (!currentPlayer || !gameState.gameStatus) return null;
 
   const isActivePlayer = currentPlayer.uid === uid;
+
+  // check if pending action is currently "bankruptcy"
+  if (gameState.pendingAction?.type === "bankruptcy") {
+    return (
+      <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
+    );
+  }
+
+  // check if pending action is currently "buyProperty"
+  if (gameState.pendingAction?.type === "buyProperty") {
+    return (
+      <BuyPropertyOverlay
+        gameState={gameState}
+        isActivePlayer={gameState.pendingAction.playerUid === uid}
+        uid={uid}
+      />
+    );
+  }
 
   switch (gameState.gameStatus) {
     case "startOfTurn":
@@ -49,9 +71,7 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
-      return (
-        <></>
-      );
+      return <></>;
 
     case "popQuiz":
       return (
@@ -61,7 +81,8 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
             quiz={gameState.activeQuiz}
             players={gameState.players}
             isHost={isHost}
-            onSubmitAnswer={onSubmitQuizAnswer}
+            lobbyCode={gameState.lobbyCode}
+            uid={uid}
           />
         )
       );
