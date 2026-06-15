@@ -1,4 +1,5 @@
 import type { PlayerState } from "../game/gameTypes";
+import type { ZimSceneController } from "./zimSceneTypes";
 
 export type TileCenter = {
   x: number;
@@ -23,11 +24,9 @@ export type ZimBoardState = {
   players: PlayerState[];
   currentTurnUid: string | null;
   lastRoll?: number | null;
+  ownedTiles?: Record<string, string>;
 };
 
-export type ZimBoardController = {
-  update: (state: ZimBoardState) => void;
-  dispose: () => void;
-};
+export type ZimBoardController = ZimSceneController<ZimBoardState>;
 
 export type ZimMonopolyBoardProps = ZimBoardState;

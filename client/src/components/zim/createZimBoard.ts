@@ -8,7 +8,13 @@ import {
   PLAYER_COLORS,
   TOKEN_OFFSETS,
 } from "../../constants/zim/board";
-import type { TileCenter, BoardTileDefinition, ZimBoardController, ZimBoardState } from "../../types/zim/zimBoardTypes";
+import type {
+  TileCenter,
+  BoardTileDefinition,
+  ZimBoardController,
+  ZimBoardState,
+} from "../../types/zim/zimBoardTypes";
+import { TOKEN_IMAGE_BY_ID } from "../../constants/game/tokenOptions";
 
 function getTileCenter(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
@@ -74,6 +80,44 @@ function getTileCenter(tileIndex: number): TileCenter {
     x: BOARD_SIZE - CORNER_SIZE / 2,
     y: CORNER_SIZE + i * TILE_WIDTH + TILE_WIDTH / 2,
   };
+}
+
+function getTileIndexFromId(tileId: string) {
+  const rawIndex = tileId.replace("tile-", "");
+  const parsedIndex = Number(rawIndex);
+
+  return Number.isInteger(parsedIndex) ? parsedIndex : null;
+}
+
+function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
+  const center = getTileCenter(tileIndex);
+  const normalizedIndex = tileIndex % 40;
+
+  if (normalizedIndex >= 1 && normalizedIndex <= 9) {
+    return { x: center.x, y: BOARD_SIZE - 18 };
+  }
+
+  if (normalizedIndex >= 11 && normalizedIndex <= 19) {
+    return { x: 18, y: center.y };
+  }
+
+  if (normalizedIndex >= 21 && normalizedIndex <= 29) {
+    return { x: center.x, y: 18 };
+  }
+
+  if (normalizedIndex >= 31 && normalizedIndex <= 39) {
+    return { x: BOARD_SIZE - 18, y: center.y };
+  }
+
+  return center;
+}
+
+function isOwnableBoardTile(tile: BoardTileDefinition | undefined) {
+  return (
+    tile?.type === "property" ||
+    tile?.type === "railroad" ||
+    tile?.type === "utility"
+  );
 }
 
 function drawCorner(
@@ -294,6 +338,40 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   return board;
 }
 
+function drawOwnershipMarkers(
+  board: zim.Container,
+  ownedTiles: ZimBoardState["ownedTiles"],
+) {
+  if (!ownedTiles) return;
+
+  Object.entries(ownedTiles).forEach(([tileId, ownerToken]) => {
+    const tileIndex = getTileIndexFromId(tileId);
+
+    if (tileIndex === null) return;
+
+    const tile = DEFAULT_BOARD_TILES[tileIndex];
+
+    if (!isOwnableBoardTile(tile)) return;
+
+    const markerPosition = getOwnershipMarkerPosition(tileIndex);
+    const tokenUrl = TOKEN_IMAGE_BY_ID[ownerToken];
+
+    if (tokenUrl) {
+      new zim.Pic({ file: tokenUrl })
+        .siz(20)
+        .loc(markerPosition.x - 10, markerPosition.y - 10, board);
+
+      return;
+    }
+
+    new zim.Circle(7, "#f4e8c8", "#111", 2).loc(
+      markerPosition.x - 7,
+      markerPosition.y - 7,
+      board,
+    );
+  });
+}
+
 function drawPlayers(
   board: zim.Container,
   players: ZimBoardState["players"],
@@ -302,26 +380,38 @@ function drawPlayers(
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
     const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+    const x = center.x + offset.dx;
+    const y = center.y + offset.dy;
+    const isCurrentTurn = player.uid === currentTurnUid;
+    const TOKEN_SIZE = 34;
+    const TOKEN_SIZE_ACTIVE = 42;
+    const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
 
-    const token = new zim.Circle(
-      player.uid === currentTurnUid ? 19 : 15,
-      PLAYER_COLORS[playerIndex] ?? "#000",
-      "#111",
-      3,
-    );
+    const tokenUrl =
+      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
 
-    token.x = center.x + offset.dx;
-    token.y = center.y + offset.dy;
-    token.addTo(board);
+    if (tokenUrl) {
+      new zim.Pic({ file: tokenUrl })
+        .siz(size)
+        .loc(x - size / 2, y - size / 2, board);
+    } else {
+      const radius = isCurrentTurn ? 19 : 15;
+      new zim.Circle(
+        radius,
+        PLAYER_COLORS[playerIndex] ?? "#000",
+        "#111",
+        3,
+      ).loc(x - radius, y - radius, board);
 
-    new zim.Label({
-      text: `${playerIndex + 1}`,
-      size: 13,
-      bold: true,
-      color: "#fff",
-      font: "Arial",
-      align: "center",
-    }).loc(token.x, token.y, board);
+      new zim.Label({
+        text: `${playerIndex + 1}`,
+        size: 13,
+        bold: true,
+        color: "#fff",
+        font: "Arial",
+        align: "center",
+      }).loc(x - 7, y - 8, board);
+    }
   });
 }
 
@@ -332,7 +422,14 @@ export function createZimBoard(
   let board: zim.Container | null = null;
 
   function draw(state: ZimBoardState) {
+    if (board) {
+      board.removeFrom();
+
+      board = null;
+    }
+
     board = drawStaticBoard(stage, state);
+    drawOwnershipMarkers(board, state.ownedTiles);
     drawPlayers(board, state.players, state.currentTurnUid);
     stage.update();
   }

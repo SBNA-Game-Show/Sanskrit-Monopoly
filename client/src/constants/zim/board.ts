@@ -5,7 +5,7 @@ export const CORNER_SIZE = 115;
 export const TILE_WIDTH = (BOARD_SIZE - CORNER_SIZE * 2) / 9;
 export const TILE_HEIGHT = CORNER_SIZE;
 
-export const DEFAULT_BOARD_TILES: BoardTileDefinition[] = [
+const BOARD_TILES: BoardTileDefinition[] = [
   { name: "आरम्भः", type: "corner", color: "#f7d28b" },
   { name: "काशी", type: "property", color: "#7b1e2b" },
   { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
@@ -50,6 +50,8 @@ export const DEFAULT_BOARD_TILES: BoardTileDefinition[] = [
   { name: "दण्डः", type: "tax", color: "#e8b4a6" },
   { name: "संस्कृतम्", type: "property", color: "#214f7a" },
 ];
+
+export const DEFAULT_BOARD_TILES = BOARD_TILES;
 
 export const PLAYER_COLORS = [
   "#d72638",

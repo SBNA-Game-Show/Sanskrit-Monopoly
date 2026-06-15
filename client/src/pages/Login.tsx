@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { auth } from "../firebase";
 import {
   signInWithEmailAndPassword,
@@ -47,7 +48,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const { showToast } = useToast();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth!, email, password);
@@ -164,14 +165,19 @@ function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-2xl px-5 py-4 outline-none text-sm transition-all border border-orange-400/20 focus:border-white focus:ring-2 focus:ring-white/20"
+              className="w-full rounded-2xl px-5 py-4 outline-none text-sm border border-orange-400/20 focus:border-white focus:ring-2 focus:ring-white/20"
               style={{ background: "#FFEED4", color: "#3D1F0A" }}
               placeholder="••••••••"
               required
             />
           </div>
 
-          <button type="submit" className="hidden" />
+          <button 
+            type="submit" 
+            className="w-full rounded-2xl py-4 bg-white text-orange-600 font-bold active:scale-95 text-sm mt-2"
+          >
+            Sign In
+          </button>
         </form>
 
         {/* Social Divider */}
