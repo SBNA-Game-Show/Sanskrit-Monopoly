@@ -81,18 +81,6 @@ export type PendingAction =
     }
   | null;
 
-export type LastAction = {
-  type:
-    | "buyProperty"
-    | "declineProperty"
-    | "payRent"
-    | "payTax"
-    | "passStart"
-    | "landedTile"
-    | "bankruptcy";
-  message: string;
-} | null;
-
 export type PlayerState = {
   uid: string;
   username: string;
@@ -119,7 +107,6 @@ export type GameState = {
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
   pendingAction: PendingAction;
-  lastAction: LastAction;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;

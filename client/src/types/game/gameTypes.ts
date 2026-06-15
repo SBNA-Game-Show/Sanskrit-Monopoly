@@ -10,5 +10,4 @@ export type {
   ActiveQuiz, // uh oh
   QuizOption, // im in truble
   PendingAction,
-  LastAction,
 } from "../../../../shared/gameTypes";

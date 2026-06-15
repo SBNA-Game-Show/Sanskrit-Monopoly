@@ -106,11 +106,6 @@ export default function Game({ gameState }: GameProps) {
           <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
             Players
           </h2>
-          {gameState.lastAction && (
-            <div className="mb-5 rounded-2xl border-2 border-[#d9a441] bg-[#fff4dc] px-5 py-3 text-sm font-extrabold text-[#6b3f1d] shadow-md">
-              {gameState.lastAction.message}
-            </div>
-          )}
 
           <div className="space-y-5">
             {gameState.players.map((player, index) => {
