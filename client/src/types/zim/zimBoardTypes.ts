@@ -24,6 +24,7 @@ export type ZimBoardState = {
   players: PlayerState[];
   currentTurnUid: string | null;
   lastRoll?: number | null;
+  ownedTiles?: Record<string, number>;
 };
 
 export type ZimBoardController = ZimSceneController<ZimBoardState>;
