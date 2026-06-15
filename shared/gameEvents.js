@@ -16,4 +16,6 @@ export const GAME_EVENTS = {
   GAME_ERROR: "game:error",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
+  GAME_JAIL_PAY_BAIL: "game:jail:pay-bail",
+  GAME_JAIL_GO: "game:jail:go",
 };

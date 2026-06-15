@@ -29,6 +29,22 @@ export default function Game({ gameState }: GameProps) {
     });
   };
 
+  const handlePayBail = () => { //This is when the player pays bail to skip jail
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_JAIL_PAY_BAIL, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  };
+
+  const handleGoToJail = () => { //This is when the player accepts going to jail
+    if (!gameState.lobbyCode || !uid) return;
+    socket.emit(GAME_EVENTS.GAME_JAIL_GO, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+  }; //its not fully implimented yet
+
   const handleRollDice = () => {
     if (!gameState.lobbyCode || !uid) return;
 
@@ -133,6 +149,8 @@ export default function Game({ gameState }: GameProps) {
               gameState={gameState}
               isHost={gameState.host.uid === uid}
               onSubmitQuizAnswer={handleSubmitQuizAnswer}
+              onPayBail={handlePayBail}
+              onGoToJail={handleGoToJail}
             />
           </div>
         </section>

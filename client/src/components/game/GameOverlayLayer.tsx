@@ -6,11 +6,14 @@ import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
+import { JailOverlay } from "./overlays/JailOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
   isHost: boolean;
   onSubmitQuizAnswer: (optionId: string) => void;
+  onPayBail: () => void;
+  onGoToJail: () => void; 
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -25,7 +28,7 @@ function getCurrentPlayer(gameState: GameState) {
 //   return gameState.edition.tiles[currentPlayer.position];
 // }
 
-export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
+export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer, onPayBail, onGoToJail }: GameOverlayLayerProps) {
   const { uid } = useAuth();
 
   const currentPlayer = getCurrentPlayer(gameState);
@@ -43,6 +46,16 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
           isActivePlayer={isActivePlayer}
         />
       );
+      
+      case "jailDecision":
+        return (
+          <JailOverlay
+            gameState={gameState}
+            isActivePlayer={isActivePlayer}
+            onPayBail={onPayBail}
+            onGoToJail={onGoToJail}
+          />
+        );
 
     case "rollingDice":
       return <DiceRollOverlay gameState={gameState} />;

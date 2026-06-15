@@ -8,6 +8,7 @@ export type GamePhase =
   | "rollingDice"
   | "tokenAdvancing"
   | "popQuiz"
+  | "jailDecision"
   | "verseChallenge"
   | "penaltyActivity"
   | "miniGame"
@@ -19,6 +20,7 @@ export type GameTileType =
   | "penalty"
   | "property"
   | "corner"
+  | "jail"
   | "special";
 
 export type GameTile = {

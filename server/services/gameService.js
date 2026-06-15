@@ -213,7 +213,8 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: "It is not your turn" };
   }
 
-  const diceRoll = Math.floor(Math.random() * 6) + 1;
+  const diceRoll = 30; //I PUT THIS AS 30 FOR TESTING PURPOSES TO LAND ON JAIL. CHANGE BACK TO 1-6 WHEN DONE TESTING
+  // const diceRoll = Math.floor(Math.random() * 6) + 1;
   const tileCount = lobby.edition.tiles.length;
 
   const previousPosition = currentPlayer.position;
@@ -233,13 +234,13 @@ export function rollDice(lobbyCode, uid) {
   lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
   if (passedStart) {
-    lobby.status = "finished";
-    lobby.winnerUid = currentPlayer.uid;
-
-    return { lobby, error: null };
+  lobby.status = "finished";
+  lobby.winnerUid = currentPlayer.uid;
+  
+  return { lobby, error: null, landedTile };
   }
 
-  return { lobby, error: null };
+  return { lobby, error: null, landedTile };
 }
 
 export function forceSkipTurn(lobbyCode) {
@@ -312,4 +313,44 @@ export function disconnectPlayer(socketId) {
     }
   }
   return { lobby: null, error: "Socket not found" };
+}
+
+const BAIL_COST = 50;
+
+export function payBail(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+  if (!lobby) return { lobby: null, error: "Lobby not found" };
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+  if (currentPlayer.uid !== uid) {
+    return { lobby, error: "It is not your turn" };
+  }
+  if (lobby.gameStatus !== "jailDecision") {
+    return { lobby, error: "No jail decision pending" };
+  }
+  if (currentPlayer.points < BAIL_COST) {
+    return { lobby, error: "Not enough points to pay bail" };
+  }
+
+  currentPlayer.points -= BAIL_COST;
+  lobby.gameStatus = "turnEnded";
+  return { lobby, error: null };
+}
+
+export function sendToJail(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+  if (!lobby) return { lobby: null, error: "Lobby not found" };
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+  if (currentPlayer.uid !== uid) {
+    return { lobby, error: "It is not your turn" };
+  }
+  if (lobby.gameStatus !== "jailDecision") {
+    return { lobby, error: "No jail decision pending" };
+  }
+
+  // TODO: actually track "in jail" state (e.g. skip next turn)
+  // once PlayerState supports it — for now just resolves the overlay
+  lobby.gameStatus = "turnEnded";
+  return { lobby, error: null };
 }

@@ -5,6 +5,8 @@ import {
   updatePlayerToken,
   startGame,
   rollDice,
+  payBail,
+  sendToJail,
   showQuiz,
   showMiniGame,
   forceSkipTurn,
@@ -44,6 +46,40 @@ function finishPopQuiz(lobby, io) {
 export function setupSocketEvents(io) {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
+
+    socket.on(GAME_EVENTS.GAME_JAIL_PAY_BAIL, async ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing jail bail data");
+        return;
+      }
+
+      const result = payBail(lobbyCode, uid);
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+      await sleep(1000);
+      startNextTurn(result.lobby, io, broadcastGameState);
+    });
+
+    socket.on(GAME_EVENTS.GAME_JAIL_GO, async ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing jail data");
+        return;
+      }
+
+      const result = sendToJail(lobbyCode, uid);
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+      await sleep(1000);
+      startNextTurn(result.lobby, io, broadcastGameState);
+    }); //these sockets are for the jail decision pop-up that appears when you land on the jail tile. It waits for the player to either pay bail or go to jail before advancing the turn
 
     // server handler for quiz submission
     socket.on(
@@ -189,6 +225,12 @@ export function setupSocketEvents(io) {
       // check tile that player landed on before advancing turn
       if (result.lobby.status === "finished") {
         return;
+      }
+
+      if (result.landedTile?.type === "jail") {
+        result.lobby.gameStatus = "jailDecision";
+        broadcastGameState(io, result.lobby);
+        return; // wait for GAME_JAIL_PAY_BAIL / GAME_JAIL_GO
       }
 
       if (result.lobby.gameStatus === "popQuiz") {
