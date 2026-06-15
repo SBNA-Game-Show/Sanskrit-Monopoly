@@ -28,7 +28,12 @@ export type GameTile = {
   id: string;
   name: string;
   type: GameTileType;
+  color?: string;
   points?: number;
+  price?: number;
+  rent?: number;
+  amount?: number;
+  group?: string;
   description?: string;
 };
 
@@ -59,6 +64,35 @@ export type ActiveQuiz = {
   endsAt: number;
 };
 
+export type PendingAction =
+  | {
+      type: "buyProperty";
+      playerUid: string;
+      tileId: string;
+      tileName: string;
+      price: number;
+      canAfford: boolean;
+    }
+  | {
+      type: "bankruptcy";
+      playerUid: string;
+      playerName: string;
+      money: number;
+    }
+  | null;
+
+export type LastAction = {
+  type:
+    | "buyProperty"
+    | "declineProperty"
+    | "payRent"
+    | "payTax"
+    | "passStart"
+    | "landedTile"
+    | "bankruptcy";
+  message: string;
+} | null;
+
 export type PlayerState = {
   uid: string;
   username: string;
@@ -66,8 +100,10 @@ export type PlayerState = {
   token: string | null;
   position: number;
   points: number;
-  money: number; // currently unused
-  properties: string[]; // currently unused
+  money: number; // <- is now being used
+  properties: string[]; // <- standard monopoly addition now makes it useable
+  needsBankruptcyResolution: boolean;
+  isEliminated: boolean;
   isConnected: boolean;
 };
 
@@ -82,6 +118,8 @@ export type GameState = {
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
+  pendingAction: PendingAction;
+  lastAction: LastAction;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
