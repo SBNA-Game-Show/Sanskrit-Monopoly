@@ -20,9 +20,6 @@ import {
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
 
-const DICE_ROLL_OVERLAY_MS = 900;
-const TURN_ENDED_OVERLAY_MS = 400;
-
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 function emitGameError(socket, message) {
@@ -218,10 +215,7 @@ export function setupSocketEvents(io) {
       landingResult.lobby.gameStatus = "turnEnded";
       broadcastGameState(io, landingResult.lobby);
 
-      // replacing this so it's more dev-friendly
-      // so I don't have to wait for eons
-      // original value used to be 1000
-      await sleep(TURN_ENDED_OVERLAY_MS);
+      await sleep(1000);
 
       startNextTurn(landingResult.lobby, io, broadcastGameState);
     });
