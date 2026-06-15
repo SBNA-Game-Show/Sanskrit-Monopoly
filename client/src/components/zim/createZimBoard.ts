@@ -93,19 +93,19 @@ function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
 
   if (normalizedIndex >= 1 && normalizedIndex <= 9) {
-    return { x: center.x, y: center.y + 28 };
+    return { x: center.x, y: BOARD_SIZE - 18 };
   }
 
   if (normalizedIndex >= 11 && normalizedIndex <= 19) {
-    return { x: center.x - 28, y: center.y };
+    return { x: 18, y: center.y };
   }
 
   if (normalizedIndex >= 21 && normalizedIndex <= 29) {
-    return { x: center.x, y: center.y - 28 };
+    return { x: center.x, y: 18 };
   }
 
   if (normalizedIndex >= 31 && normalizedIndex <= 39) {
-    return { x: center.x + 28, y: center.y };
+    return { x: BOARD_SIZE - 18, y: center.y };
   }
 
   return center;
@@ -343,7 +343,7 @@ function drawOwnershipMarkers(
 ) {
   if (!ownedTiles) return;
 
-  Object.entries(ownedTiles).forEach(([tileId, ownerPlayerIndex]) => {
+  Object.entries(ownedTiles).forEach(([tileId, ownerToken]) => {
     const tileIndex = getTileIndexFromId(tileId);
 
     if (tileIndex === null) return;
@@ -353,11 +353,19 @@ function drawOwnershipMarkers(
     if (!isOwnableBoardTile(tile)) return;
 
     const markerPosition = getOwnershipMarkerPosition(tileIndex);
-    const ownerColor = PLAYER_COLORS[ownerPlayerIndex] ?? "#000";
+    const tokenUrl = TOKEN_IMAGE_BY_ID[ownerToken];
 
-    new zim.Circle(8, ownerColor, "#111", 2).loc(
-      markerPosition.x,
-      markerPosition.y,
+    if (tokenUrl) {
+      new zim.Pic({ file: tokenUrl })
+        .siz(20)
+        .loc(markerPosition.x - 10, markerPosition.y - 10, board);
+
+      return;
+    }
+
+    new zim.Circle(7, "#f4e8c8", "#111", 2).loc(
+      markerPosition.x - 7,
+      markerPosition.y - 7,
       board,
     );
   });

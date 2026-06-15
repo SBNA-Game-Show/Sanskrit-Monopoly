@@ -21,11 +21,13 @@ export function ZimMonopolyBoard({
   );
 
   const ownedTiles = useMemo(() => {
-    const ownershipByTileId: Record<string, number> = {};
+    const ownershipByTileId: Record<string, string> = {};
 
-    players.forEach((player, playerIndex) => {
+    players.forEach((player) => {
+      if (!player.token) return;
+
       player.properties.forEach((tileId) => {
-        ownershipByTileId[tileId] = playerIndex;
+        ownershipByTileId[tileId] = player.token;
       });
     });
 
