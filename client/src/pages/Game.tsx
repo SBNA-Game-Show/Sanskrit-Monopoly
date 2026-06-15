@@ -1,14 +1,29 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import type { GameState } from "../types/game/gameTypes";
+import type { GameState, PlayerState } from "../types/game/gameTypes";
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import { ZimMonopolyBoard } from "../components/zim/ZimMonopolyBoard";
 import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
+import { DEFAULT_BOARD_TILES } from "../constants/zim/board";
 
 type GameProps = {
   gameState: GameState;
 };
+
+function getPropertyDisplayName(propertyId: string) {
+  const boardProperty = DEFAULT_BOARD_TILES.find(
+    (tile) => tile.name === propertyId,
+  );
+
+  if (boardProperty) return boardProperty.name;
+
+  const tileNumber = propertyId.match(/tile-(\d+)/)?.[1];
+  const tileIndex = tileNumber ? Number(tileNumber) : -1;
+
+  return DEFAULT_BOARD_TILES[tileIndex]?.name ?? propertyId;
+}
 
 export default function Game({ gameState }: GameProps) {
   //for debugging (KEEP THIS)
@@ -18,6 +33,156 @@ export default function Game({ gameState }: GameProps) {
 
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const userPlayer = gameState.players.find((player) => player.uid === uid) ?? null;
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    null,
+  );
+
+  const [selectedPropertyOwnerUid, setSelectedPropertyOwnerUid] = useState<
+    string | null
+  >(null);
+
+  const [selectedAdminPlayerUid, setSelectedAdminPlayerUid] = useState<
+    string | null
+  >(null);
+
+  const [ownedPropertyIdsByPlayerId, setOwnedPropertyIdsByPlayerId] = useState<
+    Record<string, string[]>
+  >({});
+
+  const [soldPropertyIdsByPlayerId, setSoldPropertyIdsByPlayerId] = useState<
+    Record<string, string[]>
+  >({});
+
+  const [moneyByPlayerId, setMoneyByPlayerId] = useState<Record<string, number>>(
+    {},
+  );
+
+  const getPlayerOwnedPropertyIds = (player: PlayerState | null) => {
+    if (!player) return [];
+
+    const soldPropertyIds = new Set(
+      soldPropertyIdsByPlayerId[player.uid] ?? [],
+    );
+
+    return Array.from(
+      new Set([
+        ...(player.properties ?? []),
+        ...(ownedPropertyIdsByPlayerId[player.uid] ?? []),
+      ]),
+    ).filter((propertyId) => !soldPropertyIds.has(propertyId));
+  };
+
+  const getPlayerMoney = (player: PlayerState | null) => {
+    if (!player) return 0;
+
+    return (
+      moneyByPlayerId[player.uid] ??
+      (player.money > 0
+        ? player.money
+        : player.points > 0
+          ? player.points
+          : 500)
+    );
+  };
+
+  const selectedPropertyOwner = selectedPropertyOwnerUid
+    ? gameState.players.find((player) => player.uid === selectedPropertyOwnerUid) ??
+      currentPlayer
+    : currentPlayer;
+
+  const selectedPropertyOwnerProperties = getPlayerOwnedPropertyIds(
+    selectedPropertyOwner,
+  );
+
+  const selectedPropertyOwnerMoney = getPlayerMoney(selectedPropertyOwner);
+
+  const selectedAdminPlayer = selectedAdminPlayerUid
+    ? gameState.players.find((player) => player.uid === selectedAdminPlayerUid) ??
+      gameState.players[0]
+    : gameState.players[0];
+
+  const selectedAdminPlayerProperties = getPlayerOwnedPropertyIds(
+    selectedAdminPlayer ?? null,
+  );
+
+  const userOwnedPropertyIds = getPlayerOwnedPropertyIds(userPlayer);
+  const userMoney = getPlayerMoney(userPlayer);
+
+  const handleBuyProperty = (propertyId: string, price: number) => {
+    if (!currentPlayer) return;
+
+    setOwnedPropertyIdsByPlayerId((current) => ({
+      ...current,
+      [currentPlayer.uid]: Array.from(
+        new Set([...(current[currentPlayer.uid] ?? []), propertyId]),
+      ),
+    }));
+
+    setSoldPropertyIdsByPlayerId((current) => ({
+      ...current,
+      [currentPlayer.uid]: (current[currentPlayer.uid] ?? []).filter(
+        (soldPropertyId) => soldPropertyId !== propertyId,
+      ),
+    }));
+
+    setMoneyByPlayerId((current) => ({
+      ...current,
+      [currentPlayer.uid]: Math.max(0, getPlayerMoney(currentPlayer) - price),
+    }));
+
+    setSelectedPropertyId(null);
+    setSelectedPropertyOwnerUid(null);
+  };
+
+  const handleSellProperty = (propertyId: string, sellValue: number) => {
+    const actionPlayer = selectedPropertyOwnerUid
+      ? gameState.players.find((player) => player.uid === selectedPropertyOwnerUid) ??
+        currentPlayer
+      : currentPlayer;
+
+    if (!actionPlayer) return;
+
+    const actionPlayerOwnedProperties = getPlayerOwnedPropertyIds(actionPlayer);
+
+    setOwnedPropertyIdsByPlayerId((current) => ({
+      ...current,
+      [actionPlayer.uid]: (
+        current[actionPlayer.uid] ?? actionPlayerOwnedProperties
+      ).filter((ownedPropertyId) => ownedPropertyId !== propertyId),
+    }));
+
+    setSoldPropertyIdsByPlayerId((current) => ({
+      ...current,
+      [actionPlayer.uid]: Array.from(
+        new Set([...(current[actionPlayer.uid] ?? []), propertyId]),
+      ),
+    }));
+
+    setMoneyByPlayerId((current) => ({
+      ...current,
+      [actionPlayer.uid]: getPlayerMoney(actionPlayer) + sellValue,
+    }));
+
+    setSelectedPropertyId(null);
+    setSelectedPropertyOwnerUid(null);
+  };
+
+  const handleDeclineProperty = () => {
+    setSelectedPropertyId(null);
+    setSelectedPropertyOwnerUid(null);
+  };
+
+  const handleOpenPropertyCard = (propertyId: string, ownerUid: string) => {
+    setSelectedPropertyId(propertyId);
+    setSelectedPropertyOwnerUid(ownerUid);
+  };
+
+  const handleClosePropertyOverlay = () => {
+    setSelectedPropertyId(null);
+    setSelectedPropertyOwnerUid(null);
+  };
 
   const handleSubmitQuizAnswer = (optionId: string) => {
     if (!gameState.lobbyCode || !uid) return;
@@ -62,7 +227,7 @@ export default function Game({ gameState }: GameProps) {
 
   return (
     <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
-      <section className="grid min-h-screen grid-cols-1 xl:grid-cols-[340px_1fr_340px] gap-6 p-6">
+      <section className="grid min-h-screen grid-cols-1 gap-6 p-6 xl:grid-cols-[340px_1fr_340px]">
         {/* Left: Players */}
         <aside className="max-h-[calc(100vh-48px)] overflow-y-auto rounded-2xl bg-[#f5bd78] p-5 shadow-xl">
           <h2 className="mb-5 text-[28px] font-bold leading-none text-[#ff514b]">
@@ -71,7 +236,7 @@ export default function Game({ gameState }: GameProps) {
 
           <div className="space-y-5">
             {gameState.players.map((player, index) => {
-              const isCurrentTurn = player.uid === currentPlayer.uid;
+              const isCurrentTurn = player.uid === currentPlayer?.uid;
               return (
                 <div
                   key={player.uid}
@@ -94,7 +259,7 @@ export default function Game({ gameState }: GameProps) {
                       <img
                         src={TOKEN_IMAGE_BY_ID[player.token]}
                         alt={`${player.username} token`}
-                        className="h-[64px] w-[64px] object-contain rounded-xl bg-white/25"
+                        className="h-[64px] w-[64px] rounded-xl bg-white/25 object-contain"
                       />
                     ) : (
                       <div className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-white/25 text-sm text-[#6b3f1d]">
@@ -120,11 +285,11 @@ export default function Game({ gameState }: GameProps) {
         </aside>
 
         <section className="flex flex-col">
-          <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
                 players={gameState.players}
-                currentTurnUid={currentPlayer.uid}
+                currentTurnUid={currentPlayer?.uid ?? ""}
                 lastRoll={gameState.lastRoll}
               />
             </div>
@@ -133,6 +298,15 @@ export default function Game({ gameState }: GameProps) {
               gameState={gameState}
               isHost={gameState.host.uid === uid}
               onSubmitQuizAnswer={handleSubmitQuizAnswer}
+              selectedPropertyId={selectedPropertyId}
+              selectedPropertyOwnerUid={selectedPropertyOwner?.uid ?? null}
+              ownedPropertyIds={selectedPropertyOwnerProperties}
+              currentMoney={selectedPropertyOwnerMoney}
+              propertyOwnerName={selectedPropertyOwner?.username ?? "Player"}
+              onBuyProperty={handleBuyProperty}
+              onDeclineProperty={handleDeclineProperty}
+              onSellProperty={handleSellProperty}
+              onClosePropertyOverlay={handleClosePropertyOverlay}
             />
           </div>
         </section>
@@ -176,13 +350,115 @@ export default function Game({ gameState }: GameProps) {
               <button
                 type="button"
                 onClick={handleRollDice}
-                disabled={currentPlayer.uid !== uid || gameState.gameStatus !== "idling"}
+                disabled={currentPlayer?.uid !== uid || gameState.gameStatus !== "idling"}
                 className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Roll Dice
               </button>
             )}
           </div>
+
+          {isHost ? (
+            <div className="mt-8 rounded-2xl bg-[#fff4dc] p-4 shadow-inner">
+              <p className="text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
+                Player Properties
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[#160f08]">
+                Click a player to view their bought properties.
+              </p>
+
+              <div className="mt-4 grid grid-cols-1 gap-2">
+                {gameState.players.map((player) => {
+                  const playerProperties = getPlayerOwnedPropertyIds(player);
+                  const isSelected = selectedAdminPlayer?.uid === player.uid;
+
+                  return (
+                    <button
+                      key={player.uid}
+                      type="button"
+                      onClick={() => setSelectedAdminPlayerUid(player.uid)}
+                      className={`flex items-center justify-between rounded-2xl border-[4px] px-4 py-3 text-left font-bold shadow-sm ${
+                        isSelected
+                          ? "border-[#6b3f1d] bg-[#ffd7a3] text-[#160f08]"
+                          : "border-[#ffa23b] bg-[#f5bd78] text-[#6b3f1d] hover:bg-[#ffd7a3]"
+                      }`}
+                    >
+                      <span>{player.username}</span>
+                      <span className="rounded-full bg-white/70 px-3 py-1 text-sm">
+                        {playerProperties.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-2xl border-[4px] border-[#ffa23b] bg-white/60 p-4">
+                <p className="text-sm font-extrabold text-[#160f08]">
+                  {selectedAdminPlayer?.username ?? "Player"}'s Properties
+                </p>
+
+                <div className="mt-3 space-y-3">
+                  {selectedAdminPlayerProperties.length > 0 ? (
+                    selectedAdminPlayerProperties.map((propertyId) => (
+                      <button
+                        key={propertyId}
+                        type="button"
+                        onClick={() =>
+                          selectedAdminPlayer &&
+                          handleOpenPropertyCard(propertyId, selectedAdminPlayer.uid)
+                        }
+                        className="w-full rounded-2xl border-[4px] border-[#ffa23b] bg-[#f5bd78] px-4 py-3 text-left font-bold text-[#160f08] shadow-md hover:bg-[#ffd7a3]"
+                      >
+                        {getPropertyDisplayName(propertyId)}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="rounded-2xl border-[4px] border-dashed border-[#ffa23b] bg-white/50 px-4 py-5 text-center text-sm font-bold text-[#6b3f1d]">
+                      This player has no properties yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-8 rounded-2xl bg-[#fff4dc] p-4 shadow-inner">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
+                    My Properties
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[#160f08]">
+                    Money: ${userMoney}
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-[#f5bd78] px-3 py-1 text-sm font-extrabold text-[#6b3f1d]">
+                  {userOwnedPropertyIds.length}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {userOwnedPropertyIds.length > 0 ? (
+                  userOwnedPropertyIds.map((propertyId) => (
+                    <button
+                      key={propertyId}
+                      type="button"
+                      onClick={() =>
+                        userPlayer && handleOpenPropertyCard(propertyId, userPlayer.uid)
+                      }
+                      className="w-full rounded-2xl border-[4px] border-[#ffa23b] bg-[#f5bd78] px-4 py-3 text-left font-bold text-[#160f08] shadow-md hover:bg-[#ffd7a3]"
+                    >
+                      {getPropertyDisplayName(propertyId)}
+                    </button>
+                  ))
+                ) : (
+                  <p className="rounded-2xl border-[4px] border-dashed border-[#ffa23b] bg-white/50 px-4 py-5 text-center text-sm font-bold text-[#6b3f1d]">
+                    Bought properties will appear here.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </aside>
       </section>
     </main>
