@@ -11,6 +11,22 @@ export function getLobby(lobbyCode) {
   return lobbies[lobbyCode] ?? null;
 }
 
+export function addLog(lobbyCode, entry) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { error: "Lobby not found" };
+  }
+
+  const logEntry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    ...entry,
+  };
+
+  lobby.log.push(logEntry);
+  return { lobby, error: null };
+}
+
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
@@ -71,6 +87,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     currentPlayerIndex: 0,
     lastRoll: null,
     winnerUid: null,
+    log: [],
   };
   console.log(lobbies);
   return lobbies[lobbyCode];
@@ -192,6 +209,13 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     player.position = 0;
     player.points = lobby.edition.startingPoints ?? 0;
   });
+
+  addLog(lobbyCode, {
+    uid: lobby.players[lobby.currentPlayerIndex].uid,
+    username: lobby.players[lobby.currentPlayerIndex].username,
+    message: "started their turn.",
+  })
+
   return { lobby, error: null };
 }
 
@@ -232,6 +256,12 @@ export function rollDice(lobbyCode, uid) {
   lobby.lastRoll = diceRoll;
   lobby.gameStatus = "rollingDice"; //play token moving animation or dice roll animation here
 
+  addLog(lobbyCode, {
+    uid: currentPlayer.uid,
+    username: currentPlayer.username,
+    message: `rolled a ${diceRoll}.`,
+  })
+
   if (passedStart) {
     lobby.status = "finished";
     lobby.winnerUid = currentPlayer.uid;
@@ -263,6 +293,11 @@ export function startNextTurn(lobby, io, broadcastGameState) {
   const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
   lobby.currentPlayerIndex = nextTurnIndex;
   lobby.gameStatus = "startOfTurn";
+  addLog(lobby.lobbyCode, {
+    uid: lobby.players[lobby.currentPlayerIndex].uid,
+    username: lobby.players[lobby.currentPlayerIndex].username,
+    message: "started their turn.",
+  })
   broadcastGameState(io, lobby);
 
   // change to idling after 2.5 seconds to make startOfTurn overlay disappear

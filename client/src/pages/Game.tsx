@@ -5,6 +5,7 @@ import { ZimMonopolyBoard } from "../components/zim/ZimMonopolyBoard";
 import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
+import { GameLog } from "../components/game/GameLog";
 
 type GameProps = {
   gameState: GameState;
@@ -183,6 +184,7 @@ export default function Game({ gameState }: GameProps) {
               </button>
             )}
           </div>
+          <GameLog gameState={gameState} uid={uid} />
         </aside>
       </section>
     </main>

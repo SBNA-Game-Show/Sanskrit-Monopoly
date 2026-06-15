@@ -74,6 +74,13 @@ export type GameHost = {
   socketId: string | null;
 };
 
+export type LogEntry = {
+  id: string;
+  uid: string;
+  username: string;
+  message: string;
+};
+
 export type GameState = {
   lobbyCode: string;
   status: GameStatus;
@@ -87,4 +94,5 @@ export type GameState = {
   winnerUid: string | null;
   startTime: number | null;
   endTime: number | null;
+  log: LogEntry[];
 };
