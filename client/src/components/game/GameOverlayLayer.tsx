@@ -6,11 +6,16 @@ import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
+import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
+import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
   isHost: boolean;
   onSubmitQuizAnswer: (optionId: string) => void;
+  onBuyProperty: () => void;
+  onDeclineProperty: () => void;
+  onResolveBankruptcy: (bankruptPlayerUid: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -25,7 +30,14 @@ function getCurrentPlayer(gameState: GameState) {
 //   return gameState.edition.tiles[currentPlayer.position];
 // }
 
-export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
+export function GameOverlayLayer({
+  gameState,
+  isHost,
+  onSubmitQuizAnswer,
+  onBuyProperty,
+  onDeclineProperty,
+  onResolveBankruptcy,
+}: GameOverlayLayerProps) {
   const { uid } = useAuth();
 
   const currentPlayer = getCurrentPlayer(gameState);
@@ -34,6 +46,29 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
   if (!currentPlayer || !gameState.gameStatus) return null;
 
   const isActivePlayer = currentPlayer.uid === uid;
+
+  // check if pending action is currently "bankruptcy"
+  if (gameState.pendingAction?.type === "bankruptcy") {
+    return (
+      <BankruptcyOverlay
+        gameState={gameState}
+        isHost={isHost}
+        onResolveBankruptcy={onResolveBankruptcy}
+      />
+    );
+  }
+
+  // check if pending action is currently "buyProperty"
+  if (gameState.pendingAction?.type === "buyProperty") {
+    return (
+      <BuyPropertyOverlay
+        gameState={gameState}
+        isActivePlayer={gameState.pendingAction.playerUid === uid}
+        onBuyProperty={onBuyProperty}
+        onDeclineProperty={onDeclineProperty}
+      />
+    );
+  }
 
   switch (gameState.gameStatus) {
     case "startOfTurn":
@@ -49,9 +84,7 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
-      return (
-        <></>
-      );
+      return <></>;
 
     case "popQuiz":
       return (
