@@ -260,19 +260,16 @@ export function forceSkipTurn(lobbyCode) {
 }
 
 export function startNextTurn(lobby, io, broadcastGameState) {
-  // show startOfTurn overlay after 2 seconds have passed
-  setTimeout(() => {
-    const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
-    lobby.currentPlayerIndex = nextTurnIndex;
-    lobby.gameStatus = "startOfTurn";
-    broadcastGameState(io, lobby);
+  const nextTurnIndex = (lobby.currentPlayerIndex + 1) % lobby.players.length;
+  lobby.currentPlayerIndex = nextTurnIndex;
+  lobby.gameStatus = "startOfTurn";
+  broadcastGameState(io, lobby);
 
-    // change to idling after 2.5 seconds to make startOfTurn overlay disappear
-    setTimeout(() => {
-      lobby.gameStatus = "idling";
-      broadcastGameState(io, lobby);
-    }, 2500);
-  }, 3500);
+  // change to idling after 2.5 seconds to make startOfTurn overlay disappear
+  setTimeout(() => {
+    lobby.gameStatus = "idling";
+    broadcastGameState(io, lobby);
+  }, 2000);
 }
 
 export function kickPlayer(lobbyCode, uid) {

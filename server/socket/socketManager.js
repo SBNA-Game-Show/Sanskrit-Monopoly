@@ -179,12 +179,7 @@ export function setupSocketEvents(io) {
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
-      await sleep(4500);
-
-      result.lobby.gameStatus = "turnEnded";
-      broadcastGameState(io, result.lobby);
-
-      await sleep(1000);
+      await sleep(2000);
 
       // check tile that player landed on before advancing turn
       if (result.lobby.status === "finished") {
