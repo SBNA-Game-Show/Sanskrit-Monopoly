@@ -2,7 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
-import { useNav } from "./game/overlays/TransitionOverlay";
+import { useNav } from "./game/TransitionOverlay";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
