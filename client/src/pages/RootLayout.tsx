@@ -1,5 +1,5 @@
 import Navbar from "../components/Navbar";
-import { TransitionProvider } from "../components/TransitionOverlay";
+import { TransitionProvider } from "../components/game/TransitionOverlay";
 import { Outlet } from "react-router-dom";
 
 function RootLayout() {

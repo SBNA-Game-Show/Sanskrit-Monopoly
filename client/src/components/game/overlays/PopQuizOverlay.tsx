@@ -1,19 +1,23 @@
 import type { ActiveQuiz, PlayerState } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
 import { useEffect, useState } from "react";
+import { socket } from "../../../socket";
+import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 
 type PopQuizOverlayProps = {
   quiz: ActiveQuiz;
   players: PlayerState[];
   isHost: boolean;
-  onSubmitAnswer: (optionId: string) => void;
+  lobbyCode: string;
+  uid: string | null;
 };
 
 export function PopQuizOverlay({
   quiz,
   players,
   isHost,
-  onSubmitAnswer,
+  lobbyCode,
+  uid,
 }: PopQuizOverlayProps) {
   const [now, setNow] = useState(Date.now());
 
@@ -34,8 +38,13 @@ export function PopQuizOverlay({
   const displayTime = `${pad(Math.floor(remainingSeconds / 60))}:${pad(remainingSeconds % 60)}`;
 
   const handleAnswerClick = (optionId: string) => {
-    if (isHost) return;
-    onSubmitAnswer(optionId);
+    if (isHost || !uid) return;
+
+    socket.emit(GAME_EVENTS.QUIZ_SUBMIT_ANSWER, {
+      lobbyCode,
+      uid,
+      optionId,
+    });
   };
 
   // commented out but retained in case needed for the future

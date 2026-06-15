@@ -15,5 +15,12 @@ export const GAME_EVENTS = {
   GAME_UPDATED: "game:updated",
   GAME_ERROR: "game:error",
 
+  // property-related stuffsies
+  GAME_BUY_PROPERTY: "game:buy-property",
+  GAME_DECLINE_PROPERTY: "game:decline-property",
+
+  // for bankrptcy
+  GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
+
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 };
