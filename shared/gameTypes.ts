@@ -7,6 +7,8 @@ export type GamePhase =
   | "idling"
   | "rollingDice"
   | "tokenAdvancing"
+  | "chance"
+  | "community"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -65,6 +67,13 @@ export type ActiveQuiz = {
   endsAt: number;
 };
 
+export type ActiveCard = {
+  id: string;
+  title: string;
+  message: string;
+  points: number;
+};
+
 export type PendingAction =
   | {
       type: "buyProperty";
@@ -121,6 +130,7 @@ export type GameState = {
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
+  activeCard: ActiveCard | null; // chance and community chest
   pendingAction: PendingAction;
   host: GameHost;
   players: PlayerState[];

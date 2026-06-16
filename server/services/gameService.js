@@ -1,5 +1,6 @@
 import { DEFAULT_EDITION } from "../../shared/defaultEdition.js";
 import { QUIZ_QUESTIONS } from "../../shared/quizQuestions.js";
+import { CHANCE_CARDS, COMMUNITY_CHEST_CARDS } from "../constants/game.js";
 
 export const lobbies = {};
 
@@ -47,6 +48,15 @@ function createActiveQuiz() {
     status: "answering",
     endsAt: Date.now() + POP_QUIZ_DURATION_MS,
   };
+}
+
+function getRandomChanceCard() {
+  const index = Math.floor(Math.random() * CHANCE_CARDS.length);
+  return CHANCE_CARDS[index];
+}
+function getRandomCommunityChestCard() {
+  const index = Math.floor(Math.random() * COMMUNITY_CHEST_CARDS.length);
+  return COMMUNITY_CHEST_CARDS[index];
 }
 
 // ***************************************************************
@@ -223,6 +233,38 @@ export function resolveLandingAction(lobby) {
     return { lobby, error: null };
   }
 
+  if (landedTile.type === "chance") {
+    lobby.gameStatus = "chance";
+    const randomCard = getRandomChanceCard();
+    lobby.activeCard = randomCard;
+
+    currentPlayer.money += randomCard.points;
+
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `drew a chance card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`, 
+    });
+
+    return { lobby, error: null };
+  }
+
+  if (landedTile.type === "community") {
+    lobby.gameStatus = "community";
+    const randomCard = getRandomCommunityChestCard();
+    lobby.activeCard = randomCard;
+
+    currentPlayer.money += randomCard.points;
+
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `drew a community chest card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`, 
+    });
+
+    return { lobby, error: null };
+  }
+
   // check if player landed on tax tile
   if (landedTile.type === "tax") {
     const taxAmount = getTaxAmount(landedTile);
@@ -338,6 +380,7 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
+    activeCard: null,
     pendingAction: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
@@ -468,6 +511,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
+  lobby.activeCard = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
   lobby.pendingAction = null;

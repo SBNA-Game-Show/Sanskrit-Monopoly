@@ -9,6 +9,8 @@ import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
 import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
 import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
 import { JailOverlay } from "./overlays/JailOverlay";
+import { ChanceOverlay } from "./overlays/ChanceOverlay";
+import { CommunityChestOverlay } from "./overlays/CommunityChestOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -90,6 +92,22 @@ export function GameOverlayLayer({
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
       return <></>;
+
+    case "chance":
+      return (
+        <ChanceOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+        />
+      );
+
+    case "community":
+      return (
+        <CommunityChestOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+        />
+      );
 
     case "popQuiz":
       return (

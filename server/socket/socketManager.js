@@ -213,6 +213,11 @@ export function setupSocketEvents(io) {
         return;
       }
 
+      if (landingResult.lobby.gameStatus === "chance" || landingResult.lobby.gameStatus === "community") {
+        broadcastGameState(io, landingResult.lobby);
+        await sleep(2500);
+      }
+
       landingResult.lobby.gameStatus = "turnEnded";
       broadcastGameState(io, landingResult.lobby);
 
