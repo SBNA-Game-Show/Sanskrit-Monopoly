@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { setupServer } from "./serverConfig.js";
 import { setupSocketEvents } from "./socket/socketManager.js";
-import { createLobby } from "./services/gameService.js";
+import { createLobby, lobbies } from "./services/gameService.js";
 
 const { app, server, io } = setupServer();
 
@@ -18,6 +18,23 @@ app.post("/api/lobby-create", async (req, res) => {
       error: "Failed to create game",
       details: error.message,
     });
+  }
+});
+
+app.get("/api/lobbies", (req, res) => {
+  try {
+    const allLobbies = Object.values(lobbies || {}).map((lobby) => ({
+      code: lobby.lobbyCode,
+      host: lobby.host?.username || "Unknown Host",
+      players: lobby.players?.length || 1,
+      maxPlayers: 4,
+      edition: lobby.edition?.name || "Standard Edition"
+    }));
+
+    res.status(200).json({ lobbies: allLobbies });
+  } catch (error) {
+    console.error("Error fetching lobbies:", error);
+    res.status(500).json({ error: "Failed to fetch active lobbies" });
   }
 });
 
