@@ -8,6 +8,7 @@ import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
 import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
 import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
+import { JailOverlay } from "./overlays/JailOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -39,6 +40,10 @@ export function GameOverlayLayer({
 
   const isActivePlayer = currentPlayer.uid === uid;
 
+  //---------------------------------------------------------------
+  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
+  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
+
   // check if pending action is currently "bankruptcy"
   if (gameState.pendingAction?.type === "bankruptcy") {
     return (
@@ -56,6 +61,19 @@ export function GameOverlayLayer({
       />
     );
   }
+
+  if (gameState.pendingAction?.type === "jail") {
+    return (
+      <JailOverlay
+        gameState={gameState}
+        isActivePlayer={isActivePlayer}
+      />
+    );
+  }
+
+  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
+  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
+  //---------------------------------------------------------------
 
   switch (gameState.gameStatus) {
     case "startOfTurn":

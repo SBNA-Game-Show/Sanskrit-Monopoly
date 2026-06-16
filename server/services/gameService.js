@@ -123,6 +123,17 @@ function createBuyPropertyAction(player, tile) {
   };
 }
 
+function createJailAction(player) {
+  const bail = 50;
+
+  return {
+    type: "jail",
+    playerUid: player.uid,
+    bail,
+    canAfford: player.money >= bail,
+  };
+}
+
 // ---- bankruptcy related helper functions
 function updateBankruptcyStatus(player) {
   player.needsBankruptcyResolution = player.money < 0;
@@ -192,6 +203,25 @@ export function resolveLandingAction(lobby) {
   }
 
   lobby.pendingAction = null;
+
+  if (landedTile.type === "goToJail") {
+    const jailIndex = lobby.edition.tiles.findIndex(
+      (tile) => tile.type === "jail"
+    );
+
+    currentPlayer.position = jailIndex;
+    currentPlayer.jailed = true;
+
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: `went to jail.`,
+    });
+
+    lobby.pendingAction = createJailAction(currentPlayer);
+
+    return { lobby, error: null };
+  }
 
   // check if player landed on tax tile
   if (landedTile.type === "tax") {
@@ -361,6 +391,7 @@ export function joinLobby(lobbyCode, playerData) {
     points: 0,
     money: 0, // <- implemented
     properties: [], // <- implemented
+    jailed: false,
     isConnected: true,
     needsBankruptcyResolution: false,
     isEliminated: false,
@@ -781,7 +812,15 @@ export function startNextTurn(lobby, io, broadcastGameState) {
 
   // change to idling after 2.5 seconds to make startOfTurn overlay disappear
   setTimeout(() => {
-    lobby.gameStatus = "idling";
+    const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+    if (currentPlayer.jailed) {
+      lobby.pendingAction = {
+        type: "jail",
+      };
+      lobby.gameStatus = "idling"
+    } else {
+      lobby.gameStatus = "idling";
+    }
     broadcastGameState(io, lobby);
   }, 2000);
 }

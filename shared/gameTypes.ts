@@ -80,6 +80,12 @@ export type PendingAction =
       playerName: string;
       money: number;
     }
+  | {
+      type: "jail";
+      playerUid: string;
+      bail: number;
+      canAfford: boolean;
+    }
   | null;
 
 export type PlayerState = {
@@ -91,6 +97,7 @@ export type PlayerState = {
   points: number;
   money: number; // <- is now being used
   properties: string[]; // <- standard monopoly addition now makes it useable
+  jailed: boolean;
   needsBankruptcyResolution: boolean;
   isEliminated: boolean;
   isConnected: boolean;

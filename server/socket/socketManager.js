@@ -16,6 +16,7 @@ import {
   resolveBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
+  lobbies,
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
@@ -255,6 +256,53 @@ export function setupSocketEvents(io) {
       broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
     });
+
+    // jail
+    socket.on(
+      GAME_EVENTS.GAME_PAY_BAIL, ({ lobbyCode }) => {
+        if (!lobbyCode) {
+          emitGameError(socket, "Missing lobby data");
+          return;
+        }
+
+        const lobby = lobbies[lobbyCode];
+        const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+        currentPlayer.money -= 50;
+        currentPlayer.jailed = false;
+        lobby.pendingAction = null;
+
+        addLog(lobbyCode, {
+          uid: currentPlayer.uid,
+          username: currentPlayer.username,
+          message: "paid ₩50 to get out of jail.",
+        })
+
+        broadcastGameState(io, lobby);
+        startNextTurn(lobby, io, broadcastGameState);
+      }
+    )
+
+    // generic pass turn handler (can be used for multiple cases)
+    socket.on(GAME_EVENTS.GAME_PASS_TURN, ({ lobbyCode }) => {
+      if (!lobbyCode) {
+        emitGameError(socket, "Missing lobby data");
+        return;
+      }
+
+      const lobby = lobbies[lobbyCode];
+      const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+      lobby.pendingAction = null;
+
+      addLog(lobbyCode, {
+        uid: currentPlayer.uid,
+        username: currentPlayer.username,
+        message: "passed their turn.",
+      })
+
+      startNextTurn(lobby, io, broadcastGameState);
+    })
 
     // resolving bankruptcy handler
     socket.on(

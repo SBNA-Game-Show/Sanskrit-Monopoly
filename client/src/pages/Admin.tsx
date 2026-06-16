@@ -19,7 +19,7 @@ interface PopQuizActivity {
 interface MonopolyTile {
   id: string;
   name: string;
-  type: "property" | "tax" | "jail" | "chance" | "community" | "minigame" | "quiz";
+  type: "property" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz";
   points: string; // Kept as a string format matching your database panel blueprint
 }
 
@@ -41,7 +41,7 @@ function Admin() {
   // Form states
   const [newEditionName, setNewEditionName] = useState("");
   const [targetTileName, setTargetTileName] = useState("");
-  const [tileType, setTileType] = useState<"property" | "tax" | "jail" | "chance" | "community" | "minigame" | "quiz">("property");
+  const [tileType, setTileType] = useState<"property" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz">("property");
   const [tileValue, setTileValue] = useState<number>(0);
   const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
 
@@ -453,6 +453,9 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                       } else if (tile.type === "jail") {
                         badgeColor = "text-purple-600 bg-purple-50 border-purple-200";
                         displayLabel = "Jail";
+                      } else if (tile.type === "goToJail") {
+                        badgeColor = "text-purple-600 bg-purple-50 border-purple-200";
+                        displayLabel = "Go To Jail";
                       } else if (tile.type === "chance") {
                         badgeColor = "text-indigo-600 bg-indigo-50 border-indigo-200";
                         displayLabel = "Chance Card";
@@ -561,6 +564,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                           <option value="minigame">Minigame</option>
                           <option value="tax">Tax </option>
                           <option value="jail">Jail</option>
+                          <option value="goToJail">Go To Jail</option>
                           <option value="chance">Chance</option>
                           <option value="community">Community Chest</option>
                         </select>

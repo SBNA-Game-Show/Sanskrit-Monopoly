@@ -10,13 +10,21 @@ export const GAME_EVENTS = {
   GAME_HOST_END_GAME: "game:host-end-game",
   GAME_HOST_RESTART_GAME: "game-host-restart-game",
 
+  GAME_UPDATED: "game:updated",
+  GAME_ERROR: "game:error",
+
+  // generic
+  GAME_PASS_TURN: "game:pass-turn",
+
+  // jail
+  GAME_PAY_BAIL: "game:pay-bail",
+
+  // property
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
 
+  // bankruptcy
   GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
-
-  GAME_UPDATED: "game:updated",
-  GAME_ERROR: "game:error",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 } as const;

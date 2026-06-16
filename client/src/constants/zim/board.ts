@@ -61,6 +61,7 @@ export const TILE_TYPE_COLORS = {
   railroad: "#d9c3a3",
   utility: "#f4e8c8",
   jail: "#bcbed0ff",
+  goToJail: "#cdb7d6ff"
 };
 
 export const PLAYER_COLORS = [

@@ -15,6 +15,12 @@ export const GAME_EVENTS = {
   GAME_UPDATED: "game:updated",
   GAME_ERROR: "game:error",
 
+  // generic
+  GAME_PASS_TURN: "game:pass-turn",
+
+  // jail
+  GAME_PAY_BAIL: "game:pay-bail",
+
   // property-related stuffsies
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
