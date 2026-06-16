@@ -2,7 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
-import { useNav } from "../components/TransitionOverlay";
+import { useNav } from "./TransitionOverlay";
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
@@ -34,10 +34,14 @@ function Navbar() {
   // Dynamic Header
   const path = window.location.pathname;
   const isLobbyPage = path.includes("/lobby/");
-  
+
   // If on lobby page then get code from URL
-  const lobbyCodeStr = isLobbyPage ? path.split("/lobby/")[1]?.toUpperCase() : "";
-  const displayTitle = isLobbyPage ? `GAME CODE: ${lobbyCodeStr}` : "Sanskrit Monopoly";
+  const lobbyCodeStr = isLobbyPage
+    ? path.split("/lobby/")[1]?.toUpperCase()
+    : "";
+  const displayTitle = isLobbyPage
+    ? `GAME CODE: ${lobbyCodeStr}`
+    : "Sanskrit Monopoly";
 
   const handleCopyCode = async () => {
     if (!isLobbyPage || !lobbyCodeStr) return;
@@ -48,7 +52,7 @@ function Navbar() {
         variant: "success",
         title: "Code Copied!",
         message: `Game code ${lobbyCodeStr} copied to clipboard. Share it with your friends!`,
-    });
+      });
     } catch (error) {
       showToast({
         variant: "error",
@@ -60,7 +64,6 @@ function Navbar() {
 
   return (
     <header className="flex min-h-16 items-center justify-between bg-[#FFC17E] px-6 py-2 select-none font-jersey relative shadow-sm">
-      
       {/* Pulsing Effect for Game Code */}
       <style>
         {`
@@ -80,14 +83,17 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Clickable Code */}    
-      <div 
+      {/* Clickable Code */}
+      <div
         onClick={isLobbyPage ? handleCopyCode : undefined}
         title={isLobbyPage ? "Click to copy game code" : undefined}
         className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center transition-all duration-300 
-        ${isLobbyPage ? "cursor-pointer hover:scale-110 active:scale-95" : "pointer-events-none"}`}>
-        <h1 className={`text-3xl lg:text-4xl text-white tracking-widest m-0 uppercase font-normal transition-all duration-300 
-          ${isLobbyPage ? "animate-text-glow" : "drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"}`}>
+        ${isLobbyPage ? "cursor-pointer hover:scale-110 active:scale-95" : "pointer-events-none"}`}
+      >
+        <h1
+          className={`text-3xl lg:text-4xl text-white tracking-widest m-0 uppercase font-normal transition-all duration-300 
+          ${isLobbyPage ? "animate-text-glow" : "drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"}`}
+        >
           {displayTitle}
         </h1>
       </div>
@@ -98,12 +104,18 @@ function Navbar() {
             <p className="m-0 text-sm font-semibold text-slate-700">
               {username || "Unknown user"} · {isAdmin ? "Admin" : "Player"}
             </p>
-            <p className="m-0 mt-0.5 text-[0.7rem] text-slate-400">UID: {uid}</p>
+            <p className="m-0 mt-0.5 text-[0.7rem] text-slate-400">
+              UID: {uid}
+            </p>
           </div>
         )}
 
         {uid && (
-          <button type="button" onClick={handleLogout} className="btn-primary font-sans">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="btn-primary font-sans"
+          >
             Logout
           </button>
         )}

@@ -1,5 +1,6 @@
 import { submitScoresToLeaderboard } from "../services/leaderboardService.js";
 import {
+  addLog,
   getLobby,
   joinLobby,
   updatePlayerToken,
@@ -11,13 +12,16 @@ import {
   kickPlayer,
   disconnectPlayer,
   startNextTurn,
+  resolveLandingAction,
+  resolveBankruptcy,
+  buyPendingProperty,
+  declinePendingProperty,
+  lobbies,
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
 
-const POP_QUIZ_DURATION_MS = 15000;
-
-const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 function emitGameError(socket, message) {
   socket.emit(GAME_EVENTS.GAME_ERROR, { message });
@@ -134,14 +138,14 @@ export function setupSocketEvents(io) {
 
     socket.on(
       GAME_EVENTS.GAME_START,
-      ({ lobbyCode, hostUid, edition, startingPoints }) => {
+      ({ lobbyCode, hostUid, tiles, startingPoints }) => {
         if (!lobbyCode || !hostUid) {
           emitGameError(socket, "Missing start game data");
           return;
         }
 
         const result = startGame(lobbyCode, hostUid, {
-          edition,
+          tiles,
           startingPoints,
         });
 
@@ -166,7 +170,8 @@ export function setupSocketEvents(io) {
         return;
       }
 
-      let result = rollDice(lobbyCode, uid);
+      const result = rollDice(lobbyCode, uid);
+
       if (result.error) {
         emitGameError(socket, result.error);
         return;
@@ -179,28 +184,154 @@ export function setupSocketEvents(io) {
       // and do stuff
       // like run the pop quiz minigame, update points, etc
 
-      await sleep(4500);
-
-      result.lobby.gameStatus = "turnEnded";
-      broadcastGameState(io, result.lobby);
-
-      await sleep(1000);
+      await sleep(2000);
 
       // check tile that player landed on before advancing turn
       if (result.lobby.status === "finished") {
         return;
       }
 
-      if (result.lobby.gameStatus === "popQuiz") {
+      const landingResult = resolveLandingAction(result.lobby);
+
+      if (landingResult.error) {
+        emitGameError(socket, landingResult.error);
         return;
       }
 
-      if (result.lobby.gameStatus === "miniGame") {
+      if (landingResult.lobby.pendingAction) {
+        broadcastGameState(io, landingResult.lobby);
         return;
       }
 
+      if (landingResult.lobby.gameStatus === "popQuiz") {
+        broadcastGameState(io, landingResult.lobby);
+        return;
+      }
+
+      if (landingResult.lobby.gameStatus === "miniGame") {
+        broadcastGameState(io, landingResult.lobby);
+        return;
+      }
+
+      if (landingResult.lobby.gameStatus === "chance" || landingResult.lobby.gameStatus === "community") {
+        broadcastGameState(io, landingResult.lobby);
+        await sleep(2500);
+      }
+
+      landingResult.lobby.gameStatus = "turnEnded";
+      broadcastGameState(io, landingResult.lobby);
+
+      await sleep(1000);
+
+      startNextTurn(landingResult.lobby, io, broadcastGameState);
+    });
+
+    // buy property handler
+    socket.on(GAME_EVENTS.GAME_BUY_PROPERTY, ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing buy property data");
+        return;
+      }
+
+      const result = buyPendingProperty(lobbyCode, uid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
     });
+
+    // decline property handler
+    socket.on(GAME_EVENTS.GAME_DECLINE_PROPERTY, ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing decline property data");
+        return;
+      }
+
+      const result = declinePendingProperty(lobbyCode, uid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+      startNextTurn(result.lobby, io, broadcastGameState);
+    });
+
+    // jail
+    socket.on(
+      GAME_EVENTS.GAME_PAY_BAIL, ({ lobbyCode }) => {
+        if (!lobbyCode) {
+          emitGameError(socket, "Missing lobby data");
+          return;
+        }
+
+        const lobby = lobbies[lobbyCode];
+        const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+        currentPlayer.money -= 50;
+        currentPlayer.jailed = false;
+        lobby.pendingAction = null;
+
+        addLog(lobbyCode, {
+          uid: currentPlayer.uid,
+          username: currentPlayer.username,
+          message: "paid ₩50 to get out of jail.",
+        })
+
+        broadcastGameState(io, lobby);
+        startNextTurn(lobby, io, broadcastGameState);
+      }
+    )
+
+    // generic pass turn handler (can be used for multiple cases)
+    socket.on(GAME_EVENTS.GAME_PASS_TURN, ({ lobbyCode }) => {
+      if (!lobbyCode) {
+        emitGameError(socket, "Missing lobby data");
+        return;
+      }
+
+      const lobby = lobbies[lobbyCode];
+      const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+      lobby.pendingAction = null;
+
+      addLog(lobbyCode, {
+        uid: currentPlayer.uid,
+        username: currentPlayer.username,
+        message: "passed their turn.",
+      })
+
+      startNextTurn(lobby, io, broadcastGameState);
+    })
+
+    // resolving bankruptcy handler
+    socket.on(
+      GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY,
+      ({ lobbyCode, hostUid, bankruptPlayerUid }) => {
+        if (!lobbyCode || !hostUid || !bankruptPlayerUid) {
+          emitGameError(socket, "Missing bankruptcy resolution data");
+          return;
+        }
+
+        const result = resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid);
+
+        if (result.error) {
+          emitGameError(socket, result.error);
+          return;
+        }
+
+        broadcastGameState(io, result.lobby);
+
+        if (result.lobby.status !== "finished") {
+          startNextTurn(result.lobby, io, broadcastGameState);
+        }
+      },
+    );
 
     socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
@@ -247,16 +378,35 @@ export function setupSocketEvents(io) {
     socket.on(GAME_EVENTS.GAME_HOST_END_GAME, async ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
 
-      if (!lobby || lobby.host.socketId !== socket.id) {
-        emitGameError(socket, "Only the host can end the game.");
+      if (!lobby) {
+        emitGameError(socket, "Lobby not found");
+
+        return;
+      }
+
+      if (lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can end the game");
+
         return;
       }
 
       lobby.status = "finished";
+      lobby.gameStatus = "turnEnded";
+      lobby.pendingAction = null;
+      lobby.activeQuiz = null;
+      lobby.winnerUid = null;
       lobby.endTime = Date.now();
 
-      await submitScoresToLeaderboard(lobby);
-      
+      addLog(lobbyCode, {
+        uid: lobby.host.uid,
+        username: lobby.host.username,
+        message: "ended the game.",
+      });
+
+      // temporarily commented out
+      // may submit incorrect scores (points-based instead of money-based)
+      // await submitScoresToLeaderboard(lobby);
+
       broadcastGameState(io, lobby);
     });
 
@@ -281,9 +431,21 @@ export function setupSocketEvents(io) {
       lobby.lastRoll = null;
       lobby.winnerUid = null;
 
+      lobby.pendingAction = null;
+
       lobby.players.forEach((player) => {
         player.position = 0;
         player.points = lobby.edition.startingPoints ?? 0;
+        player.money = lobby.edition.startingPoints ?? 1500;
+        player.properties = [];
+        player.isEliminated = false;
+        player.needsBankruptcyResolution = false;
+      });
+
+      addLog(lobbyCode, {
+        uid: lobby.players[lobby.currentPlayerIndex].uid,
+        username: lobby.players[lobby.currentPlayerIndex].username,
+        message: "started their turn.",
       });
 
       broadcastGameState(io, lobby);

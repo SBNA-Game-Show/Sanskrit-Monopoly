@@ -4,9 +4,12 @@ import type {
   CreateZimScene,
   ZimSceneController,
 } from "../../types/zim/zimSceneTypes";
+import type { GameEdition } from "../../types/game/gameTypes";
 
 type ZimSceneHostProps<TState, TActions = undefined> = {
+  edition?: GameEdition
   state: TState;
+  // make createZimScene have an optional arugment for edtion
   createScene: CreateZimScene<TState, TActions>;
   actions?: TActions;
   width?: number;
@@ -15,6 +18,7 @@ type ZimSceneHostProps<TState, TActions = undefined> = {
 };
 
 export function ZimSceneHost<TState, TActions = undefined>({
+  edition,
   state,
   createScene,
   actions,
@@ -41,11 +45,14 @@ export function ZimSceneHost<TState, TActions = undefined>({
       height,
       color: backgroundColor,
       ready: () => {
-        controllerRef.current = createScene(
-          frame.stage,
-          latestStateRef.current,
-          actions,
-        );
+        //if edtion is passed down as a prop, create scene with edition as addtional argument
+        if (edition) {
+          console.log("EDITION AVAILABLE", edition);
+          controllerRef.current = createScene(frame.stage, latestStateRef.current, actions, edition);
+        //otherwise, just create the scene without the edition
+        } else {
+          controllerRef.current = createScene(frame.stage, latestStateRef.current, actions);
+        }
       },
     });
 

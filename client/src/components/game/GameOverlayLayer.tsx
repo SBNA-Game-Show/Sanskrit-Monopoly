@@ -6,11 +6,16 @@ import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
+import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
+import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
+import { JailOverlay } from "./overlays/JailOverlay";
+import { ChanceOverlay } from "./overlays/ChanceOverlay";
+import { CommunityChestOverlay } from "./overlays/CommunityChestOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  uid: string | null;
   isHost: boolean;
-  onSubmitQuizAnswer: (optionId: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -25,15 +30,52 @@ function getCurrentPlayer(gameState: GameState) {
 //   return gameState.edition.tiles[currentPlayer.position];
 // }
 
-export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
-  const { uid } = useAuth();
-
+export function GameOverlayLayer({
+  gameState,
+  isHost,
+  uid,
+}: GameOverlayLayerProps) {
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
 
   if (!currentPlayer || !gameState.gameStatus) return null;
 
   const isActivePlayer = currentPlayer.uid === uid;
+
+  //---------------------------------------------------------------
+  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
+  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
+
+  // check if pending action is currently "bankruptcy"
+  if (gameState.pendingAction?.type === "bankruptcy") {
+    return (
+      <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
+    );
+  }
+
+  // check if pending action is currently "buyProperty"
+  if (gameState.pendingAction?.type === "buyProperty") {
+    return (
+      <BuyPropertyOverlay
+        gameState={gameState}
+        isActivePlayer={gameState.pendingAction.playerUid === uid}
+        uid={uid}
+      />
+    );
+  }
+
+  if (gameState.pendingAction?.type === "jail") {
+    return (
+      <JailOverlay
+        gameState={gameState}
+        isActivePlayer={isActivePlayer}
+      />
+    );
+  }
+
+  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
+  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
+  //---------------------------------------------------------------
 
   switch (gameState.gameStatus) {
     case "startOfTurn":
@@ -49,8 +91,22 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
+      return <></>;
+
+    case "chance":
       return (
-        <></>
+        <ChanceOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+        />
+      );
+
+    case "community":
+      return (
+        <CommunityChestOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+        />
       );
 
     case "popQuiz":
@@ -61,7 +117,8 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
             quiz={gameState.activeQuiz}
             players={gameState.players}
             isHost={isHost}
-            onSubmitAnswer={onSubmitQuizAnswer}
+            lobbyCode={gameState.lobbyCode}
+            uid={uid}
           />
         )
       );
@@ -86,13 +143,15 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "turnEnded":
       return (
+        <></>
+        // commented out for now
         // Change this to its own seperate result overlay later
         // ex: player 1 got +20 points or -20 points, etc
-        <PenaltyActivityOverlay
-          gameState={gameState}
-          isActivePlayer={isActivePlayer}
-          mode="result"
-        />
+        // <PenaltyActivityOverlay
+        //   gameState={gameState}
+        //   isActivePlayer={isActivePlayer}
+        //   mode="result"
+        // />
       );
 
     case "miniGame":

@@ -44,7 +44,7 @@ export default function Lobby() {
   }, [authLoading]);
 
   // --- TRAFFIC CONTROLLER ROUTING ---
-  
+
   if (lobbyState && lobbyState.status === "playing") {
     return <Game gameState={lobbyState} />;
   }
@@ -52,7 +52,7 @@ export default function Lobby() {
   // todo (jyotirmoy): make the results screen render game data
   if (lobbyState && lobbyState.status === "finished") {
     return <Result gameState={lobbyState} />;
-  } 
+  }
 
   if (lobbyState && lobbyState.status === "waiting") {
     // Pass the state down to your new dedicated UI component
@@ -62,9 +62,7 @@ export default function Lobby() {
   // Fallback Loading State
   return (
     <main className="h-[calc(100vh-56px)] bg-white font-jersey flex items-center justify-center">
-      <p className="text-3xl text-[#F97316] tracking-wider">
-        Loading Lobby...
-      </p>
+      <p className="text-3xl text-[#F97316] tracking-wider">Loading Lobby...</p>
     </main>
   );
 }

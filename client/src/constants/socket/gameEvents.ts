@@ -13,5 +13,18 @@ export const GAME_EVENTS = {
   GAME_UPDATED: "game:updated",
   GAME_ERROR: "game:error",
 
+  // generic
+  GAME_PASS_TURN: "game:pass-turn",
+
+  // jail
+  GAME_PAY_BAIL: "game:pay-bail",
+
+  // property
+  GAME_BUY_PROPERTY: "game:buy-property",
+  GAME_DECLINE_PROPERTY: "game:decline-property",
+
+  // bankruptcy
+  GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
+
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 } as const;
