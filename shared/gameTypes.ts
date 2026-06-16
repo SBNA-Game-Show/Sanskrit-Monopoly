@@ -38,8 +38,9 @@ export type GameTile = {
 };
 
 export type GameEdition = {
-  id: string;
-  name: string;
+  // id and name optional for now
+  id?: string;
+  name?: string;
   startingPoints: number;
   tiles: GameTile[];
 };

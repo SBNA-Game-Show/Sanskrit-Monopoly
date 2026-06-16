@@ -53,6 +53,16 @@ const BOARD_TILES: BoardTileDefinition[] = [
 
 export const DEFAULT_BOARD_TILES = BOARD_TILES;
 
+export const TILE_TYPE_COLORS = {
+  corner: "#f7d28b",
+  property: "#ffffff",
+  special: "#f4e8c8",
+  tax: "#e8b4a6",
+  railroad: "#d9c3a3",
+  utility: "#f4e8c8",
+  jail: "#bcbed0ff",
+};
+
 export const PLAYER_COLORS = [
   "#d72638",
   "#2f80ed",

@@ -153,6 +153,7 @@ export default function Game({ gameState }: GameProps) {
           <div className="flex flex-1 items-center justify-center rounded-[22px] border-[12px] border-[#6b3f1d] bg-[#202733] p-4 shadow-2xl">
             <div className="aspect-square h-full max-h-[calc(100vh-190px)] w-full max-w-[calc(100vh-190px)]">
               <ZimMonopolyBoard
+                edition={gameState.edition}
                 players={gameState.players}
                 currentTurnUid={currentPlayer?.uid ?? null}
                 lastRoll={gameState.lastRoll}

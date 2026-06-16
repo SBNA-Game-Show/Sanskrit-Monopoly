@@ -402,8 +402,11 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  if (options.edition) {
-    lobby.edition = options.edition;
+  if (options.tiles) {
+    lobby.edition = {
+      startingPoints: options.startingPoints,
+      tiles: options.tiles
+    };
   }
 
   if (typeof options.startingPoints === "number") {

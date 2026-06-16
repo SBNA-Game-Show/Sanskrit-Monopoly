@@ -4,17 +4,16 @@ import {
   CORNER_SIZE,
   TILE_HEIGHT,
   TILE_WIDTH,
-  DEFAULT_BOARD_TILES,
   PLAYER_COLORS,
   TOKEN_OFFSETS,
 } from "../../constants/zim/board";
 import type {
   TileCenter,
-  BoardTileDefinition,
   ZimBoardController,
   ZimBoardState,
 } from "../../types/zim/zimBoardTypes";
 import { TOKEN_IMAGE_BY_ID } from "../../constants/game/tokenOptions";
+import type { GameEdition, GameTile } from "../../types/game/gameTypes";
 
 function getTileCenter(tileIndex: number): TileCenter {
   const normalizedIndex = tileIndex % 40;
@@ -82,13 +81,6 @@ function getTileCenter(tileIndex: number): TileCenter {
   };
 }
 
-function getTileIndexFromId(tileId: string) {
-  const rawIndex = tileId.replace("tile-", "");
-  const parsedIndex = Number(rawIndex);
-
-  return Number.isInteger(parsedIndex) ? parsedIndex : null;
-}
-
 function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const center = getTileCenter(tileIndex);
   const normalizedIndex = tileIndex % 40;
@@ -112,7 +104,7 @@ function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   return center;
 }
 
-function isOwnableBoardTile(tile: BoardTileDefinition | undefined) {
+function isOwnableBoardTile(tile: GameTile | undefined) {
   return (
     tile?.type === "property" ||
     tile?.type === "railroad" ||
@@ -122,7 +114,7 @@ function isOwnableBoardTile(tile: BoardTileDefinition | undefined) {
 
 function drawCorner(
   board: zim.Container,
-  tile: BoardTileDefinition,
+  tile: GameTile,
   x: number,
   y: number,
 ) {
@@ -151,7 +143,7 @@ function drawCorner(
 
 function drawTile(
   board: zim.Container,
-  tile: BoardTileDefinition,
+  tile: GameTile,
   x: number,
   y: number,
   w: number,
@@ -238,7 +230,11 @@ function drawDice(board: zim.Container, diceValue: number | null | undefined) {
   }).center(dice);
 }
 
-function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
+function drawStaticBoard(
+  edition: GameEdition,
+  stage: zim.Stage,
+  state: ZimBoardState,
+) {
   stage.removeAllChildren();
 
   const board = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
@@ -277,18 +273,18 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
 
   drawCorner(
     board,
-    DEFAULT_BOARD_TILES[0],
+    edition.tiles[0],
     BOARD_SIZE - CORNER_SIZE,
     BOARD_SIZE - CORNER_SIZE,
   );
-  drawCorner(board, DEFAULT_BOARD_TILES[10], 0, BOARD_SIZE - CORNER_SIZE);
-  drawCorner(board, DEFAULT_BOARD_TILES[20], 0, 0);
-  drawCorner(board, DEFAULT_BOARD_TILES[30], BOARD_SIZE - CORNER_SIZE, 0);
+  drawCorner(board, edition.tiles[10], 0, BOARD_SIZE - CORNER_SIZE);
+  drawCorner(board, edition.tiles[20], 0, 0);
+  drawCorner(board, edition.tiles[30], BOARD_SIZE - CORNER_SIZE, 0);
 
   for (let i = 0; i < 9; i += 1) {
     drawTile(
       board,
-      DEFAULT_BOARD_TILES[i + 1],
+      edition.tiles[i + 1],
       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
       BOARD_SIZE - CORNER_SIZE,
       TILE_WIDTH,
@@ -300,7 +296,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   for (let i = 0; i < 9; i += 1) {
     drawTile(
       board,
-      DEFAULT_BOARD_TILES[i + 11],
+      edition.tiles[i + 11],
       0,
       BOARD_SIZE - CORNER_SIZE - (i + 1) * TILE_WIDTH,
       TILE_HEIGHT,
@@ -312,7 +308,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   for (let i = 0; i < 9; i += 1) {
     drawTile(
       board,
-      DEFAULT_BOARD_TILES[i + 21],
+      edition.tiles[i + 21],
       CORNER_SIZE + i * TILE_WIDTH,
       0,
       TILE_WIDTH,
@@ -324,7 +320,7 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
   for (let i = 0; i < 9; i += 1) {
     drawTile(
       board,
-      DEFAULT_BOARD_TILES[i + 31],
+      edition.tiles[i + 31],
       BOARD_SIZE - CORNER_SIZE,
       CORNER_SIZE + i * TILE_WIDTH,
       TILE_HEIGHT,
@@ -339,17 +335,17 @@ function drawStaticBoard(stage: zim.Stage, state: ZimBoardState) {
 }
 
 function drawOwnershipMarkers(
+  edition: GameEdition,
   board: zim.Container,
   ownedTiles: ZimBoardState["ownedTiles"],
 ) {
   if (!ownedTiles) return;
 
   Object.entries(ownedTiles).forEach(([tileId, ownerToken]) => {
-    const tileIndex = getTileIndexFromId(tileId);
-
+    const tileIndex = edition.tiles.findIndex((tile) => tile.id === tileId);
     if (tileIndex === null) return;
 
-    const tile = DEFAULT_BOARD_TILES[tileIndex];
+    const tile = edition.tiles[tileIndex];
 
     if (!isOwnableBoardTile(tile)) return;
 
@@ -418,7 +414,12 @@ function drawPlayers(
 export function createZimBoard(
   stage: zim.Stage,
   initialState: ZimBoardState,
+  actions?: any, //keep this here or board will break
+  edition?: GameEdition,
 ): ZimBoardController {
+  if (!edition) {
+    throw new Error("GameEdition is required for createZimBoard");
+  }
   let board: zim.Container | null = null;
 
   function draw(state: ZimBoardState) {
@@ -428,8 +429,8 @@ export function createZimBoard(
       board = null;
     }
 
-    board = drawStaticBoard(stage, state);
-    drawOwnershipMarkers(board, state.ownedTiles);
+    board = drawStaticBoard(edition, stage, state);
+    drawOwnershipMarkers(edition, board, state.ownedTiles);
     drawPlayers(board, state.players, state.currentTurnUid);
     stage.update();
   }

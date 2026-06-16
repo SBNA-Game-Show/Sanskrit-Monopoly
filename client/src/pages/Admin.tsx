@@ -77,19 +77,13 @@ function Admin() {
       });
       
       setEditions(liveEditions);
-      setLoading(false);
-    }, (error: any) => {
-      console.error("Firestore access blocked. Initializing local workspace memory container...", error);
-      const stored = localStorage.getItem("mock_game_editions");
-      if (stored) {
-        setEditions(JSON.parse(stored));
-      } else {
-        const initialSeed: GameEdition[] = [
-          { id: "seed_1", name: "Good Morals Edition", rewards: { "शब्द-परीक्षा": 100 }, penalties: { "शब्द-परीक्षा": 50 } },
-          { id: "seed_2", name: "Temple Edition", rewards: {}, penalties: {} }
-        ];
-        setEditions(initialSeed);
-        localStorage.setItem("mock_game_editions", JSON.stringify(initialSeed));
+      
+      // Sync the active configuration screen efficiently using memory lookups
+      if (selectedIdRef.current) {
+        const currentMatch = liveEditions.find(e => e.id === selectedIdRef.current);
+        if (currentMatch) {
+          setSelectedEdition(currentMatch);
+        }
       }
       
       setLoading(false);

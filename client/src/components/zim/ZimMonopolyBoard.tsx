@@ -1,16 +1,18 @@
 import { useMemo } from "react";
 import { ZimSceneHost } from "./ZimSceneHost";
 import { createZimBoard } from "./createZimBoard";
-import type { PlayerState } from "../../types/game/gameTypes";
+import type { GameEdition, PlayerState } from "../../types/game/gameTypes";
 import type { ZimBoardState } from "../../types/zim/zimBoardTypes";
 
 type ZimMonopolyBoardProps = {
+  edition: GameEdition;
   players: PlayerState[];
   currentTurnUid: string | null;
   lastRoll: number | null;
 };
 
 export function ZimMonopolyBoard({
+  edition,
   players,
   currentTurnUid,
   lastRoll,
@@ -46,6 +48,7 @@ export function ZimMonopolyBoard({
 
   return (
     <ZimSceneHost
+      edition={edition}
       state={boardState}
       createScene={createZimBoard}
       width={900}

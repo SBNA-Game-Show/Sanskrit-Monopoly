@@ -137,14 +137,14 @@ export function setupSocketEvents(io) {
 
     socket.on(
       GAME_EVENTS.GAME_START,
-      ({ lobbyCode, hostUid, edition, startingPoints }) => {
+      ({ lobbyCode, hostUid, tiles, startingPoints }) => {
         if (!lobbyCode || !hostUid) {
           emitGameError(socket, "Missing start game data");
           return;
         }
 
         const result = startGame(lobbyCode, hostUid, {
-          edition,
+          tiles,
           startingPoints,
         });
 
