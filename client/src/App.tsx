@@ -13,6 +13,7 @@ import RootLayout from "./pages/RootLayout";
 import Home from "./pages/Home";
 import Rules from "./pages/Rules";
 import Lobby from "./pages/Lobby";
+import ActiveLobbies from "./pages/ActiveLobbies";
 //import Game from "./pages/Game";
 //import AdminGame from "./pages/AdminGame";
 import Result from "./pages/Result";
@@ -38,7 +39,7 @@ const router = createBrowserRouter([
           },
           { path: "rules", element: <Rules /> },
           { path: "lobby/:lobbyCode", element: <Lobby /> },
-
+          { path: "active-lobbies", element: <ActiveLobbies /> },
         ],
       },
     ],

@@ -162,7 +162,7 @@ function Home() {
         </div> {/* Top Row */}
 
         {/* Enter Lobby Btn*/}
-        <div className="w-full flex justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
           <button
             type="button"
             disabled={!isCodeEntered}
@@ -171,6 +171,14 @@ function Home() {
             className={`w-64 shadow-none ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}
             ${isCodeEntered ? "bg-[#FDAF5D] hover-scale-105 active:scale-95 cursor-pointer opacity-100" : "bg-[#FFC17E]/70 opacity-70 cursor-not-allowed"}`}>
             ENTER LOBBY
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/active-lobbies")}
+            style={{ filter: shared_styles.activeGlow }}
+            className={`bg-[#FDAF5D] hover:scale-105 active:scale-95 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}>
+            ACTIVE LOBBIES
           </button>
         </div>{/* Enter Lobby Btn */}
       </div> {/* Buttons*/}

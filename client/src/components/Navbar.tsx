@@ -33,11 +33,18 @@ function Navbar() {
 
   // Dynamic Header
   const path = window.location.pathname;
-  const isLobbyPage = path.includes("/lobby/");
+  const isLobbyPage = path.startsWith("/lobby/");
+  const isActiveLobbiesPage = path === "/active-lobbies";
   
   // If on lobby page then get code from URL
   const lobbyCodeStr = isLobbyPage ? path.split("/lobby/")[1]?.toUpperCase() : "";
-  const displayTitle = isLobbyPage ? `GAME CODE: ${lobbyCodeStr}` : "Sanskrit Monopoly";
+
+  let displayTitle = "SANSKRIT MONOPOLY";
+  if (isActiveLobbiesPage) {
+    displayTitle = "ACTIVE LOBBIES";
+  } else if (isLobbyPage) {
+    displayTitle = `GAME CODE: ${lobbyCodeStr}`;
+  }
 
   const handleCopyCode = async () => {
     if (!isLobbyPage || !lobbyCodeStr) return;
@@ -86,10 +93,10 @@ function Navbar() {
         title={isLobbyPage ? "Click to copy game code" : undefined}
         className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center transition-all duration-300 
         ${isLobbyPage ? "cursor-pointer hover:scale-110 active:scale-95" : "pointer-events-none"}`}>
-        <h1 className={`text-3xl lg:text-4xl text-white tracking-widest m-0 uppercase font-normal transition-all duration-300 
-          ${isLobbyPage ? "animate-text-glow" : "drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"}`}>
-          {displayTitle}
-        </h1>
+          <h1 className={`text-3xl lg:text-4xl text-white tracking-widest m-0 uppercase font-normal transition-all duration-300 ${
+            isLobbyPage ? "animate-text-glow" : "drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"}`}>
+            {displayTitle}
+          </h1>
       </div>
 
       <div className="flex items-center gap-4">
