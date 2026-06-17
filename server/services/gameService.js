@@ -165,7 +165,7 @@ function setBankruptcyActionIfNeeded(lobby, player) {
     return false;
   }
 
-  lobby.pendingAction = createBankruptcyAction(player);
+  lobby.gameStatus = "bankruptcy";
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -297,7 +297,7 @@ export function resolveLandingAction(lobby) {
   const owner = findTileOwner(lobby, landedTile.id);
 
   if (!owner) {
-    lobby.pendingAction = createBuyPropertyAction(currentPlayer, landedTile);
+    lobby.gameStatus = "buyProperty";
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
@@ -635,15 +635,17 @@ export function buyPendingProperty(lobbyCode, uid) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  const action = lobby.pendingAction;
-
-  if (!action || action.type !== "buyProperty") {
+  if (lobby.gameStatus !== "buyProperty") {
     return { lobby, error: "No property purchase is pending" };
   }
 
-  if (action.playerUid !== uid) {
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+  if (currentPlayer.uid !== uid) {
     return { lobby, error: "Only the landing player can buy this property" };
   }
+
+  const tile = lobby.edition.tiles[currentPlayer.position];
 
   const player = lobby.players.find(
     (currentPlayer) => currentPlayer.uid === uid,
