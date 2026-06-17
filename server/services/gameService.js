@@ -120,42 +120,9 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
   return typeof tile.rent === "number" ? tile.rent : 10;
 }
 
-function createBuyPropertyAction(player, tile) {
-  const price = getTilePrice(tile);
-
-  return {
-    type: "buyProperty",
-    playerUid: player.uid,
-    tileId: tile.id,
-    tileName: tile.name,
-    price,
-    canAfford: player.money >= price,
-  };
-}
-
-function createJailAction(player) {
-  const bail = 50;
-
-  return {
-    type: "jail",
-    playerUid: player.uid,
-    bail,
-    canAfford: player.money >= bail,
-  };
-}
-
 // ---- bankruptcy related helper functions
 function updateBankruptcyStatus(player) {
   player.needsBankruptcyResolution = player.money < 0;
-}
-
-function createBankruptcyAction(player) {
-  return {
-    type: "bankruptcy",
-    playerUid: player.uid,
-    playerName: player.username,
-    money: player.money,
-  };
 }
 
 function setBankruptcyActionIfNeeded(lobby, player) {
@@ -212,11 +179,9 @@ export function resolveLandingAction(lobby) {
     return { lobby, error: "Landed tile not found" };
   }
 
-  lobby.pendingAction = null;
-
   if (landedTile.type === "goToJail") {
     const jailIndex = lobby.edition.tiles.findIndex(
-      (tile) => tile.type === "jail"
+      (tile) => tile.type === "jail",
     );
 
     currentPlayer.position = jailIndex;
@@ -228,7 +193,7 @@ export function resolveLandingAction(lobby) {
       message: `went to jail.`,
     });
 
-    lobby.pendingAction = createJailAction(currentPlayer);
+    lobby.gameStatus = "jail";
 
     return { lobby, error: null };
   }
@@ -243,7 +208,7 @@ export function resolveLandingAction(lobby) {
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a chance card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`, 
+      message: `drew a chance card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
@@ -259,7 +224,7 @@ export function resolveLandingAction(lobby) {
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a community chest card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`, 
+      message: `drew a community chest card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
@@ -381,7 +346,6 @@ export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
     activeCard: null,
-    pendingAction: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
     edition,
@@ -479,7 +443,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   if (options.tiles) {
     lobby.edition = {
       startingPoints: options.startingPoints,
-      tiles: options.tiles
+      tiles: options.tiles,
     };
   }
 
@@ -514,7 +478,6 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.activeCard = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
-  lobby.pendingAction = null;
   lobby.startTime = Date.now();
   lobby.endTime = null;
 
@@ -559,8 +522,7 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: "Game is not currently active" };
   }
 
-  // pending action guard
-  if (lobby.pendingAction) {
+  if (lobby.gameStatus !== "idling") {
     return { lobby, error: "Resolve the current action before rolling again" };
   }
 
@@ -641,6 +603,10 @@ export function buyPendingProperty(lobbyCode, uid) {
 
   const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
+  if (!currentPlayer) {
+    return { lobby, error: "Current player not found" };
+  }
+
   if (currentPlayer.uid !== uid) {
     return { lobby, error: "Only the landing player can buy this property" };
   }
@@ -654,10 +620,6 @@ export function buyPendingProperty(lobbyCode, uid) {
   if (!player) {
     return { lobby, error: "Player not found" };
   }
-
-  const tile = lobby.edition.tiles.find(
-    (currentTile) => currentTile.id === action.tileId,
-  );
 
   if (!tile || !isBuyableTile(tile)) {
     return { lobby, error: "This tile cannot be purchased" };
@@ -679,7 +641,6 @@ export function buyPendingProperty(lobbyCode, uid) {
   player.properties.push(tile.id);
   updateBankruptcyStatus(player);
 
-  lobby.pendingAction = null;
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -697,26 +658,39 @@ export function declinePendingProperty(lobbyCode, uid) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  const action = lobby.pendingAction;
-
-  if (!action || action.type !== "buyProperty") {
+  if (lobby.gameStatus !== "buyProperty") {
     return { lobby, error: "No property purchase is pending" };
   }
 
-  if (action.playerUid !== uid) {
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+  if (!currentPlayer) {
+    return { lobby, error: "Current player not found" };
+  }
+
+  if (currentPlayer.uid !== uid) {
     return {
       lobby,
       error: "Only the landing player can decline this property",
     };
   }
 
-  lobby.pendingAction = null;
-  const decliningPlayer = lobby.players.find((player) => player.uid === uid);
+  const tile = lobby.edition.tiles[currentPlayer.position];
+
+  if (!tile || !isBuyableTile(tile)) {
+    return { lobby, error: "This tile cannot be purchased" };
+  }
+
+  const existingOwner = findTileOwner(lobby, tile.id);
+
+  if (existingOwner) {
+    return { lobby, error: "This property is already owned" };
+  }
 
   addLog(lobby.lobbyCode, {
     uid,
-    username: decliningPlayer?.username ?? "The player",
-    message: `declined to buy ${action.tileName}.`,
+    username: currentPlayer.username,
+    message: `declined to buy ${tile.name}.`,
   });
   lobby.gameStatus = "turnEnded";
 
@@ -735,14 +709,8 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: "Only the host can resolve bankruptcy" };
   }
 
-  const action = lobby.pendingAction;
-
-  if (!action || action.type !== "bankruptcy") {
+  if (lobby.gameStatus !== "bankruptcy") {
     return { lobby, error: "No bankruptcy resolution is pending" };
-  }
-
-  if (action.playerUid !== bankruptPlayerUid) {
-    return { lobby, error: "Bankruptcy action does not match this player" };
   }
 
   const bankruptPlayer = lobby.players.find(
@@ -751,6 +719,10 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
 
   if (!bankruptPlayer) {
     return { lobby, error: "Bankrupt player not found" };
+  }
+
+  if (!bankruptPlayer.needsBankruptcyResolution) {
+    return { lobby, error: "This player is not bankrupt" };
   }
 
   const releasedProperties = bankruptPlayer.properties;
@@ -770,8 +742,6 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
   }
-
-  lobby.pendingAction = null;
 
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
@@ -859,14 +829,7 @@ export function startNextTurn(lobby, io, broadcastGameState) {
   // change to idling after 2.5 seconds to make startOfTurn overlay disappear
   setTimeout(() => {
     const currentPlayer = lobby.players[lobby.currentPlayerIndex];
-    if (currentPlayer.jailed) {
-      lobby.pendingAction = {
-        type: "jail",
-      };
-      lobby.gameStatus = "idling"
-    } else {
-      lobby.gameStatus = "idling";
-    }
+    lobby.gameStatus = currentPlayer.jailed ? "jail" : "idling";
     broadcastGameState(io, lobby);
   }, 2000);
 }
