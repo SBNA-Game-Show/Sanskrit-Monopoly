@@ -198,7 +198,11 @@ export function setupSocketEvents(io) {
         return;
       }
 
-      if (landingResult.lobby.pendingAction) {
+      if (
+        landingResult.lobby.gameStatus === "buyProperty" ||
+        landingResult.lobby.gameStatus === "bankruptcy" ||
+        landingResult.lobby.gameStatus === "jail"
+      ) {
         broadcastGameState(io, landingResult.lobby);
         return;
       }
@@ -213,7 +217,10 @@ export function setupSocketEvents(io) {
         return;
       }
 
-      if (landingResult.lobby.gameStatus === "chance" || landingResult.lobby.gameStatus === "community") {
+      if (
+        landingResult.lobby.gameStatus === "chance" ||
+        landingResult.lobby.gameStatus === "community"
+      ) {
         broadcastGameState(io, landingResult.lobby);
         await sleep(2500);
       }
@@ -263,30 +270,27 @@ export function setupSocketEvents(io) {
     });
 
     // jail
-    socket.on(
-      GAME_EVENTS.GAME_PAY_BAIL, ({ lobbyCode }) => {
-        if (!lobbyCode) {
-          emitGameError(socket, "Missing lobby data");
-          return;
-        }
-
-        const lobby = lobbies[lobbyCode];
-        const currentPlayer = lobby.players[lobby.currentPlayerIndex];
-
-        currentPlayer.money -= 50;
-        currentPlayer.jailed = false;
-        lobby.pendingAction = null;
-
-        addLog(lobbyCode, {
-          uid: currentPlayer.uid,
-          username: currentPlayer.username,
-          message: "paid ₩50 to get out of jail.",
-        })
-
-        broadcastGameState(io, lobby);
-        startNextTurn(lobby, io, broadcastGameState);
+    socket.on(GAME_EVENTS.GAME_PAY_BAIL, ({ lobbyCode }) => {
+      if (!lobbyCode) {
+        emitGameError(socket, "Missing lobby data");
+        return;
       }
-    )
+
+      const lobby = lobbies[lobbyCode];
+      const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+      currentPlayer.money -= 50;
+      currentPlayer.jailed = false;
+
+      addLog(lobbyCode, {
+        uid: currentPlayer.uid,
+        username: currentPlayer.username,
+        message: "paid ₩50 to get out of jail.",
+      });
+
+      broadcastGameState(io, lobby);
+      startNextTurn(lobby, io, broadcastGameState);
+    });
 
     // generic pass turn handler (can be used for multiple cases)
     socket.on(GAME_EVENTS.GAME_PASS_TURN, ({ lobbyCode }) => {
@@ -298,16 +302,14 @@ export function setupSocketEvents(io) {
       const lobby = lobbies[lobbyCode];
       const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
-      lobby.pendingAction = null;
-
       addLog(lobbyCode, {
         uid: currentPlayer.uid,
         username: currentPlayer.username,
         message: "passed their turn.",
-      })
+      });
 
       startNextTurn(lobby, io, broadcastGameState);
-    })
+    });
 
     // resolving bankruptcy handler
     socket.on(
@@ -392,7 +394,6 @@ export function setupSocketEvents(io) {
 
       lobby.status = "finished";
       lobby.gameStatus = "turnEnded";
-      lobby.pendingAction = null;
       lobby.activeQuiz = null;
       lobby.winnerUid = null;
       lobby.endTime = Date.now();
@@ -430,8 +431,6 @@ export function setupSocketEvents(io) {
       lobby.currentPlayerIndex = 0;
       lobby.lastRoll = null;
       lobby.winnerUid = null;
-
-      lobby.pendingAction = null;
 
       lobby.players.forEach((player) => {
         player.position = 0;
