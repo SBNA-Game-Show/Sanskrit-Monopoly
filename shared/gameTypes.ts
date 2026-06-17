@@ -9,6 +9,8 @@ export type GamePhase =
   | "tokenAdvancing"
   | "chance"
   | "community"
+  | "buyProperty"
+  | "jail"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -74,29 +76,6 @@ export type ActiveCard = {
   points: number;
 };
 
-export type PendingAction =
-  | {
-      type: "buyProperty";
-      playerUid: string;
-      tileId: string;
-      tileName: string;
-      price: number;
-      canAfford: boolean;
-    }
-  | {
-      type: "bankruptcy";
-      playerUid: string;
-      playerName: string;
-      money: number;
-    }
-  | {
-      type: "jail";
-      playerUid: string;
-      bail: number;
-      canAfford: boolean;
-    }
-  | null;
-
 export type PlayerState = {
   uid: string;
   username: string;
@@ -131,7 +110,6 @@ export type GameState = {
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
-  pendingAction: PendingAction;
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
