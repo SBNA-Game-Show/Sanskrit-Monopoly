@@ -14,9 +14,11 @@ export function BankruptcyOverlay({
   isHost,
   uid,
 }: BankruptcyOverlayProps) {
-  const action = gameState.pendingAction;
+  const bankruptPlayer = gameState.players.find(
+    (player) => player.needsBankruptcyResolution && !player.isEliminated,
+  );
 
-  if (!action || action.type !== "bankruptcy") return null;
+  if (!bankruptPlayer) return null;
 
   const handleResolveBankruptcy = (bankruptPlayerUid: string) => {
     if (!gameState.lobbyCode || !uid) return;
@@ -35,15 +37,15 @@ export function BankruptcyOverlay({
       </p>
 
       <h2 className="text-[34px] font-extrabold text-[#160f08]">
-        {action.playerName}
+        {bankruptPlayer.username}
       </h2>
 
       <p className="mt-4 text-lg font-semibold text-[#6b3f1d]">
         This player is below ₩0 with a balance of{" "}
         <span className="font-extrabold">
-          {action.money < 0
-            ? `-₩${Math.abs(action.money)}`
-            : `₩${action.money}`}
+          {bankruptPlayer.money < 0
+            ? `-₩${Math.abs(bankruptPlayer.money)}`
+            : `₩${bankruptPlayer.money}`}
         </span>
         .
       </p>
@@ -51,7 +53,7 @@ export function BankruptcyOverlay({
       {isHost ? (
         <button
           type="button"
-          onClick={() => handleResolveBankruptcy(action.playerUid)}
+          onClick={() => handleResolveBankruptcy(bankruptPlayer.uid)}
           className="mt-7 rounded-full bg-[#b33a3a] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#d9534f]"
         >
           Eliminate Player

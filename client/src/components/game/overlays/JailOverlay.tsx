@@ -1,4 +1,4 @@
-//This page is just the overlay, ill add cooler looks to this later... maybe; also ill try to add informal comments for easier merging 
+//This page is just the overlay, ill add cooler looks to this later... maybe; also ill try to add informal comments for easier merging
 
 import type { GameState } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
@@ -12,20 +12,17 @@ type JailOverlayProps = {
 
 const BAIL_COST = 50;
 
-export function JailOverlay({
-  gameState,
-  isActivePlayer,
-}: JailOverlayProps) {
+export function JailOverlay({ gameState, isActivePlayer }: JailOverlayProps) {
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-  const canAffordBail = (currentPlayer?.points ?? 0) >= BAIL_COST;
+  const canAffordBail = (currentPlayer?.money ?? 0) >= BAIL_COST;
 
-  function handlePayBail(){
+  function handlePayBail() {
     socket.emit(GAME_EVENTS.GAME_PAY_BAIL, {
       lobbyCode: gameState.lobbyCode,
     });
   }
 
-  function handlePassTurn(){
+  function handlePassTurn() {
     socket.emit(GAME_EVENTS.GAME_PASS_TURN, {
       lobbyCode: gameState.lobbyCode,
     });
@@ -37,9 +34,7 @@ export function JailOverlay({
         Special Tile
       </p>
 
-      <h2 className="text-[34px] font-extrabold text-[#160f08]">
-        Go To Jail
-      </h2>
+      <h2 className="text-[34px] font-extrabold text-[#160f08]">Go To Jail</h2>
 
       <p className="mt-2 text-base font-semibold text-[#6b3f1d]">
         {currentPlayer?.username} landed on the jail tile.
@@ -52,7 +47,7 @@ export function JailOverlay({
 
         <p className="mt-2 text-sm font-semibold text-[#6b3f1d]">
           {isActivePlayer
-            ? `Pay ${BAIL_COST} points to skip jail, or go to jail.`
+            ? `Pay ${BAIL_COST} money to skip jail, or go to jail.`
             : "Waiting for the current player to decide."}
         </p>
       </div>
@@ -86,7 +81,7 @@ export function JailOverlay({
 
       {isActivePlayer && !canAffordBail && (
         <p className="mt-3 text-sm font-semibold text-[#b33a3a]">
-          Not enough points to pay bail, NOT IMPLIMENTED
+          Not enough money to pay bail, NOT IMPLIMENTED
         </p>
       )}
     </GameOverlayShell>

@@ -42,41 +42,6 @@ export function GameOverlayLayer({
 
   const isActivePlayer = currentPlayer.uid === uid;
 
-  //---------------------------------------------------------------
-  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
-  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
-
-  // check if pending action is currently "bankruptcy"
-  if (gameState.pendingAction?.type === "bankruptcy") {
-    return (
-      <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
-    );
-  }
-
-  // check if pending action is currently "buyProperty"
-  if (gameState.pendingAction?.type === "buyProperty") {
-    return (
-      <BuyPropertyOverlay
-        gameState={gameState}
-        isActivePlayer={gameState.pendingAction.playerUid === uid}
-        uid={uid}
-      />
-    );
-  }
-
-  if (gameState.pendingAction?.type === "jail") {
-    return (
-      <JailOverlay
-        gameState={gameState}
-        isActivePlayer={isActivePlayer}
-      />
-    );
-  }
-
-  // GET RID OF PENDINGACTION IN THE FUTURE IN FAVOUR OF GAMESTATUS
-  // ALL DATA IN PENDINGACTION CAN JUST BE DERIVED FROM GAME STATE
-  //---------------------------------------------------------------
-
   switch (gameState.gameStatus) {
     case "startOfTurn":
       return (
@@ -84,6 +49,25 @@ export function GameOverlayLayer({
           gameState={gameState}
           isActivePlayer={isActivePlayer}
         />
+      );
+
+    case "bankruptcy":
+      return (
+        <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
+      );
+
+    case "buyProperty":
+      return (
+        <BuyPropertyOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+          uid={uid}
+        />
+      );
+
+    case "jail":
+      return (
+        <JailOverlay gameState={gameState} isActivePlayer={isActivePlayer} />
       );
 
     case "rollingDice":
@@ -95,10 +79,7 @@ export function GameOverlayLayer({
 
     case "chance":
       return (
-        <ChanceOverlay
-          gameState={gameState}
-          isActivePlayer={isActivePlayer}
-        />
+        <ChanceOverlay gameState={gameState} isActivePlayer={isActivePlayer} />
       );
 
     case "community":
