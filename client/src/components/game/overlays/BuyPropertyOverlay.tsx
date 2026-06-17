@@ -14,19 +14,21 @@ export function BuyPropertyOverlay({
   isActivePlayer,
   uid,
 }: BuyPropertyOverlayProps) {
-  const action = gameState.pendingAction;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const tileIndex = currentPlayer?.position ?? -1;
+  const tile = gameState.edition.tiles[tileIndex];
 
-  if (!action || action.type !== "buyProperty") return null;
+  const owner = tile
+    ? gameState.players.find((player) => player.properties.includes(tile.id))
+    : null;
 
-  const currentPlayer = gameState.players.find(
-    (player) => player.uid === action.playerUid,
-  );
+  if (!currentPlayer || !tile || owner) return null;
 
-  const tileIndex = gameState.edition.tiles.findIndex(
-    (tile) => tile.id === action.tileId || tile.name === action.tileName,
-  );
+  const price = tile.price ?? 100;
+  const canAfford = currentPlayer.money >= price;
   const resolvedTileIndex = tileIndex >= 0 ? tileIndex : 0;
-  const boardTile = gameState.edition.tiles[resolvedTileIndex % gameState.edition.tiles.length];
+  const boardTile =
+    gameState.edition.tiles[resolvedTileIndex % gameState.edition.tiles.length];
   const editionTile = gameState.edition.tiles[resolvedTileIndex];
 
   const color = boardTile?.color ?? "#7b1e2b";
@@ -35,7 +37,7 @@ export function BuyPropertyOverlay({
     "A Sanskrit Monopoly property card. Buy it to collect rent when other players land here.";
   const rent = 10; // make dynamic later
   const rentWithSet = rent * 2;
-  const sellValue = Math.round(action.price * 0.5);
+  const sellValue = Math.round(price * 0.5);
 
   const handleBuyProperty = () => {
     if (!gameState.lobbyCode || !uid) return;
@@ -69,7 +71,7 @@ export function BuyPropertyOverlay({
               Property Title Card
             </p>
             <h2 className="mt-2 text-[34px] font-extrabold leading-tight text-[#160f08]">
-              {action.tileName}
+              {tile.name}
             </h2>
             <p className="mt-1 text-sm font-bold text-[#6b3f1d]">
               Position {resolvedTileIndex} • Unowned
@@ -84,24 +86,33 @@ export function BuyPropertyOverlay({
           {/* Stats grid */}
           <div className="mt-5 grid grid-cols-3 gap-3 text-center">
             <div className="rounded-2xl bg-[#f5bd78] px-3 py-4 shadow-sm">
-              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">Price</p>
-              <p className="mt-1 text-2xl font-extrabold">₩{action.price}</p>
+              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">
+                Price
+              </p>
+              <p className="mt-1 text-2xl font-extrabold">₩{price}</p>
             </div>
             <div className="rounded-2xl bg-[#f5bd78] px-3 py-4 shadow-sm">
-              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">Rent</p>
+              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">
+                Rent
+              </p>
               <p className="mt-1 text-2xl font-extrabold">₩{rent}</p>
             </div>
             <div className="rounded-2xl bg-[#f5bd78] px-3 py-4 shadow-sm">
-              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">Sell</p>
+              <p className="text-xs font-extrabold uppercase text-[#6b3f1d]">
+                Sell
+              </p>
               <p className="mt-1 text-2xl font-extrabold">₩{sellValue}</p>
             </div>
           </div>
 
           {/* Rent rules */}
           <div className="mt-5 rounded-2xl border-[4px] border-[#ffa23b] bg-white/70 p-4 text-left">
-            <p className="text-sm font-extrabold uppercase text-[#6b3f1d]">Rent Rules</p>
+            <p className="text-sm font-extrabold uppercase text-[#6b3f1d]">
+              Rent Rules
+            </p>
             <p className="mt-2 text-sm font-semibold text-[#160f08]">
-              Base rent is ₩{rent}. If the player owns the full color set, rent becomes ₩{rentWithSet}.
+              Base rent is ₩{rent}. If the player owns the full color set, rent
+              becomes ₩{rentWithSet}.
             </p>
           </div>
 
@@ -109,7 +120,7 @@ export function BuyPropertyOverlay({
           <div className="mt-5">
             {isActivePlayer ? (
               <>
-                {!action.canAfford && (
+                {!canAfford && (
                   <div className="mb-4 rounded-2xl bg-[#fff1e5] px-4 py-3">
                     <p className="text-base font-extrabold text-[#b33a3a]">
                       Not enough money to buy this property.
@@ -120,7 +131,7 @@ export function BuyPropertyOverlay({
                   <button
                     type="button"
                     onClick={handleBuyProperty}
-                    disabled={!action.canAfford}
+                    disabled={!canAfford}
                     className="h-[54px] flex-1 rounded-2xl border-[5px] border-[#ffa23b] bg-[#e84a15] text-lg font-extrabold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Buy Property
