@@ -11,6 +11,7 @@ export type GamePhase =
   | "community"
   | "buyProperty"
   | "jail"
+  | "bankruptcy"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
