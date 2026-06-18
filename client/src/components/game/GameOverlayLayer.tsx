@@ -6,11 +6,16 @@ import { VerseChallengeOverlay } from "./overlays/VerseChallengeOverlay";
 import { PenaltyActivityOverlay } from "./overlays/PenaltyActivityOverlay";
 import { MiniGameOverlay } from "./overlays/MiniGameOverlay";
 import { DiceRollOverlay } from "./overlays/DiceRollOverlay";
+import { BuyPropertyOverlay } from "./overlays/BuyPropertyOverlay";
+import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
+import { JailOverlay } from "./overlays/JailOverlay";
+import { ChanceOverlay } from "./overlays/ChanceOverlay";
+import { CommunityChestOverlay } from "./overlays/CommunityChestOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
+  uid: string | null;
   isHost: boolean;
-  onSubmitQuizAnswer: (optionId: string) => void;
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -25,9 +30,11 @@ function getCurrentPlayer(gameState: GameState) {
 //   return gameState.edition.tiles[currentPlayer.position];
 // }
 
-export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: GameOverlayLayerProps) {
-  const { uid } = useAuth();
-
+export function GameOverlayLayer({
+  gameState,
+  isHost,
+  uid,
+}: GameOverlayLayerProps) {
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
 
@@ -44,13 +51,43 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
         />
       );
 
+    case "bankruptcy":
+      return (
+        <BankruptcyOverlay gameState={gameState} isHost={isHost} uid={uid} />
+      );
+
+    case "buyProperty":
+      return (
+        <BuyPropertyOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+          uid={uid}
+        />
+      );
+
+    case "jail":
+      return (
+        <JailOverlay gameState={gameState} isActivePlayer={isActivePlayer} />
+      );
+
     case "rollingDice":
       return <DiceRollOverlay gameState={gameState} />;
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board
+      return <></>;
+
+    case "chance":
       return (
-        <></>
+        <ChanceOverlay gameState={gameState} isActivePlayer={isActivePlayer} />
+      );
+
+    case "community":
+      return (
+        <CommunityChestOverlay
+          gameState={gameState}
+          isActivePlayer={isActivePlayer}
+        />
       );
 
     case "popQuiz":
@@ -61,7 +98,8 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
             quiz={gameState.activeQuiz}
             players={gameState.players}
             isHost={isHost}
-            onSubmitAnswer={onSubmitQuizAnswer}
+            lobbyCode={gameState.lobbyCode}
+            uid={uid}
           />
         )
       );
@@ -86,13 +124,15 @@ export function GameOverlayLayer({ gameState, isHost, onSubmitQuizAnswer }: Game
 
     case "turnEnded":
       return (
+        <></>
+        // commented out for now
         // Change this to its own seperate result overlay later
         // ex: player 1 got +20 points or -20 points, etc
-        <PenaltyActivityOverlay
-          gameState={gameState}
-          isActivePlayer={isActivePlayer}
-          mode="result"
-        />
+        // <PenaltyActivityOverlay
+        //   gameState={gameState}
+        //   isActivePlayer={isActivePlayer}
+        //   mode="result"
+        // />
       );
 
     case "miniGame":

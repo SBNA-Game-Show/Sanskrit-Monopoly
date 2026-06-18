@@ -7,6 +7,11 @@ export type GamePhase =
   | "idling"
   | "rollingDice"
   | "tokenAdvancing"
+  | "chance"
+  | "community"
+  | "buyProperty"
+  | "jail"
+  | "bankruptcy"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -15,23 +20,32 @@ export type GamePhase =
 
 export type GameTileType =
   | "start"
-  | "reward"
-  | "penalty"
-  | "property"
   | "corner"
-  | "special";
+  | "property"
+  | "special"
+  | "tax"
+  | "railroad"
+  | "utility"
+  | "penalty"
+  | "reward";
 
 export type GameTile = {
   id: string;
   name: string;
   type: GameTileType;
+  color?: string;
   points?: number;
+  price?: number;
+  rent?: number;
+  amount?: number;
+  group?: string;
   description?: string;
 };
 
 export type GameEdition = {
-  id: string;
-  name: string;
+  // id and name optional for now
+  id?: string;
+  name?: string;
   startingPoints: number;
   tiles: GameTile[];
 };
@@ -56,6 +70,13 @@ export type ActiveQuiz = {
   endsAt: number;
 };
 
+export type ActiveCard = {
+  id: string;
+  title: string;
+  message: string;
+  points: number;
+};
+
 export type PlayerState = {
   uid: string;
   username: string;
@@ -63,8 +84,11 @@ export type PlayerState = {
   token: string | null;
   position: number;
   points: number;
-  money: number; // currently unused
-  properties: string[]; // currently unused
+  money: number; // <- is now being used
+  properties: string[]; // <- standard monopoly addition now makes it useable
+  jailed: boolean;
+  needsBankruptcyResolution: boolean;
+  isEliminated: boolean;
   isConnected: boolean;
 };
 
@@ -74,11 +98,19 @@ export type GameHost = {
   socketId: string | null;
 };
 
+export type LogEntry = {
+  id: string;
+  uid: string;
+  username: string;
+  message: string;
+};
+
 export type GameState = {
   lobbyCode: string;
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
+  activeCard: ActiveCard | null; // chance and community chest
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
@@ -87,4 +119,5 @@ export type GameState = {
   winnerUid: string | null;
   startTime: number | null;
   endTime: number | null;
+  log: LogEntry[];
 };
