@@ -438,7 +438,7 @@ export function setupSocketEvents(io) {
         player.money = lobby.edition.startingPoints ?? 1500;
         player.properties = [];
         player.isEliminated = false;
-        player.needsBankruptcyResolution = false;
+        player.isBankrupt = false;
       });
 
       addLog(lobbyCode, {

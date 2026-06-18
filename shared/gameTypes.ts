@@ -87,7 +87,7 @@ export type PlayerState = {
   money: number; // <- is now being used
   properties: string[]; // <- standard monopoly addition now makes it useable
   jailed: boolean;
-  needsBankruptcyResolution: boolean;
+  isBankrupt: boolean;
   isEliminated: boolean;
   isConnected: boolean;
 };

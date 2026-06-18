@@ -21,7 +21,7 @@ export const GAME_EVENTS = {
   // jail
   GAME_PAY_BAIL: "game:pay-bail",
 
-  // property-related stuffsies
+  // property-related stuff
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
 

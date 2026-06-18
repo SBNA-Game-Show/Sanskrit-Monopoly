@@ -15,7 +15,7 @@ export function BankruptcyOverlay({
   uid,
 }: BankruptcyOverlayProps) {
   const bankruptPlayer = gameState.players.find(
-    (player) => player.needsBankruptcyResolution && !player.isEliminated,
+    (player) => player.isBankrupt && !player.isEliminated,
   );
 
   if (!bankruptPlayer) return null;

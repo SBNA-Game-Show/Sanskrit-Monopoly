@@ -122,13 +122,13 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
 
 // ---- bankruptcy related helper functions
 function updateBankruptcyStatus(player) {
-  player.needsBankruptcyResolution = player.money < 0;
+  player.isBankrupt = player.money < 0;
 }
 
 function setBankruptcyActionIfNeeded(lobby, player) {
   updateBankruptcyStatus(player);
 
-  if (!player.needsBankruptcyResolution) {
+  if (!player.isBankrupt) {
     return false;
   }
 
@@ -400,7 +400,7 @@ export function joinLobby(lobbyCode, playerData) {
     properties: [], // <- implemented
     jailed: false,
     isConnected: true,
-    needsBankruptcyResolution: false,
+    isBankrupt: false,
     isEliminated: false,
   });
   return { lobby, error: null };
@@ -487,7 +487,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     player.points = lobby.edition.startingPoints ?? 0;
     player.money = lobby.edition.startingPoints ?? 1500;
     player.properties = [];
-    player.needsBankruptcyResolution = false;
+    player.isBankrupt = false;
     player.isEliminated = false;
   });
 
@@ -523,9 +523,7 @@ export function rollDice(lobbyCode, uid) {
   }
 
   // block unresolved bankruptcy
-  const bankruptPlayer = lobby.players.find(
-    (player) => player.needsBankruptcyResolution,
-  );
+  const bankruptPlayer = lobby.players.find((player) => player.isBankrupt);
 
   if (bankruptPlayer) {
     return {
@@ -717,14 +715,14 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: "Bankrupt player not found" };
   }
 
-  if (!bankruptPlayer.needsBankruptcyResolution) {
+  if (!bankruptPlayer.isBankrupt) {
     return { lobby, error: "This player is not bankrupt" };
   }
 
   const releasedProperties = bankruptPlayer.properties;
 
   bankruptPlayer.isEliminated = true;
-  bankruptPlayer.needsBankruptcyResolution = false;
+  bankruptPlayer.isBankrupt = false;
   bankruptPlayer.properties = [];
 
   lobby.players.forEach((player) => {
