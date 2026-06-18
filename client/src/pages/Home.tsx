@@ -298,7 +298,7 @@ function Home() {
         </div>
         {/* Top Row */}
         {/* Enter Lobby Btn*/}
-        <div className="w-full flex justify-center">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
           <button
             type="button"
             disabled={!isCodeEntered}
@@ -309,10 +309,17 @@ function Home() {
           >
             ENTER LOBBY
           </button>
-        </div>
-        {/* Enter Lobby Btn */}
-      </div>
-      {/* Buttons*/}
+
+          <button
+            type="button"
+            onClick={() => navigate("/active-lobbies")}
+            style={{ filter: shared_styles.activeGlow }}
+            className={`bg-[#FDAF5D] hover:scale-105 active:scale-95 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}>
+            ACTIVE LOBBIES
+          </button>
+        </div>{/* Enter Lobby Btn */}
+      </div> {/* Buttons*/}
+
       {/* Footer */}
       <div className="w-full bg-[#FFC17E] h-20 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)]"></div>
     </main>
