@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import type { GameState } from "../types/game/gameTypes";
+import { TILE_TYPE_COLORS } from "../constants/zim/board";
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
 
@@ -20,7 +21,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
   const [selectedEdition, setSelectedEdition] = useState<string | null>(null);
   const [startingMoney, setStartingMoney] = useState<number | null>(null);
-  const [availableEditions, setAvailableEditions] = useState<string[]>([]);
+  const [availableEditions, setAvailableEditions] = useState<{id: string, name: string}[]>([]);
 
   const host = lobbyState.host;
   const players = lobbyState.players ?? [];
@@ -42,18 +43,10 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     const editionsRef = collection(db, "game_editions");
 
     const unsubscribe = onSnapshot(editionsRef, (snapshot) => { 
-      const liveEditions = snapshot.docs.map((doc) => doc.data().name);
+      const liveEditions = snapshot.docs.map((doc) => {return {id: doc.id, name: doc.data().name}});
       setAvailableEditions(liveEditions);
     }, (error) => {
-      console.warn("Firebase blocked. Pulling editions from local Admin cache...", error);
-      const stored = localStorage.getItem("default_game_editions");
-
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setAvailableEditions(parsed.map((ed: any) => ed.name));
-      } else {
-        setAvailableEditions(["Temple", "Moral Teaching", "Bhagavad Gita"]);
-      }
+      console.log(error);
     });
 
     return () => unsubscribe();
@@ -84,13 +77,22 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     e.preventDefault();
   };
 
-  const handleStartGame = () => {
-    if (!canStart || !lobbyCode || !uid) return;
+  const handleStartGame = async () => {
+    if (!canStart || !lobbyCode || !uid || !selectedEdition) return;
+
+    const docRef = doc(db, "game_editions", selectedEdition);
+    const docSnap = await getDoc(docRef);
+    const editionData = docSnap.data();
+
+    const coloredTiles = editionData.tiles.map(tile => ({
+      ...tile,
+      color: tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
+    }));
 
     socket.emit(GAME_EVENTS.GAME_START, {
       lobbyCode,
       hostUid: uid,
-      edition: lobbyState.edition, 
+      tiles: coloredTiles, 
       startingPoints: startingMoney ?? 0,
     });
   };
@@ -279,20 +281,20 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
               <div className="flex flex-wrap gap-3 lg:gap-4">
                 {availableEditions.map((edition) => {
-                    const isSelected = selectedEdition === edition;
+                    const isSelected = selectedEdition === edition.id;
 
                     return (
                       <button
-                        key={edition}
+                        key={edition.id}
                         disabled={!isHost}
-                        onClick={() => setSelectedEdition(edition)}
+                        onClick={() => setSelectedEdition(edition.id)}
                         className={`text-base lg:text-lg rounded-xl p-2 px-5 tracking-wider transition-all text-white ${
                           isSelected
                             ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-1"
                             : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
                         }`}
                       >
-                        {edition}
+                        {edition.name}
                       </button>
                     );
                   },
