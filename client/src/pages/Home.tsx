@@ -217,7 +217,7 @@ function Home() {
       showToast({
         variant: "success",
         title: "Room created",
-        message: `${lobbyType === "private" ? "Private" : "Public"}room has been created successfully.`,
+        message: `${lobbyType === "private" ? "Private" : "Public"} room has been created successfully.`,
       });
       navigate(`/lobby/${data.lobby.lobbyCode}`);
     } catch {
