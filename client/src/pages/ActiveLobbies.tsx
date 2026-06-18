@@ -51,9 +51,11 @@ export default function ActiveLobbies() {
 
     // Button Styling
     const shared_styles = {
-        btnTransition: "transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-sm border-none select-none outline-none",
+        btnTransition: "transition-all duration-300 active:scale-95 cursor-pointer shadow-sm border-none select-none outline-none",
         textFormat: "tracking-widest font-normal font-jersey text-white text-center"
     };
+
+    const availableLobbies = lobbies.filter(lobby => lobby.players < lobby.maxPlayers);
     
     return (
     <main className="h-[calc(100vh-64px)] bg-white flex flex-col items-center justify-start select-none relative overflow-hidden">
@@ -63,23 +65,30 @@ export default function ActiveLobbies() {
         
         {loading ? (
           <div className="flex-grow flex items-center justify-center">
-            <p className="text-4xl font-jersey text-[#FDAF5D] tracking-widest animate-pulse">Scanning for games...</p>
+            <p className="text-4xl font-jersey text-[#FDAF5D] tracking-widest animate-pulse">SCANNING FOR GAMES...</p>
           </div>
-        ) : lobbies.length === 0 ? (
+        ) : availableLobbies.length === 0 ? (
           <div className="flex-grow flex items-center justify-center">
-            <p className="text-4xl font-jersey text-[#FDAF5D] tracking-widest">No active lobbies found.</p>
+            <p className="text-4xl font-jersey text-[#FDAF5D] tracking-widest">NO ACTIVE LOBBIES FOUND.</p>
           </div>
         ) : (
           /* Grid Layout For Lobby Codes */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-12 gap-y-16 overflow-y-auto p-4">
-            {lobbies.map((lobby) => (
-              <button 
-                key={lobby.code}
-                onClick={() => handleJoin(lobby)}
-                className={`bg-[#FDAF5D] hover:bg-[#FF9513] h-16 w-52 rounded-[30px] text-3xl ${shared_styles.textFormat} ${shared_styles.btnTransition}`}
-              >
-                {lobby.code}
-              </button>
+            {availableLobbies.map((lobby) => (
+              <div key={lobby.code} className="flex flex-col items-center gap-2">
+                <button 
+                  key={lobby.code}
+                  onClick={() => handleJoin(lobby)}
+                  className={`bg-[#FDAF5D] hover:bg-[#FF9513] h-16 w-52 rounded-[30px] text-3xl ${shared_styles.textFormat} ${shared_styles.btnTransition}`}
+                >
+                  {lobby.code}
+                </button>
+
+                {/* Player Count Text */}
+                <span className="text-[#FDAF5D] font-jersey text-[1.35rem] tracking-widest uppercase">
+                  PLAYERS: {lobby.players}/{lobby.maxPlayers}
+                </span>
+              </div>
             ))}
           </div>
         )}
