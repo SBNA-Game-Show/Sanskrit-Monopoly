@@ -237,7 +237,7 @@ function Home() {
         {`
           @keyframes soft-float {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            50% { transform: translateY(-20px); }
           }
           .animate-float {
             animation: soft-float 4s ease-in-out infinite;
@@ -292,7 +292,7 @@ function Home() {
               placeholder="ENTER CODE"
               value={lobbyCode.toLocaleUpperCase()}
               onChange={(e) => setLobbyCode(e.target.value.toLocaleUpperCase())}
-              className="w-full h-full bg-transparent text-center text-2xl text-orange-900 tracking-widest font-jersey font-normal outline-none placeholder-orange-300 border-none px-2 uppercase flex items-center justify-center"
+              className="w-full h-full bg-transparent text-center text-2xl text-[#FDAF5D] tracking-widest font-jersey font-normal outline-none placeholder-[#FDAF5D] border-none px-2 uppercase flex items-center justify-center"
             />
           </div>
         </div>
@@ -303,12 +303,8 @@ function Home() {
             type="button"
             disabled={!isCodeEntered}
             onClick={() => navigate(`/lobby/${lobbyCode}`)}
-            style={{
-              filter: isCodeEntered
-                ? shared_styles.activeGlow
-                : shared_styles.passiveGlow,
-            }}
-            className={`w-64 shadow-none ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}
+            style={{filter: isCodeEntered ? shared_styles.activeGlow : shared_styles.passiveGlow}}
+            className={`w-64 shadow-none ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}
             ${isCodeEntered ? "bg-[#FDAF5D] hover-scale-105 active:scale-95 cursor-pointer opacity-100" : "bg-[#FFC17E]/70 opacity-70 cursor-not-allowed"}`}
           >
             ENTER LOBBY
