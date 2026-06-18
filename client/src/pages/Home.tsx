@@ -276,13 +276,13 @@ function Home() {
                 <button 
                   type="button" 
                   onClick={() => createRoom("public")}
-                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FFC17E] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
+                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
                     PUBLIC
                 </button>
                 <button 
                   type="button" 
                   onClick={() => createRoom("private")}
-                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FFC17E] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
+                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
                     PRIVATE
                 </button>
             </div>

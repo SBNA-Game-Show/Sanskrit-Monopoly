@@ -9,8 +9,8 @@ setupSocketEvents(io);
 
 app.post("/api/lobby-create", async (req, res) => {
   try {
-    const { hostUid, hostUsername } = req.body;
-    const lobby = createLobby(hostUid, hostUsername);
+    const { hostUid, hostUsername, isPrivate } = req.body;
+    const lobby = createLobby(hostUid, hostUsername, isPrivate);
     res.json({ lobby });
   } catch (error) {
     console.log(error);
@@ -23,7 +23,9 @@ app.post("/api/lobby-create", async (req, res) => {
 
 app.get("/api/lobbies", (req, res) => {
   try {
-    const allLobbies = Object.values(lobbies || {}).map((lobby) => ({
+    const allLobbies = Object.values(lobbies || {})
+    .filter((lobby) => !lobby.isPrivate) // Only show public lobbies
+    .map((lobby) => ({
       code: lobby.lobbyCode,
       host: lobby.host?.username || "Unknown Host",
       players: lobby.players?.length || 1,
