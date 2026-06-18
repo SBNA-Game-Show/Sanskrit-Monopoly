@@ -343,7 +343,7 @@ function drawOwnershipMarkers(
 
   Object.entries(ownedTiles).forEach(([tileId, ownerToken]) => {
     const tileIndex = edition.tiles.findIndex((tile) => tile.id === tileId);
-    if (tileIndex === null) return;
+    if (tileIndex === -1) return;
 
     const tile = edition.tiles[tileIndex];
 
@@ -368,12 +368,69 @@ function drawOwnershipMarkers(
   });
 }
 
+const TILE_COUNT = 40;
+const SLIDE_STEP_SEC = 0.2;
+
+function buildTilePath(from: number, to: number): number[] {
+  const path = [from];
+  let pos = from;
+  while (pos !== to) {
+    pos = (pos + 1) % TILE_COUNT;
+    path.push(pos);
+  }
+  return path;
+}
+
+function getTokenXY(tileIndex: number, playerIndex: number, size: number) {
+  const center = getTileCenter(tileIndex);
+  const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+  const x = center.x + offset.dx - size / 2;
+  const y = center.y + offset.dy - size / 2;
+  return { x, y };
+}
+
+function slideTokenAlongPath(
+  board: zim.Container,
+  stage: zim.Stage,
+  tokenUrl: string,
+  size: number,
+  path: number[],
+  playerIndex: number,
+  onComplete: () => void,
+) {
+  const start = getTokenXY(path[0], playerIndex, size);
+  const token = new zim.Pic({ file: tokenUrl }).siz(size).loc(start.x, start.y, board);
+
+  let step = 0;
+
+  const walk = () => {
+    step += 1;
+    if (step >= path.length) {
+      onComplete();
+      return;
+    }
+
+    const next = getTokenXY(path[step], playerIndex, size);
+    token.animate({
+      props: { x: next.x, y: next.y },
+      time: SLIDE_STEP_SEC,
+      ease: "linear",
+      call: walk,
+    });
+    stage.update();
+  };
+  walk();
+}
+
 function drawPlayers(
   board: zim.Container,
   players: ZimBoardState["players"],
   currentTurnUid: string | null,
+  skipPlayerIndex?: number,
 ) {
   players.forEach((player, playerIndex) => {
+    if (playerIndex === skipPlayerIndex) return;
+
     const center = getTileCenter(player.position);
     const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
     const x = center.x + offset.dx;
@@ -421,8 +478,10 @@ export function createZimBoard(
     throw new Error("GameEdition is required for createZimBoard");
   }
   let board: zim.Container | null = null;
+  let isAnimating = false;
+  let latestState = initialState;
 
-  function draw(state: ZimBoardState) {
+  function draw(state: ZimBoardState, skipPlayerIndex?: number) {
     if (board) {
       board.removeFrom();
 
@@ -431,7 +490,7 @@ export function createZimBoard(
 
     board = drawStaticBoard(edition, stage, state);
     drawOwnershipMarkers(edition, board, state.ownedTiles);
-    drawPlayers(board, state.players, state.currentTurnUid);
+    drawPlayers(board, state.players, state.currentTurnUid, skipPlayerIndex);
     stage.update();
   }
 
@@ -439,10 +498,49 @@ export function createZimBoard(
 
   return {
     update(nextState: ZimBoardState) {
+      latestState = nextState;
+      if (isAnimating) return;
       draw(nextState);
     },
 
+    slideCurrentPlayer(playerIndex, fromPosition, toPosition) {
+      if (isAnimating) return;
+
+      const player = latestState.players[playerIndex];
+      const tokenUrl = player?.token ? TOKEN_IMAGE_BY_ID[player.token] : null;
+      if (!tokenUrl || fromPosition === toPosition) {
+        draw(latestState);
+        return;
+      }
+
+      isAnimating = true;
+
+      const startState: ZimBoardState = {
+        ...latestState,
+        players: latestState.players.map((p, i) =>
+          i === playerIndex ? { ...p, position: fromPosition } : p,
+        ),  
+      };
+      draw(startState, playerIndex);
+
+      const path = buildTilePath(fromPosition, toPosition);
+      const isCurrentTurn = player.uid === latestState.currentTurnUid;
+      const size = isCurrentTurn ? 42 : 34;
+
+      slideTokenAlongPath(board!, stage, tokenUrl, size, path, playerIndex, () => {
+        isAnimating = false;
+        latestState = {
+          ...latestState,
+          players: latestState.players.map((p, i) =>
+            i === playerIndex ? { ...p, position: toPosition } : p,
+          ),
+        };
+        draw(latestState);
+      });
+    },
+
     dispose() {
+      isAnimating = false;
       stage.removeAllChildren();
       stage.update();
       board = null;

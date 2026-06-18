@@ -27,6 +27,12 @@ export type ZimBoardState = {
   ownedTiles?: Record<string, string>;
 };
 
-export type ZimBoardController = ZimSceneController<ZimBoardState>;
+export type ZimBoardController = ZimSceneController<ZimBoardState> & {
+  slideCurrentPlayer: (
+    playerIndex: number,
+    fromPosition: number,
+    toPosition: number,
+  ) => void;
+};
 
 export type ZimMonopolyBoardProps = ZimBoardState;

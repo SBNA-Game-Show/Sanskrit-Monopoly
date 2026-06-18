@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { getDiceFaceUrl } from "../../../constants/game/diceFaces";
 import type { GameState } from "../../../types/game/gameTypes";
-
-const ROLL_CYCLES = 6;
-const ROLL_INTERVAL_MS = 70;
-const SETTLE_MS = 200;
+import { ROLL_CYCLES, ROLL_INTERVAL_MS, SETTLE_MS } from "../../../constants/game/diceAnimation";
 
 type DiceRollOverlayProps = {
   gameState: GameState;
+  onComplete?: () => void;
 };
 
-export function DiceRollOverlay({ gameState }: DiceRollOverlayProps) {
+export function DiceRollOverlay({ gameState, onComplete }: DiceRollOverlayProps) {
   const targetRoll = (gameState as unknown as { lastRoll?: number }).lastRoll ?? null;
 
   const [displayFace, setDisplayFace] = useState<number>(
@@ -44,7 +42,10 @@ export function DiceRollOverlay({ gameState }: DiceRollOverlayProps) {
 
         setTimeout(() => {
           setPop(true);
-          setTimeout(() => setPop(false), SETTLE_MS);
+          setTimeout(() => {
+            setPop(false);
+            onComplete?.();
+          }, SETTLE_MS);
         }, 50);
       }
     }, ROLL_INTERVAL_MS);

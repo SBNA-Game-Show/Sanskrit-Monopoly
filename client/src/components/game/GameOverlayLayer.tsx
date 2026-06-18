@@ -16,6 +16,7 @@ type GameOverlayLayerProps = {
   gameState: GameState;
   uid: string | null;
   isHost: boolean;
+  onDiceRollComplete?: () => void; 
 };
 
 function getCurrentPlayer(gameState: GameState) {
@@ -34,6 +35,7 @@ export function GameOverlayLayer({
   gameState,
   isHost,
   uid,
+  onDiceRollComplete,
 }: GameOverlayLayerProps) {
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
@@ -71,7 +73,7 @@ export function GameOverlayLayer({
       );
 
     case "rollingDice":
-      return <DiceRollOverlay gameState={gameState} />;
+      return <DiceRollOverlay gameState={gameState} onComplete={onDiceRollComplete} />;
 
     case "tokenAdvancing":
       // Do not render anything here, just move token across board

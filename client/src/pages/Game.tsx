@@ -6,6 +6,7 @@ import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 import { GameLog } from "../components/game/GameLog";
+import { useCallback, useState } from "react";
 
 type GameProps = {
   gameState: GameState;
@@ -26,6 +27,11 @@ export default function Game({ gameState }: GameProps) {
 
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+  const [diceRollCompleteKey, setDiceRollCompleteKey] = useState(0);
+  const handleDiceRollComplete = useCallback(() => {
+    setDiceRollCompleteKey((k) => k + 1);
+  }, []);
 
   const handleRollDice = () => {
     if (!gameState.lobbyCode || !uid) return;
@@ -157,6 +163,8 @@ export default function Game({ gameState }: GameProps) {
                 players={gameState.players}
                 currentTurnUid={currentPlayer?.uid ?? null}
                 lastRoll={gameState.lastRoll}
+                gameStatus={gameState.gameStatus}
+                diceRollCompleteKey={diceRollCompleteKey}
               />
             </div>
 
@@ -164,6 +172,7 @@ export default function Game({ gameState }: GameProps) {
               gameState={gameState}
               uid={uid}
               isHost={gameState.host.uid === uid}
+              onDiceRollComplete={handleDiceRollComplete}
             />
           </div>
         </section>

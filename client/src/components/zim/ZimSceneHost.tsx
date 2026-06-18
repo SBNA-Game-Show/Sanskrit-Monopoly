@@ -15,6 +15,8 @@ type ZimSceneHostProps<TState, TActions = undefined> = {
   width?: number;
   height?: number;
   backgroundColor?: string;
+  onControllerReady?: (controller: ZimSceneController<TState>) => void;
+  autoUpdate?: boolean;
 };
 
 export function ZimSceneHost<TState, TActions = undefined>({
@@ -25,6 +27,8 @@ export function ZimSceneHost<TState, TActions = undefined>({
   width = 900,
   height = 900,
   backgroundColor = "#202733",
+  onControllerReady,
+  autoUpdate = true,
 }: ZimSceneHostProps<TState, TActions>) {
   const reactId = useId();
   const hostId = `zim-scene-${reactId.replace(/:/g, "")}`;
@@ -35,8 +39,10 @@ export function ZimSceneHost<TState, TActions = undefined>({
 
   useEffect(() => {
     latestStateRef.current = state;
-    controllerRef.current?.update(state);
-  }, [state]);
+    if (autoUpdate != false) {
+      controllerRef.current?.update(state);
+    }
+  }, [state, autoUpdate]);
 
   useEffect(() => {
     const frame = new zim.Frame({
@@ -53,6 +59,7 @@ export function ZimSceneHost<TState, TActions = undefined>({
         } else {
           controllerRef.current = createScene(frame.stage, latestStateRef.current, actions);
         }
+        onControllerReady?.(controllerRef.current);
       },
     });
 
