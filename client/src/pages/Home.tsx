@@ -32,13 +32,11 @@ const shared_styles = {
   billSize: "w-36 h-20 lg:w-30 lg:h-20",
   cardSize: "w-24 h-32 lg:w-20 lg:h-25",
   controlWidth: "w-full sm:w-56",
-  textFormat:
-    "text-2xl tracking-widest font-normal font-jersey text-white text-center",
+  textFormat: "text-2xl tracking-widest font-normal font-jersey text-white text-center",
   activeGlow: "drop-shadow(0px 0px 12px #FDAF5D)",
   passiveGlow: "drop-shadow(0px 0px 6px rgba(255, 193, 126, 0.3))",
   decorativeGlow: "drop-shadow(0px 0px 5px rgba(255, 193, 126, 0.85))",
-  hoverTransition:
-    "transition-all duration-300 select-none outline-none border-none rounded-2xl flex items-center justify-center",
+  hoverTransition: "transition-all duration-300 select-none outline-none border-none rounded-2xl flex items-center justify-center",
 };
 
 // Placement of images
@@ -200,7 +198,7 @@ function Home() {
 
   const isCodeEntered = lobbyCode.trim().length > 0;
 
-  const createRoom = async () => {
+  const createRoom = async (lobbyType: "public" | "private") => {
     try {
       const SERVER_URL = import.meta.env.DEV
         ? "http://localhost:3000"
@@ -208,7 +206,7 @@ function Home() {
       const response = await fetch(`${SERVER_URL}/api/lobby-create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostUid: uid, hostUsername: username }),
+        body: JSON.stringify({ hostUid: uid, hostUsername: username, isPrivate: lobbyType === "private" }),
       });
 
       if (!response.ok) {
@@ -219,7 +217,7 @@ function Home() {
       showToast({
         variant: "success",
         title: "Room created",
-        message: "Room has been created successfully.",
+        message: `${lobbyType === "private" ? "Private" : "Public"}room has been created successfully.`,
       });
       navigate(`/lobby/${data.lobby.lobbyCode}`);
     } catch {
@@ -271,15 +269,31 @@ function Home() {
       <div className="z-10 flex flex-col items-center justify-center space-y-6 max-w-xl w-full px-4 flex-grow mx-auto">
         {/* Top Row */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-          {/* Create Room Btn */}
-          <button
-            type="button"
-            onClick={createRoom}
-            style={{ filter: shared_styles.activeGlow }}
-            className={`bg-[#FDAF5D] hover:scale-105 active-scale-98 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}
-          >
-            CREATE LOBBY
-          </button>
+
+          {/* Spring Public/Private Option Menu */}
+          <div className={`relative group flex justify-center ${shared_styles.controlWidth}`}>
+            <div className="absolute bottom-full mb-3 left-0 w-full flex flex-col items-center gap-2 opacity-0 invisible translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <button 
+                  type="button" 
+                  onClick={() => createRoom("public")}
+                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FFC17E] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
+                    PUBLIC
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => createRoom("private")}
+                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FFC17E] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
+                    PRIVATE
+                </button>
+            </div>
+
+            {/* Create Room Btn */}
+            <div 
+              style={{filter: shared_styles.activeGlow}}
+              className={`bg-[#FDAF5D] shadow-sm cursor-default w-full ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}>
+                CREATE LOBBY
+            </div>
+          </div> {/* Spring Public/Private Option Menu */}
 
           {/* Enter Code */}
           <div
