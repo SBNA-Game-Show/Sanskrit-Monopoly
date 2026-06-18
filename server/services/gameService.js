@@ -163,7 +163,7 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
 }
 
 // ***************************************************************
-// ****************** MONOPOLY GAME LOGIC HELPERINOES ************
+// ****************** MONOPOLY GAME LOGIC HELPERS ****************
 // ***************************************************************
 
 export function resolveLandingAction(lobby) {
@@ -513,10 +513,6 @@ export function rollDice(lobbyCode, uid) {
   if (!currentPlayer || currentPlayer.isEliminated) {
     return { lobby, error: "Current player is eliminated" };
   }
-
-  // DEV ONLY: force near tax tiles for faster bankruptcy testing
-  // REMOVE / COMMENT OUT before normal playtesting
-  // currentPlayer.position = 3;
 
   if (lobby.status !== "playing") {
     return { lobby, error: "Game is not currently active" };
