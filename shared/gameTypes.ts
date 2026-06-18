@@ -107,6 +107,7 @@ export type LogEntry = {
 
 export type GameState = {
   lobbyCode: string;
+  isPrivate: boolean;
   status: GameStatus;
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
