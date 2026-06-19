@@ -122,17 +122,19 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
 
 // ---- bankruptcy related helper functions
 function updateBankruptcyStatus(player) {
-  player.isBankrupt = player.money < 0;
+  player.isBankrupt = player.money < 0; // player considered bankrupt if money drops below zero
 }
 
 function setBankruptcyActionIfNeeded(lobby, player) {
   updateBankruptcyStatus(player);
 
+  // continue if player recovered from bankruptcy or never went negative
   if (!player.isBankrupt) {
     return false;
   }
 
-  lobby.gameStatus = "bankruptcy";
+  lobby.gameStatus = "bankruptcy"; // pause normal turn flow until bankruptcy is resolved
+  
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -140,6 +142,34 @@ function setBankruptcyActionIfNeeded(lobby, player) {
   });
 
   return true;
+}
+
+// called when player self-declares as bankrupt
+// reuses eliminiation logic (until selling is implemented)
+export function declareBankruptcy(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.gameStatus !== "bankruptcy") {
+    return { lobby, error: "No bankruptcy is pending" };
+  }
+
+  const bankruptPlayer = lobby.players.find((player) => player.uid === uid);
+
+  if (!bankruptPlayer) {
+    return { lobby, error: "Player not found" };
+  }
+
+  if (!bankruptPlayer.isBankrupt) {
+    return { lobby, error: "This player is not bankrupt" };
+  }
+
+  // Selling assets will eventually happen before this point.
+  // Until then, declaring bankruptcy means elimination.
+  return resolveBankruptcy(lobbyCode, lobby.host.uid, uid);
 }
 
 // ----- active player-related helpers
