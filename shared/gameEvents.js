@@ -27,6 +27,7 @@ export const GAME_EVENTS = {
 
   // for bankrptcy
   GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
+  GAME_DECLARE_BANKRUPTCY: "game:declare-bankruptcy",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 };
