@@ -91,12 +91,11 @@ export default function Game({ gameState }: GameProps) {
                       {/* Modified to use 'Money' for now. Will create edition-related logic later */}
                       <p>Money: {formatMoney(player.money ?? 0)}</p>
                       <p>Properties: {player.properties.length}</p>
-                      {player.needsBankruptcyResolution &&
-                        !player.isEliminated && (
-                          <p className="mt-1 text-xs font-extrabold text-red-700">
-                            Bankruptcy pending
-                          </p>
-                        )}
+                      {player.isBankrupt && !player.isEliminated && (
+                        <p className="mt-1 text-xs font-extrabold text-red-700">
+                          Bankruptcy pending
+                        </p>
+                      )}
                       {player.isEliminated && (
                         <p className="mt-1 text-xs font-extrabold text-red-800">
                           Eliminated
