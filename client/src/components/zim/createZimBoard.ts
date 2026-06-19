@@ -372,6 +372,7 @@ function drawPlayers(
   board: zim.Container,
   players: ZimBoardState["players"],
   currentTurnUid: string | null,
+  prevPositions: Map<string, number>,
 ) {
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
@@ -386,18 +387,35 @@ function drawPlayers(
     const tokenUrl =
       player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
 
+    const prevPosition = prevPositions.get(player.uid);
+    const shouldAnimate =
+      prevPosition != null && prevPosition !== player.position;
+    const startCenter = shouldAnimate
+      ? getTileCenter(prevPosition)
+      : center;
+    const startX = startCenter.x + offset.dx;
+    const startY = startCenter.y + offset.dy;
+
+    let token: zim.Pic | zim.Container;
+
     if (tokenUrl) {
-      new zim.Pic({ file: tokenUrl })
+      token = new zim.Pic({ file: tokenUrl })
         .siz(size)
-        .loc(x - size / 2, y - size / 2, board);
+        .loc(startX - size / 2, startY - size / 2, board);
     } else {
       const radius = isCurrentTurn ? 19 : 15;
+      token = new zim.Container(size, size).loc(
+        startX - size / 2,
+        startY - size / 2,
+        board,
+      );
+
       new zim.Circle(
         radius,
         PLAYER_COLORS[playerIndex] ?? "#000",
         "#111",
         3,
-      ).loc(x - radius, y - radius, board);
+      ).center(token);
 
       new zim.Label({
         text: `${playerIndex + 1}`,
@@ -406,8 +424,18 @@ function drawPlayers(
         color: "#fff",
         font: "Arial",
         align: "center",
-      }).loc(x - 7, y - 8, board);
+      }).center(token);
     }
+
+    if (shouldAnimate) {
+      token.animate({
+        props: { x: x - size / 2, y: y - size / 2 },
+        time: 0.4,
+        ease: "sineInOut",
+      });
+    }
+
+    prevPositions.set(player.uid, player.position);
   });
 }
 
@@ -421,6 +449,7 @@ export function createZimBoard(
     throw new Error("GameEdition is required for createZimBoard");
   }
   let board: zim.Container | null = null;
+  const prevPositions = new Map<string, number>();
 
   function draw(state: ZimBoardState) {
     if (board) {
@@ -431,7 +460,7 @@ export function createZimBoard(
 
     board = drawStaticBoard(edition, stage, state);
     drawOwnershipMarkers(edition, board, state.ownedTiles);
-    drawPlayers(board, state.players, state.currentTurnUid);
+    drawPlayers(board, state.players, state.currentTurnUid, prevPositions);
     stage.update();
   }
 
