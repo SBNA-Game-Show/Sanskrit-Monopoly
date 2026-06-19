@@ -367,11 +367,12 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
+export function createLobby(hostUid, hostUsername, isPrivate = false, edition = DEFAULT_EDITION) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
     lobbyCode: lobbyCode,
+    isPrivate: isPrivate,
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
