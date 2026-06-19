@@ -14,6 +14,7 @@ import {
   startNextTurn,
   resolveLandingAction,
   resolveBankruptcy,
+  declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
   lobbies,
@@ -334,6 +335,29 @@ export function setupSocketEvents(io) {
         }
       },
     );
+
+    // declaring bankruptcy handler
+    socket.on(GAME_EVENTS.GAME_DECLARE_BANKRUPTCY, ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing bankruptcy declaration data");
+        return; 
+      }
+
+      // player chooses to declare bankruptcy
+      const result = declareBankruptcy(lobbyCode, uid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
+ 
+      // If bankruptcy eliminated the second-last player, game is probably already over
+      if (result.lobby.status !== "finished") {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
+    });
 
     socket.on(GAME_EVENTS.GAME_HOST_SKIP_TURN, ({ lobbyCode }) => {
       const lobby = getLobby(lobbyCode);
