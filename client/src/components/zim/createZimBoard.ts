@@ -373,18 +373,84 @@ function drawPlayers(
   players: ZimBoardState["players"],
   currentTurnUid: string | null,
 ) {
+  // Grouping players by board position to handle multiple players on the same tile
+  const playersByPosition: Record<number, number[]> = {};
+
+  players.forEach((player, index) => {
+    if (!playersByPosition[player.position]) {
+      playersByPosition[player.position] = [];
+    }
+    playersByPosition[player.position].push(index);
+  });
+
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
-    const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
-    const x = center.x + offset.dx;
-    const y = center.y + offset.dy;
+    const normalizedIndex = player.position % 40;
+
+    // Determine where player sits w/in shared tile space
+    const group = playersByPosition[player.position];
+    const groupSize = group.length;
+    const indexInGroup = group.indexOf(playerIndex);
+
+    let dx = 0;
+    let dy = 0;
+
+    // Distance to push tokens inward
+    const PUSH_INWARD = 40;
+    // Spacing between tokens when multiple players on same tile
+    const STACK_SPACING = 40;
+    // Calc. staggered layer so it sits side by side
+    const inwardDistance = PUSH_INWARD + (indexInGroup * STACK_SPACING);
+
+    // Bottom Edge --> Push Up (-Y), stagger X
+    if (normalizedIndex >= 1 && normalizedIndex <= 9) {
+      dy = -inwardDistance;
+    }
+    // Left Edge --> Push Right (+X), stagger Y
+    else if (normalizedIndex >= 11 && normalizedIndex <= 19) {
+      dx = inwardDistance;
+    }
+    // Top Edge --> Push Down (+Y), stagger X
+    else if (normalizedIndex >= 21 && normalizedIndex <= 29) {
+      dy = inwardDistance;
+    }
+    // Right Edge --> Push Left (-X), stagger Y
+    else if (normalizedIndex >= 31 && normalizedIndex <= 39) {
+      dx = -inwardDistance;
+    }
+    // Corners (0, 10, 20, 30) -> Stack diagonally towards center
+    else {
+        // GO (0)
+        if (normalizedIndex === 0) {
+            dx = -inwardDistance * 0.7;
+            dy = -inwardDistance * 0.7;
+        }
+        // Jail (10)
+        else if (normalizedIndex === 10) {
+            dx = inwardDistance * 0.7;
+            dy = -inwardDistance * 0.7;
+        }
+        // Free Parking (20)
+        else if (normalizedIndex === 20) {
+            dx = inwardDistance * 0.7;
+            dy = inwardDistance * 0.7;
+        }
+        // Go to Jail (30)
+        else if (normalizedIndex === 30) {
+            dx = -inwardDistance * 0.7;
+            dy = inwardDistance * 0.7;
+        }
+    }
+
+    const x = center.x + dx;
+    const y = center.y + dy;
+
     const isCurrentTurn = player.uid === currentTurnUid;
     const TOKEN_SIZE = 34;
     const TOKEN_SIZE_ACTIVE = 42;
     const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
 
-    const tokenUrl =
-      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
+    const tokenUrl = player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
 
     if (tokenUrl) {
       new zim.Pic({ file: tokenUrl })
