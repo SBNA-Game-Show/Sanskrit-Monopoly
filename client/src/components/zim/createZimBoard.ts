@@ -486,6 +486,8 @@ export function createZimBoard(
   if (!edition) {
     throw new Error("GameEdition is required for createZimBoard");
   }
+  const activeEdition: GameEdition = edition;
+
   let board: zim.Container | null = null;
 
   function draw(state: ZimBoardState) {
@@ -495,8 +497,8 @@ export function createZimBoard(
       board = null;
     }
 
-    board = drawStaticBoard(edition, stage, state);
-    drawOwnershipMarkers(edition, board, state.ownedTiles);
+    board = drawStaticBoard(activeEdition, stage, state);
+    drawOwnershipMarkers(activeEdition, board, state.ownedTiles);
     drawPlayers(board, state.players, state.currentTurnUid);
     stage.update();
   }
