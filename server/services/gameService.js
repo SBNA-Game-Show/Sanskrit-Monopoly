@@ -134,7 +134,7 @@ function setBankruptcyActionIfNeeded(lobby, player) {
   }
 
   lobby.gameStatus = "bankruptcy"; // pause normal turn flow until bankruptcy is resolved
-  
+
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -192,6 +192,51 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
   return -1;
 }
 
+function applyCardEffect(lobby, player, card) {
+  if (!card?.effect || card.effect.type === "none") {
+    return;
+  }
+
+  switch (card.effect.type) {
+    case "money": {
+      player.money += card.effect.amount;
+      updateBankruptcyStatus(player);
+      return;
+    }
+
+    case "advanceToGo": {
+      player.position = 0;
+      player.money += PASS_START_BONUS;
+      updateBankruptcyStatus(player);
+      return;
+    }
+
+    case "goBack": {
+      const tileCount = lobby.edition.tiles.length;
+      player.position =
+        (player.position - card.effect.spaces + tileCount) % tileCount;
+      return;
+    }
+
+    case "goToJail": {
+      const jailIndex = lobby.edition.tiles.findIndex(
+        (tile) => tile.type === "jail",
+      );
+
+      if (jailIndex !== -1) {
+        player.position = jailIndex;
+        player.jailed = true;
+        lobby.gameStatus = "jail";
+      }
+
+      return;
+    }
+
+    default:
+      return;
+  }
+}
+
 // ***************************************************************
 // ****************** MONOPOLY GAME LOGIC HELPERS ****************
 // ***************************************************************
@@ -233,12 +278,16 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomChanceCard();
     lobby.activeCard = randomCard;
 
-    currentPlayer.money += randomCard.points;
+    applyCardEffect(lobby, currentPlayer, randomCard);
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a chance card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
+      message:
+        randomCard.points === 0
+          ? `drew a chance card: ${randomCard.title}.`
+          : `drew a chance card and ${randomCard.points > 0 ? "received" : "lost"
+          } ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
@@ -249,12 +298,16 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomCommunityChestCard();
     lobby.activeCard = randomCard;
 
-    currentPlayer.money += randomCard.points;
+    applyCardEffect(lobby, currentPlayer, randomCard);
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a community chest card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
+      message:
+        randomCard.points === 0
+          ? `drew a community chest card: ${randomCard.title}.`
+          : `drew a community chest card and ${randomCard.points > 0 ? "received" : "lost"
+          } ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
