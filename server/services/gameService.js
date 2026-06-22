@@ -122,17 +122,19 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
 
 // ---- bankruptcy related helper functions
 function updateBankruptcyStatus(player) {
-  player.needsBankruptcyResolution = player.money < 0;
+  player.isBankrupt = player.money < 0; // player considered bankrupt if money drops below zero
 }
 
 function setBankruptcyActionIfNeeded(lobby, player) {
   updateBankruptcyStatus(player);
 
-  if (!player.needsBankruptcyResolution) {
+  // continue if player recovered from bankruptcy or never went negative
+  if (!player.isBankrupt) {
     return false;
   }
 
-  lobby.gameStatus = "bankruptcy";
+  lobby.gameStatus = "bankruptcy"; // pause normal turn flow until bankruptcy is resolved
+  
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -140,6 +142,34 @@ function setBankruptcyActionIfNeeded(lobby, player) {
   });
 
   return true;
+}
+
+// called when player self-declares as bankrupt
+// reuses eliminiation logic (until selling is implemented)
+export function declareBankruptcy(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.gameStatus !== "bankruptcy") {
+    return { lobby, error: "No bankruptcy is pending" };
+  }
+
+  const bankruptPlayer = lobby.players.find((player) => player.uid === uid);
+
+  if (!bankruptPlayer) {
+    return { lobby, error: "Player not found" };
+  }
+
+  if (!bankruptPlayer.isBankrupt) {
+    return { lobby, error: "This player is not bankrupt" };
+  }
+
+  // Selling assets will eventually happen before this point.
+  // Until then, declaring bankruptcy means elimination.
+  return resolveBankruptcy(lobbyCode, lobby.host.uid, uid);
 }
 
 // ----- active player-related helpers
@@ -163,7 +193,7 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
 }
 
 // ***************************************************************
-// ****************** MONOPOLY GAME LOGIC HELPERINOES ************
+// ****************** MONOPOLY GAME LOGIC HELPERS ****************
 // ***************************************************************
 
 export function resolveLandingAction(lobby) {
@@ -337,11 +367,12 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, edition = DEFAULT_EDITION) {
+export function createLobby(hostUid, hostUsername, isPrivate = false, edition = DEFAULT_EDITION) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
     lobbyCode: lobbyCode,
+    isPrivate: isPrivate,
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
@@ -400,7 +431,7 @@ export function joinLobby(lobbyCode, playerData) {
     properties: [], // <- implemented
     jailed: false,
     isConnected: true,
-    needsBankruptcyResolution: false,
+    isBankrupt: false,
     isEliminated: false,
   });
   return { lobby, error: null };
@@ -487,7 +518,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     player.points = lobby.edition.startingPoints ?? 0;
     player.money = lobby.edition.startingPoints ?? 1500;
     player.properties = [];
-    player.needsBankruptcyResolution = false;
+    player.isBankrupt = false;
     player.isEliminated = false;
   });
 
@@ -514,10 +545,6 @@ export function rollDice(lobbyCode, uid) {
     return { lobby, error: "Current player is eliminated" };
   }
 
-  // DEV ONLY: force near tax tiles for faster bankruptcy testing
-  // REMOVE / COMMENT OUT before normal playtesting
-  // currentPlayer.position = 3;
-
   if (lobby.status !== "playing") {
     return { lobby, error: "Game is not currently active" };
   }
@@ -527,9 +554,7 @@ export function rollDice(lobbyCode, uid) {
   }
 
   // block unresolved bankruptcy
-  const bankruptPlayer = lobby.players.find(
-    (player) => player.needsBankruptcyResolution,
-  );
+  const bankruptPlayer = lobby.players.find((player) => player.isBankrupt);
 
   if (bankruptPlayer) {
     return {
@@ -721,14 +746,14 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: "Bankrupt player not found" };
   }
 
-  if (!bankruptPlayer.needsBankruptcyResolution) {
+  if (!bankruptPlayer.isBankrupt) {
     return { lobby, error: "This player is not bankrupt" };
   }
 
   const releasedProperties = bankruptPlayer.properties;
 
   bankruptPlayer.isEliminated = true;
-  bankruptPlayer.needsBankruptcyResolution = false;
+  bankruptPlayer.isBankrupt = false;
   bankruptPlayer.properties = [];
 
   lobby.players.forEach((player) => {

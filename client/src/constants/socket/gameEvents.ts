@@ -19,12 +19,13 @@ export const GAME_EVENTS = {
   // jail
   GAME_PAY_BAIL: "game:pay-bail",
 
-  // property
+  // property-related stuff
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
 
   // bankruptcy
   GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
+  GAME_DECLARE_BANKRUPTCY: "game:declare-bankruptcy",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 } as const;

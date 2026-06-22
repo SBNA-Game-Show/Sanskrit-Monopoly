@@ -9,26 +9,95 @@ type BankruptcyOverlayProps = {
   uid: string | null;
 };
 
+type BankruptcyViewerRole = "bankruptPlayer" | "host" | "observer";
+
 export function BankruptcyOverlay({
   gameState,
   isHost,
   uid,
 }: BankruptcyOverlayProps) {
   const bankruptPlayer = gameState.players.find(
-    (player) => player.needsBankruptcyResolution && !player.isEliminated,
+    (player) => player.isBankrupt && !player.isEliminated,
   );
 
   if (!bankruptPlayer) return null;
 
-  const handleResolveBankruptcy = (bankruptPlayerUid: string) => {
+  // avoids "possibly undefined" warnings
+  const activeBankruptPlayer = bankruptPlayer;
+
+  // decide what this viewer is allowed to do in bankruptcy overlay
+  const viewerRole: BankruptcyViewerRole =
+    activeBankruptPlayer.uid === uid
+      ? "bankruptPlayer"
+      : isHost
+        ? "host"
+        : "observer";
+
+  function handleBankruptcyResolution() {
     if (!gameState.lobbyCode || !uid) return;
 
-    socket.emit(GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY, {
-      lobbyCode: gameState.lobbyCode,
-      hostUid: uid,
-      bankruptPlayerUid,
-    });
-  };
+    if (viewerRole === "bankruptPlayer") {
+      // bankrupt player is declaring bankruptcy for themselves
+      socket.emit(GAME_EVENTS.GAME_DECLARE_BANKRUPTCY, {
+        lobbyCode: gameState.lobbyCode,
+        uid,
+      });
+
+      return;
+    }
+
+    if (viewerRole === "host") {
+      // host can still force-eliminate as a fallback
+      socket.emit(GAME_EVENTS.GAME_RESOLVE_BANKRUPTCY, {
+        lobbyCode: gameState.lobbyCode,
+        hostUid: uid,
+        bankruptPlayerUid: activeBankruptPlayer.uid,
+      });
+    }
+  }
+
+  function renderActionContent() {
+    switch (viewerRole) {
+      case "bankruptPlayer":
+        return (
+          <>
+            <button
+              type="button"
+              onClick={handleBankruptcyResolution}
+              className="mt-7 rounded-full bg-[#b33a3a] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#d9534f]"
+            >
+              Declare Bankruptcy
+            </button>
+          </>
+        );
+
+      case "host":
+        return (
+          <>
+            {/* bankrupt player should normally resolve this on their own */}
+            <p className="mt-6 text-base font-bold text-[#6b3f1d]">
+              Waiting for {activeBankruptPlayer.username} to resolve bankruptcy.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleBankruptcyResolution}
+              className="mt-7 rounded-full bg-[#b33a3a] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#d9534f]"
+            >
+              Force Eliminate Player
+            </button>
+          </>
+        );
+
+      default:
+        return (
+          // Other players just get to sit and look pretty in the meanwhile
+          <p className="mt-6 text-base font-bold text-[#6b3f1d]">
+            Waiting for {activeBankruptPlayer.username} to resolve bankruptcy.
+          </p>
+        );
+    }
+  }
 
   return (
     <GameOverlayShell>
@@ -50,19 +119,8 @@ export function BankruptcyOverlay({
         .
       </p>
 
-      {isHost ? (
-        <button
-          type="button"
-          onClick={() => handleResolveBankruptcy(bankruptPlayer.uid)}
-          className="mt-7 rounded-full bg-[#b33a3a] px-8 py-3 text-base font-extrabold text-white shadow-md hover:bg-[#d9534f]"
-        >
-          Eliminate Player
-        </button>
-      ) : (
-        <p className="mt-6 text-base font-bold text-[#6b3f1d]">
-          Waiting for the host to resolve bankruptcy.
-        </p>
-      )}
+      {/* Render exactly one role-specific action or waiting message. */}
+      {renderActionContent()}
     </GameOverlayShell>
   );
 }
