@@ -81,6 +81,18 @@ function getTileCenter(tileIndex: number): TileCenter {
   };
 }
 
+const TILE_COUNT = 40;
+
+function buildTilePath(from: number, to: number): number[] {
+  const path = [from];
+  let pos = from;
+  while (pos !== to) {
+    pos = (pos + 1) % TILE_COUNT;
+    path.push(pos);
+  }
+  return path;
+}
+
 function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const center = getTileCenter(tileIndex);
   const normalizedIndex = tileIndex % 40;
@@ -428,11 +440,27 @@ function drawPlayers(
     }
 
     if (shouldAnimate) {
-      token.animate({
-        props: { x: x - size / 2, y: y - size / 2 },
-        time: 0.4,
-        ease: "sineInOut",
-      });
+      const path = buildTilePath(prevPosition, player.position);
+      const stepTime = 0.4 / Math.max(path.length - 1, 1);
+
+      let step = 1;
+      const walk = () => {
+        if (step >= path.length) return;
+        const next = getTileCenter(path[step]);
+        token.animate({
+          props: {
+            x: next.x + offset.dx - size / 2,
+            y: next.y + offset.dy - size / 2,
+          },
+          time: stepTime,
+          ease: "linear",
+          call: () => {
+            step += 1;
+            if (step < path.length) walk();
+          },
+        });
+      };
+      walk();
     }
 
     prevPositions.set(player.uid, player.position);
