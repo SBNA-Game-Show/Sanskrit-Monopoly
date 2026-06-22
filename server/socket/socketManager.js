@@ -481,12 +481,11 @@ export function setupSocketEvents(io) {
     });
 
     // Update game edition handler
-    socket.on("GAME_UPDATE_EDITION", ({ lobbyCode, editionName }) => {
+    socket.on(GAME_EVENTS.LOBBY_UPDATE_EDITION, ({ lobbyCode, editionName }) => {
       const { lobby } = updateLobbyEdition(lobbyCode, editionName);
   
       if (lobby) {
-        // Broadcast the update so players currently in the waiting room see it sync up
-        io.to(lobbyCode).emit("GAME_UPDATED", lobby);
+        broadcastGameState(io, lobby);
       }
     });
 

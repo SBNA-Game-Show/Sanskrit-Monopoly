@@ -289,7 +289,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
                         disabled={!isHost}
                         onClick={() => {
                           setSelectedEdition(edition.id); 
-                          socket.emit("GAME_UPDATE_EDITION", {
+                          socket.emit(GAME_EVENTS.LOBBY_UPDATE_EDITION, {
                             lobbyCode, 
                             editionName: edition.name
                           });
