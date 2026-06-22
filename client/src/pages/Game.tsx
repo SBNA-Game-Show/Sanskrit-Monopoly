@@ -6,6 +6,8 @@ import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 import { GameLog } from "../components/game/GameLog";
+import { SellPropertyPanel } from "../components/game/SellPropertyPanel";
+
 
 type GameProps = {
   gameState: GameState;
@@ -216,7 +218,8 @@ export default function Game({ gameState }: GameProps) {
               </button>
             )}
           </div>
-          <GameLog gameState={gameState} uid={uid} />
+          {!isHost && <SellPropertyPanel gameState={gameState} uid={uid} />}
+          <GameLog gameState={gameState} uid={uid ?? ""} />
         </aside>
       </section>
     </main>
