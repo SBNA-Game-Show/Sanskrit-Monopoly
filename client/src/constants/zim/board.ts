@@ -63,7 +63,8 @@ export const TILE_TYPE_COLORS = {
   jail: "#bcbed0ff",
   goToJail: "#cdb7d6ff",
   chance: "#ffd09dff",
-  community: "#aee1ffff"
+  community: "#aee1ffff",
+  quiz: "#ceffedff"
 };
 
 export const PLAYER_COLORS = [

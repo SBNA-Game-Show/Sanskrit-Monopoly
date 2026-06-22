@@ -50,23 +50,12 @@ export type GameEdition = {
   tiles: GameTile[];
 };
 
-export type QuizOption = {
-  id: string;
-  text: string;
-};
-
 export type ActiveQuiz = {
   id: string;
   question: string;
-  options: QuizOption[];
-
-  // Keep optional because clients may not need to know the answer until reveal phase
-  correctOptionId?: string;
-
-  // player uid -> option id
-  answers: Record<string, string>;
-
-  status: "answering" | "revealing" | "closed";
+  options: string[];
+  correctAnswer: string;
+  status: "answering" | "correct" | "incorrect" | "timerExpired";
   endsAt: number;
 };
 

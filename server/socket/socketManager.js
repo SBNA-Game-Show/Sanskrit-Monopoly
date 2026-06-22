@@ -37,11 +37,7 @@ function finishPopQuiz(lobby, io) {
   if (!lobby.activeQuiz) return;
   if (lobby.gameStatus !== "popQuiz") return;
 
-  lobby.activeQuiz.status = "closed";
   lobby.activeQuiz = null;
-  lobby.gameStatus = "turnEnded";
-
-  broadcastGameState(io, lobby);
 
   startNextTurn(lobby, io, broadcastGameState);
 }
@@ -52,9 +48,8 @@ export function setupSocketEvents(io) {
 
     // server handler for quiz submission
     socket.on(
-      GAME_EVENTS.QUIZ_SUBMIT_ANSWER,
-      ({ lobbyCode, uid, optionId }) => {
-        if (!lobbyCode || !uid || !optionId) {
+      GAME_EVENTS.QUIZ_SUBMIT_ANSWER, async ({ lobbyCode, uid, answer }) => {
+        if (!lobbyCode || !uid || !answer) {
           emitGameError(socket, "Missing quiz answer data");
           return;
         }
@@ -86,17 +81,17 @@ export function setupSocketEvents(io) {
           return;
         }
 
-        lobby.activeQuiz.answers[uid] = optionId;
-
-        const answeredCount = Object.keys(lobby.activeQuiz.answers).length;
-        const playerCount = lobby.players.length;
-
-        if (answeredCount >= playerCount) {
-          finishPopQuiz(lobby, io);
-          return;
+        // check answer correctness
+        if (answer === lobby.activeQuiz.correctAnswer) {
+          lobby.activeQuiz.status = "correct";
+        } else {
+          lobby.activeQuiz.status = "incorrect";
         }
-
         broadcastGameState(io, lobby);
+
+        await sleep(2500);
+
+        finishPopQuiz(lobby, io);
       },
     );
 
@@ -139,7 +134,7 @@ export function setupSocketEvents(io) {
 
     socket.on(
       GAME_EVENTS.GAME_START,
-      ({ lobbyCode, hostUid, tiles, startingPoints }) => {
+      ({ lobbyCode, hostUid, tiles, questions, startingPoints }) => {
         if (!lobbyCode || !hostUid) {
           emitGameError(socket, "Missing start game data");
           return;
@@ -147,6 +142,7 @@ export function setupSocketEvents(io) {
 
         const result = startGame(lobbyCode, hostUid, {
           tiles,
+          questions,
           startingPoints,
         });
 
