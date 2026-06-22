@@ -2,6 +2,7 @@ import { useNav } from "../components/TransitionOverlay";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import { useToast } from "../context/ToastContext";
+import { Button } from "../components/common/Button";
 
 // Import assets
 import card_1 from "../assets/card_1.png";
@@ -272,14 +273,9 @@ function Home() {
         {/* Top Row */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
           {/* Create Room Btn */}
-          <button
-            type="button"
-            onClick={createRoom}
-            style={{ filter: shared_styles.activeGlow }}
-            className={`bg-[#FDAF5D] hover:scale-105 active-scale-98 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}
-          >
+          <Button size="xl" glow onClick={createRoom} className="w-full sm:w-56">
             CREATE LOBBY
-          </button>
+          </Button>
 
           {/* Enter Code */}
           <div
@@ -299,20 +295,9 @@ function Home() {
         {/* Top Row */}
         {/* Enter Lobby Btn*/}
         <div className="w-full flex justify-center">
-          <button
-            type="button"
-            disabled={!isCodeEntered}
-            onClick={() => navigate(`/lobby/${lobbyCode}`)}
-            style={{
-              filter: isCodeEntered
-                ? shared_styles.activeGlow
-                : shared_styles.passiveGlow,
-            }}
-            className={`w-64 shadow-none ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}
-            ${isCodeEntered ? "bg-[#FDAF5D] hover-scale-105 active:scale-95 cursor-pointer opacity-100" : "bg-[#FFC17E]/70 opacity-70 cursor-not-allowed"}`}
-          >
+          <Button size="xl" glow disabled={!isCodeEntered} onClick={() => navigate(`/lobby/${lobbyCode}`)} className="w-64">
             ENTER LOBBY
-          </button>
+          </Button>
         </div>
         {/* Enter Lobby Btn */}
       </div>

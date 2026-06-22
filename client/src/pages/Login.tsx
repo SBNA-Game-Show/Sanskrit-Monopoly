@@ -7,6 +7,7 @@ import {
   GoogleAuthProvider,
 } from "firebase/auth";
 import { useToast } from "../context/ToastContext";
+import { Button } from "../components/common/Button";
 
 function getLoginErrorMessage(err: unknown): string {
   const code =
@@ -172,12 +173,9 @@ function Login() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="w-full rounded-2xl py-4 bg-white text-orange-600 font-bold active:scale-95 text-sm mt-2"
-          >
+          <Button variant="white" fullWidth type="submit" className="mt-2 py-4">
             Sign In
-          </button>
+          </Button>
         </form>
 
         {/* Social Divider */}
@@ -189,18 +187,14 @@ function Login() {
           <div className="flex-grow border-t border-white/20"></div>
         </div>
 
-        <button
-          onClick={handleGoogleLogin}
-          className="w-full rounded-2xl py-4 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all hover:brightness-105 active:scale-95"
-          style={{ background: "#FFEED4" }}
-        >
+        <Button variant="social" fullWidth onClick={handleGoogleLogin} className="py-4 gap-3">
           <svg width="20" height="20" viewBox="0 0 48 48">
             <path fill="#EA4335" d="M24 9.5c3.1 0 5.6 1.1 7.6 2.9l5.6-5.6C33.7 3.5 29.2 1.5 24 1.5 14.9 1.5 7.2 7 3.8 14.8l6.6 5.1C12.1 13.4 17.6 9.5 24 9.5z"/>
             <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.7-2.1 5-4.4 6.5l6.8 5.3c4-3.7 6.3-9.2 6.3-15.8z"/>
             <path fill="#FBBC05" d="M10.4 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-6.6-5.1A23 23 0 0 0 1 24c0 3.7.9 7.2 2.5 10.3l6.9-5.7z"/>
             <path fill="#34A853" d="M24 46.5c5.2 0 9.6-1.7 12.8-4.7l-6.8-5.3c-1.7 1.2-3.9 1.9-6 1.9-6.4 0-11.8-4-13.7-9.8l-6.9 5.7C7.2 41.5 15 46.5 24 46.5z"/>
           </svg>
-        </button>
+        </Button>
       </div>
     </div>
   );
