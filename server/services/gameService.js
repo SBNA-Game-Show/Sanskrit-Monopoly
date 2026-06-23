@@ -194,10 +194,18 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
 
 function applyCardEffect(lobby, player, card) {
   switch (card.effect) {
-    case "goToJail":
-      player.position = 10;
-      // player.jailed = true;
+    case "goToJail": {
+      const jailIndex = lobby.edition.tiles.findIndex(
+        (tile) => tile.type === "jail",
+      );
+      if (jailIndex !== -1) {
+        player.position = jailIndex;
+        player.jailed = true;
+        lobby.gameStatus = "jail";
+      }
+
       break;
+    }
 
     case "goBack3":
       const totalTiles = lobby.edition.tiles.length;
