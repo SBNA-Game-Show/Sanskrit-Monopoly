@@ -722,6 +722,73 @@ export function declinePendingProperty(lobbyCode, uid) {
   return { lobby, error: null };
 }
 
+export function sellProperty(lobbyCode, uid, propertyId) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.status !== "playing") {
+    return { lobby, error: "Game is not currently active" };
+  }
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+  if (!currentPlayer) {
+    return { lobby, error: "Current player not found" };
+  }
+
+  if (currentPlayer.uid !== uid) {
+    return { lobby, error: "You can only sell property on your turn" };
+  }
+
+  const allowedStatuses = ["idling", "buyProperty"];
+
+  if (!allowedStatuses.includes(lobby.gameStatus)) {
+    return {
+      lobby,
+      error: "You can only sell before rolling dice or while deciding to buy a property",
+    };
+  }
+
+  const player = lobby.players.find((currentPlayer) => currentPlayer.uid === uid);
+
+  if (!player) {
+    return { lobby, error: "Player not found" };
+  }
+
+  if (!player.properties.includes(propertyId)) {
+    return { lobby, error: "You do not own this property" };
+  }
+
+  const tile = lobby.edition.tiles.find(
+    (currentTile) => currentTile.id === propertyId,
+  );
+
+  if (!tile || !isBuyableTile(tile)) {
+    return { lobby, error: "This property cannot be sold" };
+  }
+
+  const price = getTilePrice(tile);
+  const sellValue = Math.round(price * 0.5);
+
+  player.properties = player.properties.filter(
+    (currentPropertyId) => currentPropertyId !== propertyId,
+  );
+
+  player.money += sellValue;
+  updateBankruptcyStatus(player);
+
+  addLog(lobby.lobbyCode, {
+    uid: player.uid,
+    username: player.username,
+    message: `sold ${tile.name} for ₩${sellValue}.`,
+  });
+
+  return { lobby, error: null };
+}
+
 // bankruptcy resolver function
 export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
   const lobby = getLobby(lobbyCode);

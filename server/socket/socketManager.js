@@ -17,6 +17,7 @@ import {
   declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
+   sellProperty,
   lobbies,
 } from "../services/gameService.js";
 
@@ -268,6 +269,23 @@ export function setupSocketEvents(io) {
 
       broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
+    });
+
+    // sell property handler
+    socket.on(GAME_EVENTS.GAME_SELL_PROPERTY, ({ lobbyCode, uid, propertyId }) => {
+      if (!lobbyCode || !uid || !propertyId) {
+        emitGameError(socket, "Missing sell property data");
+        return;
+      }
+
+      const result = sellProperty(lobbyCode, uid, propertyId);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
     });
 
     // jail
