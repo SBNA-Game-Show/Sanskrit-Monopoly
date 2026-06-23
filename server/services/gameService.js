@@ -214,16 +214,16 @@ function applyCardEffect(lobby, player, card) {
 
     case "advanceToGo":
       player.position = 0;
-      player.points += card.points;
+      player.money += card.points;
       break;
 
     case "money":
-      player.points += card.points;
+      player.money += card.points;
       break;
 
     default:
       if (typeof card.points === "number") {
-        player.points += card.points;
+        player.money += card.points;
       }
       break;
   }

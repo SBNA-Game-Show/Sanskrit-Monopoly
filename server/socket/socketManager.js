@@ -200,6 +200,17 @@ export function setupSocketEvents(io) {
       }
 
       if (
+        landingResult.lobby.gameStatus === "chance" ||
+        landingResult.lobby.gameStatus === "community"
+      ) {
+        broadcastGameState(io, landingResult.lobby);
+        await sleep(2500);
+        //Put applyCardEffect HERE
+        //this makes the card effect apply after the chance/community card pop up disappears
+        //ex: makes the jail pop up only show up after the chance/communit card pop up
+      }
+
+      if (
         landingResult.lobby.gameStatus === "buyProperty" ||
         landingResult.lobby.gameStatus === "bankruptcy" ||
         landingResult.lobby.gameStatus === "jail"
@@ -216,14 +227,6 @@ export function setupSocketEvents(io) {
       if (landingResult.lobby.gameStatus === "miniGame") {
         broadcastGameState(io, landingResult.lobby);
         return;
-      }
-
-      if (
-        landingResult.lobby.gameStatus === "chance" ||
-        landingResult.lobby.gameStatus === "community"
-      ) {
-        broadcastGameState(io, landingResult.lobby);
-        await sleep(2500);
       }
 
       landingResult.lobby.gameStatus = "turnEnded";
