@@ -12,6 +12,7 @@ export type GamePhase =
   | "buyProperty"
   | "jail"
   | "bankruptcy"
+  | "auction"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -70,6 +71,13 @@ export type ActiveQuiz = {
   endsAt: number;
 };
 
+// basic auction state. Might add more 
+export type ActiveAuction = {
+  tileId: string;
+  highestBid: number;
+  highestBidderUid: string | null;
+};
+
 export type ActiveCard = {
   id: string;
   title: string;
@@ -112,6 +120,7 @@ export type GameState = {
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
+  activeAuction: ActiveAuction | null; // unless gameStatus is auction
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
