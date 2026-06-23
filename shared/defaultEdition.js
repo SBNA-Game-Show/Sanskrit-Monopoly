@@ -12,7 +12,7 @@ export const BOARD_TILES = [
   { name: "बद्रीनाथः", type: "property", color: "#274c3b" },
   { name: "केदारनाथः", type: "property", color: "#274c3b" },
 
-  { name: "विश्रामः", type: "corner", color: "#f7d28b" },
+  { name: "विश्रामः", type: "jail", color: "#f7d28b" },
   { name: "सत्यम्", type: "property", color: "#b85c38" },
   { name: "विद्युत्", type: "utility", color: "#f4e8c8" },
   { name: "धर्मः", type: "property", color: "#b85c38" },

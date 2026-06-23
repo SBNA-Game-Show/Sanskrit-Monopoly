@@ -193,49 +193,73 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
 }
 
 function applyCardEffect(lobby, player, card) {
-  if (!card?.effect || card.effect.type === "none") {
+  switch (card.effect) {
+    case "goToJail":
+      player.position = 10;
+      // player.jailed = true;
+      break;
+
+    case "goBack3":
+      const totalTiles = lobby.edition.tiles.length;
+      player.position = (player.position - 3 + totalTiles) % totalTiles;
+      break;
+
+    case "advanceToGo":
+      player.position = 0;
+      player.points += card.points;
+      break;
+
+    case "money":
+      player.points += card.points;
+      break;
+
+    default:
+      if (typeof card.points === "number") {
+        player.points += card.points;
+      }
+      break;
+  }
+}
+
+switch (card.effect.type) {
+  case "money": {
+    player.money += card.effect.amount;
+    updateBankruptcyStatus(player);
     return;
   }
 
-  switch (card.effect.type) {
-    case "money": {
-      player.money += card.effect.amount;
-      updateBankruptcyStatus(player);
-      return;
-    }
-
-    case "advanceToGo": {
-      player.position = 0;
-      player.money += PASS_START_BONUS;
-      updateBankruptcyStatus(player);
-      return;
-    }
-
-    case "goBack": {
-      const tileCount = lobby.edition.tiles.length;
-      player.position =
-        (player.position - card.effect.spaces + tileCount) % tileCount;
-      return;
-    }
-
-    case "goToJail": {
-      const jailIndex = lobby.edition.tiles.findIndex(
-        (tile) => tile.type === "jail",
-      );
-
-      if (jailIndex !== -1) {
-        player.position = jailIndex;
-        player.jailed = true;
-        lobby.gameStatus = "jail";
-      }
-
-      return;
-    }
-
-    default:
-      return;
+  case "advanceToGo": {
+    player.position = 0;
+    player.money += PASS_START_BONUS;
+    updateBankruptcyStatus(player);
+    return;
   }
+
+  case "goBack": {
+    const tileCount = lobby.edition.tiles.length;
+    player.position =
+      (player.position - card.effect.spaces + tileCount) % tileCount;
+    return;
+  }
+
+  case "goToJail": {
+    const jailIndex = lobby.edition.tiles.findIndex(
+      (tile) => tile.type === "jail",
+    );
+
+    if (jailIndex !== -1) {
+      player.position = jailIndex;
+      player.jailed = true;
+      lobby.gameStatus = "jail";
+    }
+
+    return;
+  }
+
+  default:
+    return;
 }
+
 
 // ***************************************************************
 // ****************** MONOPOLY GAME LOGIC HELPERS ****************
