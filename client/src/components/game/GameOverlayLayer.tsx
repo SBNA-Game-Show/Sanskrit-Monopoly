@@ -11,6 +11,7 @@ import { BankruptcyOverlay } from "./overlays/BankruptcyOverlay";
 import { JailOverlay } from "./overlays/JailOverlay";
 import { ChanceOverlay } from "./overlays/ChanceOverlay";
 import { CommunityChestOverlay } from "./overlays/CommunityChestOverlay";
+import { AuctionOverlay } from "./overlays/AuctionOverlay";
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -89,6 +90,10 @@ export function GameOverlayLayer({
           isActivePlayer={isActivePlayer}
         />
       );
+
+    // auction overlay added to the mix
+    case "auction":
+      return <AuctionOverlay gameState={gameState} uid={uid} isHost={isHost} />;
 
     case "popQuiz":
       return (
