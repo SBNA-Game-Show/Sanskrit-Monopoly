@@ -27,7 +27,10 @@ export type GameTileType =
   | "railroad"
   | "utility"
   | "penalty"
-  | "reward";
+  | "reward"
+  | "chance"
+  | "community"
+  | "jail";
 
 export type GameTile = {
   id: string;

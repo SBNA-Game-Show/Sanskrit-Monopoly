@@ -221,45 +221,6 @@ function applyCardEffect(lobby, player, card) {
   }
 }
 
-switch (card.effect.type) {
-  case "money": {
-    player.money += card.effect.amount;
-    updateBankruptcyStatus(player);
-    return;
-  }
-
-  case "advanceToGo": {
-    player.position = 0;
-    player.money += PASS_START_BONUS;
-    updateBankruptcyStatus(player);
-    return;
-  }
-
-  case "goBack": {
-    const tileCount = lobby.edition.tiles.length;
-    player.position =
-      (player.position - card.effect.spaces + tileCount) % tileCount;
-    return;
-  }
-
-  case "goToJail": {
-    const jailIndex = lobby.edition.tiles.findIndex(
-      (tile) => tile.type === "jail",
-    );
-
-    if (jailIndex !== -1) {
-      player.position = jailIndex;
-      player.jailed = true;
-      lobby.gameStatus = "jail";
-    }
-
-    return;
-  }
-
-  default:
-    return;
-}
-
 
 // ***************************************************************
 // ****************** MONOPOLY GAME LOGIC HELPERS ****************

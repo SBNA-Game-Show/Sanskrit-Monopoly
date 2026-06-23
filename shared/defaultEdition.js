@@ -3,7 +3,7 @@
 export const BOARD_TILES = [
   { name: "आरम्भः", type: "corner", color: "#f7d28b" },
   { name: "काशी", type: "property", color: "#7b1e2b" },
-  { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
+  { name: "भाग्यम्", type: "chance", color: "#f4e8c8" },
   { name: "नालन्दा", type: "property", color: "#7b1e2b" },
   { name: "करः", type: "tax", color: "#e8b4a6" },
   { name: "यात्रा", type: "railroad", color: "#d9c3a3" },
@@ -19,7 +19,7 @@ export const BOARD_TILES = [
   { name: "सेवा", type: "property", color: "#b85c38" },
   { name: "रथमार्गः", type: "railroad", color: "#d9c3a3" },
   { name: "गङ्गा", type: "property", color: "#3f6f8f" },
-  { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
+  { name: "समुदाय निधिः", type: "community", color: "#f4e8c8" },
   { name: "यमुना", type: "property", color: "#3f6f8f" },
   { name: "सरस्वती", type: "property", color: "#3f6f8f" },
 
@@ -40,7 +40,7 @@ export const BOARD_TILES = [
   { name: "प्रश्नः", type: "special", color: "#f4e8c8" },
   { name: "पुरुषोत्तमः", type: "property", color: "#5d3a8c" },
   { name: "यात्रा", type: "railroad", color: "#d9c3a3" },
-  { name: "भाग्यम्", type: "special", color: "#f4e8c8" },
+  { name: "समुदाय निधिः", type: "community", color: "#f4e8c8" },
   { name: "तक्षशिला", type: "property", color: "#214f7a" },
   { name: "दण्डः", type: "tax", color: "#e8b4a6" },
   { name: "संस्कृतम्", type: "property", color: "#214f7a" },
