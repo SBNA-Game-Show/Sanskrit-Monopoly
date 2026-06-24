@@ -24,7 +24,7 @@ interface MonopolyTile {
   price?: string;
   rent?: string;
   sellValue?: string;
-  group?: "red" | "brown" | "light blue" | "pink" | "orange" | "yellow" | "green" | "dark blue" ;
+  group?: "red" | "brown" | "light blue" | "pink" | "orange" | "yellow" | "green" | "dark blue" | "" ;
 }
 
 interface GameEdition {
@@ -118,7 +118,11 @@ function Admin() {
         id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
         name: neutralSpaceName,
         type: "property", // Safe base string fallback required by your type schema
-        money: "0"       // Flat baseline values
+        money: "0",       // Flat baseline values
+        price: "100",
+        rent: "10",
+        sellValue: "50",
+        group: ""
       };
     });
 
@@ -455,7 +459,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
 
                       if (tile.type === "property") {
                         badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-                        displayLabel = "Property";
+                        // displayLabel = "Property";
                       } else if (tile.type === "quiz") {
                         badgeColor = "text-green-600 bg-green-50 border-green-200";
                         displayLabel = `Quiz • +/- ${tile.money || "0"} pts`;
@@ -623,7 +627,6 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                               value={propertyGroup}
                               onChange={(e) => setPropertyGroup(e.target.value)}
                               className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize"
-                              required={tileType === "property"}
                             >
                               <option value="">-- Select Color Group --</option>
                               <option value="red">Red</option>
