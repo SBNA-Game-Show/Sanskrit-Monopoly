@@ -1,6 +1,6 @@
 // ── Variants ──────────────────────────────────────────────────────────────────
 //   primary    orange #FDAF5D   — Home "CREATE LOBBY", LobbyWaiting "START"
-//   action     orange         — Game controls, quiz answers, overlay actions
+//   action     orange             — Game controls, quiz answers, overlay actions
 //   toggle     orange             — Edition / Starting Money selectors
 //   social     peach #fd8300    — Google sign-in
 //   white      white bg           — Login "Sign In" submit
@@ -12,7 +12,7 @@
 //   xl    home page jersey CTAs   (CREATE LOBBY, START)
 //
 // ── Props ─────────────────────────────────────────────────────────────────────
-//   active      boolean  toggle variant only — is this pill selected?
+//   active      boolean  toggle variant only
 //   glow        boolean  adds orange drop-shadow (Home page buttons)
 //   fullWidth   boolean  w-full
 //   neon        boolean  adds pulsing neon glow (LobbyWaiting START button)
