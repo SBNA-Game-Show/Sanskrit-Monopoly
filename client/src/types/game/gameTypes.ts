@@ -7,5 +7,7 @@ export type {
   GameTile,
   GameTileType,
   PlayerState,
-  ActiveQuiz,
+  ActiveQuiz, // for quiz
+  ActiveAuction, // for auctioning
+  QuizOption, // for quiz selection
 } from "../../../../shared/gameTypes";

@@ -17,6 +17,9 @@ import {
   declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
+  sellProperty,
+  placeAuctionBid,
+  resolveAuction,
   lobbies,
 } from "../services/gameService.js";
 
@@ -263,7 +266,48 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+
+      // auction path stays paused in the auction overlay
+      // but non-auction path should advance normally
+      if (result.lobby.gameStatus === "turnEnded") {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
+    });
+
+    // auction handler
+    socket.on(
+      GAME_EVENTS.GAME_PLACE_AUCTION_BID,
+      ({ lobbyCode, uid, bidIncrement }) => {
+        const result = placeAuctionBid(lobbyCode, uid, bidIncrement);
+        if (result.error) return emitGameError(socket, result.error);
+
+        broadcastGameState(io, result.lobby);
+      },
+    );
+
+    socket.on(GAME_EVENTS.GAME_RESOLVE_AUCTION, ({ lobbyCode, hostUid }) => {
+      const result = resolveAuction(lobbyCode, hostUid);
+      if (result.error) return emitGameError(socket, result.error);
+
+      broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
+    });
+
+    // sell property handler
+    socket.on(GAME_EVENTS.GAME_SELL_PROPERTY, ({ lobbyCode, uid, propertyId }) => {
+      if (!lobbyCode || !uid || !propertyId) {
+        emitGameError(socket, "Missing sell property data");
+        return;
+      }
+
+      const result = sellProperty(lobbyCode, uid, propertyId);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
     });
 
     // jail
@@ -449,6 +493,7 @@ export function setupSocketEvents(io) {
       lobby.startTime = Date.now();
       lobby.endTime = null;
       lobby.currentPlayerIndex = 0;
+      lobby.activeAuction = null;
       lobby.lastRoll = null;
       lobby.winnerUid = null;
 
