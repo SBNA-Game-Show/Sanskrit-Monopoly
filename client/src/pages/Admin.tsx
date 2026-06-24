@@ -20,7 +20,11 @@ interface MonopolyTile {
   id: string;
   name: string;
   type: "property" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz";
-  points: string; // Kept as a string format matching your database panel blueprint
+  money: string; // Kept as a string format matching your database panel blueprint
+  price?: string;
+  rent?: string;
+  sellValue?: string;
+  group?: "red" | "brown" | "light blue" | "pink" | "orange" | "yellow" | "green" | "dark blue" ;
 }
 
 interface GameEdition {
@@ -44,6 +48,10 @@ function Admin() {
   const [tileType, setTileType] = useState<"property" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz">("property");
   const [tileValue, setTileValue] = useState<number>(0);
   const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
+  const [propertyCost, setPropertyCost] = useState<number>(0);
+  const [rentCost, setRentCost] = useState<number>(0);
+  const [sellingCost, setSellingCost] = useState<number>(0);
+  const [propertyGroup, setPropertyGroup] = useState<string>("");
 
   // Inline Name Renaming Buffers
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
@@ -110,7 +118,7 @@ function Admin() {
         id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
         name: neutralSpaceName,
         type: "property", // Safe base string fallback required by your type schema
-        points: "0"       // Flat baseline values
+        money: "0"       // Flat baseline values
       };
     });
 
@@ -163,8 +171,11 @@ function Admin() {
       id: updatedTiles[editingTileIndex].id, // Keeps the original stable random ID intact
       name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
       type: tileType,
-      // ✅ FIXED: Saves custom point values for Property Costs, Quiz stakes, or Minigames
-      points: tileType === "property" || tileType === "minigame" || tileType === "quiz" ? String(tileValue) : "0"
+      money: tileType === "property" || tileType === "minigame" || tileType === "quiz" ? String(tileValue) : "0",
+      price: tileType === "property" ? String(propertyCost) : "0",
+      rent: tileType === "property" ? String(rentCost) : "0",
+      sellValue: tileType === "property" ? String(sellingCost) : "0",
+      group: tileType === "property" ? (propertyGroup as any) : ""
     };
 
     try {
@@ -176,6 +187,10 @@ function Admin() {
       // 3. Clear all input states and close the editing panel on success
       setTargetTileName("");
       setTileValue(0);
+      setPropertyCost(0);
+      setRentCost(0);
+      setSellingCost(0);
+      setPropertyGroup("");
       setEditingTileIndex(null); 
       alert("Changes successfully committed to Firestore!");
     } catch (err) {
@@ -440,13 +455,13 @@ const handleOptionChangeLocally = (index: number, val: string) => {
 
                       if (tile.type === "property") {
                         badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-                        // displayLabel = `Property • Cost: ${tile.points} pts`;
+                        displayLabel = "Property";
                       } else if (tile.type === "quiz") {
                         badgeColor = "text-green-600 bg-green-50 border-green-200";
-                        displayLabel = `Quiz • +/- ${tile.points} pts`;
+                        displayLabel = `Quiz • +/- ${tile.money || "0"} pts`;
                       } else if (tile.type === "minigame") {
                         badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200";
-                        displayLabel = `Minigame • +/- ${tile.points} pts`;
+                        displayLabel = `Minigame • +/- ${tile.money || "0"} pts`;
                       } else if (tile.type === "tax") {
                         badgeColor = "text-red-600 bg-red-50 border-red-200";
                         displayLabel = "Tax • 200 pts";
@@ -480,17 +495,40 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                               {idx}
                             </span>
                             <div className="flex flex-col">
-                              <span className="text-base text-slate-900 font-extrabold tracking-tight">{tile.name}</span>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>
-                                  {tile.type}
-                                </span>
-                                  {(tile.type === "property" || tile.type === "minigame" || tile.type === "quiz") && (
-                                  <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">
-                                    {tile.type === "property" ? `Cost: ${tile.points} Pts` : `Stakes: ${tile.points} Pts`}
+                              <span className="text-base text-slate-900 font-extrabold tracking-tight">
+                                {idx === 0 ? "STARTING POINT" : tile.name}
+                              </span>
+                              {idx !== 0 && (
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>
+                                    {tile.type === "goToJail" ? "Go To Jail" : tile.type}
                                   </span>
+                                  {tile.type === "property" ? (
+                                  <div className="flex flex-wrap gap-1.5 items-center">
+                                    {tile.group && (
+                                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider bg-white shadow-sm border-gray-300 text-slate-700 flex items-center gap-1">
+                                        {tile.group}
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] font-bold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border shadow-sm">
+                                      Cost: {tile.price || "0"} Pts
+                                    </span>
+                                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shadow-sm">
+                                      Rent: {tile.rent || "0"} Pts
+                                    </span>
+                                    <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shadow-sm">
+                                      Sell: {tile.sellValue || "0"} Pts
+                                    </span>
+                                  </div>
+                                ) : (
+                                  (tile.type === "minigame" || tile.type === "quiz") && (
+                                    <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">
+                                      Points: {tile.money || "0"} Pts
+                                    </span>
+                                  )
                                 )}
                               </div>
+                              )}
                             </div>
                           </div>
 
@@ -505,7 +543,11 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                                 setEditingTileIndex(idx);
                                 setTargetTileName(tile.name);
                                 setTileType(tile.type as any);
-                                setTileValue(Number(tile.points) || 0);
+                                setTileValue(Number(tile.money) || 0);
+                                setPropertyCost(Number(tile.price) || 0);
+                                setRentCost(Number(tile.rent) || 0);
+                                setSellingCost(Number(tile.sellValue) || 0);
+                                setPropertyGroup(tile.group || "");
                               }}
                               className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${
                                 isCurrentlyEditingThis
@@ -571,25 +613,71 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                       </div>
                     </div>
 
-                    <div>
-                      {/*Dynamic context label based on selection */}
-                      <label className="block font-bold text-slate-700 mb-1">
-                        {tileType === "property" ? "Property Cost / Price" : "Point Modifier Value (Gain/Loss)"}
-                      </label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={tileValue}
-                        onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
-                        // UPDATED: Only unlocks inputs for  Minigame, and Quiz tiles
-                        disabled={tileType !== "minigame" && tileType !== "quiz"}
-                        className={`w-full p-2.5 rounded-xl border font-bold focus:outline-none text-base transition-all ${
-                          tileType === "minigame" || tileType === "quiz"
-                            ? "bg-white border-orange-300 text-slate-900 shadow-sm"
-                            : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed select-none"
-                        }`}
-                      />
-                    </div>
+                    {tileType === "property" ? (
+                      <div className="space-y-3 animate-fade-in">
+                        {/* ✅ ADDED: Property Color Group Dropdown Menu */}
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Property Color Set Group</label>
+                          <div className="bg-white p-1 rounded-xl border border-orange-300">
+                            <select
+                              value={propertyGroup}
+                              onChange={(e) => setPropertyGroup(e.target.value)}
+                              className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize"
+                              required={tileType === "property"}
+                            >
+                              <option value="">-- Select Color Group --</option>
+                              <option value="red">Red</option>
+                              <option value="brown">Brown</option>
+                              <option value="light blue">Light Blue</option>
+                              <option value="pink">Pink</option>
+                              <option value="orange">Orange</option>
+                              <option value="yellow">Yellow</option>
+                              <option value="green">Green</option>
+                              <option value="dark blue">Dark Blue</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Property Purchase Cost</label>
+                          <input 
+                            type="number" min="0" value={propertyCost}
+                            onChange={(e) => setPropertyCost(Math.abs(Number(e.target.value)))}
+                            className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Rent Price</label>
+                          <input 
+                            type="number" min="0" value={rentCost}
+                            onChange={(e) => setRentCost(Math.abs(Number(e.target.value)))}
+                            className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Selling Price</label>
+                          <input 
+                            type="number" min="0" value={sellingCost}
+                            onChange={(e) => setSellingCost(Math.abs(Number(e.target.value)))}
+                            className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* ✅ FIXED: Only render the Money Modifier input box if the type is explicitly Minigame or Quiz */
+                      (tileType === "minigame" || tileType === "quiz") && (
+                        <div className="animate-fade-in">
+                          <label className="block font-bold text-slate-700 mb-1">Money Modifier Value (Gain/Loss)</label>
+                          <input 
+                            type="number" 
+                            min="0"
+                            value={tileValue}
+                            onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
+                            className="w-full p-2.5 rounded-xl border border-orange-300 font-bold focus:outline-none text-base bg-white text-slate-900 shadow-sm"
+                          />
+                        </div>
+                      )
+                    )}
 
                     <div className="flex gap-2 pt-2">
                       <button
