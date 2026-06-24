@@ -100,8 +100,8 @@ export function GameOverlayLayer({
         //activeQuiz must not be null
         gameState.activeQuiz && (
           <PopQuizOverlay
+            gameState={gameState}
             quiz={gameState.activeQuiz}
-            players={gameState.players}
             isHost={isHost}
             lobbyCode={gameState.lobbyCode}
             uid={uid}

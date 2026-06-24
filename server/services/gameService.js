@@ -31,20 +31,19 @@ export function addLog(lobbyCode, entry) {
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
-function getRandomQuizQuestion() {
-  const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
-  return QUIZ_QUESTIONS[index];
+function getRandomQuizQuestion(questions) {
+  const index = Math.floor(Math.random() * questions.length);
+  return questions[index];
 }
 
-function createActiveQuiz() {
-  const question = getRandomQuizQuestion();
+function createActiveQuiz(questions) {
+  const question = getRandomQuizQuestion(questions);
 
   return {
     id: `quiz-${Date.now()}`,
     question: question.question,
     options: question.options,
-    correctOptionId: question.correctOptionId,
-    answers: {},
+    correctAnswer: question.correctAnswer,
     status: "answering",
     endsAt: Date.now() + POP_QUIZ_DURATION_MS,
   };
@@ -342,6 +341,12 @@ export function resolveLandingAction(lobby) {
     return { lobby, error: null };
   }
 
+  if (landedTile.type === "quiz") {
+    lobby.gameStatus = "popQuiz";
+    lobby.activeQuiz = createActiveQuiz(lobby.edition.questions);
+    return { lobby, error: null };
+  }
+
   if (!isBuyableTile(landedTile)) {
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
@@ -440,6 +445,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
     activeAuction: null,
+    gameTimer: null, // timer for MINIGAMES ONLY, holds reference to timer so we can clearTimeout if needed
     activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
@@ -535,10 +541,11 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  if (options.tiles) {
+  if (options.tiles && options.questions) {
     lobby.edition = {
       startingPoints: options.startingPoints,
       tiles: options.tiles,
+      questions: options.questions,
     };
   }
 

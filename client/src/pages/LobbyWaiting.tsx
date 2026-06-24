@@ -89,10 +89,13 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
       color: tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
     }));
 
+    const questions = editionData.activities;
+
     socket.emit(GAME_EVENTS.GAME_START, {
       lobbyCode,
       hostUid: uid,
       tiles: coloredTiles, 
+      questions: questions,
       startingPoints: startingMoney ?? 0,
     });
   };

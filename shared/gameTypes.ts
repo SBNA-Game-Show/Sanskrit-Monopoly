@@ -54,23 +54,12 @@ export type GameEdition = {
   tiles: GameTile[];
 };
 
-export type QuizOption = {
-  id: string;
-  text: string;
-};
-
 export type ActiveQuiz = {
   id: string;
   question: string;
-  options: QuizOption[];
-
-  // Keep optional because clients may not need to know the answer until reveal phase
-  correctOptionId?: string;
-
-  // player uid -> option id
-  answers: Record<string, string>;
-
-  status: "answering" | "revealing" | "closed";
+  options: string[];
+  correctAnswer: string;
+  status: "answering" | "correct" | "incorrect" | "timerExpired";
   endsAt: number;
 };
 
@@ -124,6 +113,7 @@ export type GameState = {
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
   activeAuction: ActiveAuction | null; // unless gameStatus is auction
+  // gameTimer: is not given a type since the server does not send this field over to the client
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
