@@ -17,7 +17,6 @@ import {
   declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
-   sellProperty,
   lobbies,
 } from "../services/gameService.js";
 
@@ -268,6 +267,30 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+
+      // auction path stays paused in the auction overlay
+      // but non-auction path should advance normally
+      if (result.lobby.gameStatus === "turnEnded") {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
+    });
+
+    // auction handler
+    socket.on(
+      GAME_EVENTS.GAME_PLACE_AUCTION_BID,
+      ({ lobbyCode, uid, bidIncrement }) => {
+        const result = placeAuctionBid(lobbyCode, uid, bidIncrement);
+        if (result.error) return emitGameError(socket, result.error);
+
+        broadcastGameState(io, result.lobby);
+      },
+    );
+
+    socket.on(GAME_EVENTS.GAME_RESOLVE_AUCTION, ({ lobbyCode, hostUid }) => {
+      const result = resolveAuction(lobbyCode, hostUid);
+      if (result.error) return emitGameError(socket, result.error);
+
+      broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
     });
 
@@ -471,6 +494,7 @@ export function setupSocketEvents(io) {
       lobby.startTime = Date.now();
       lobby.endTime = null;
       lobby.currentPlayerIndex = 0;
+      lobby.activeAuction = null;
       lobby.lastRoll = null;
       lobby.winnerUid = null;
 
