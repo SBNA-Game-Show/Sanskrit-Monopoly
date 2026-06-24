@@ -35,14 +35,61 @@ function broadcastGameState(io, lobby) {
   io.to(lobby.lobbyCode).emit(GAME_EVENTS.GAME_UPDATED, lobby);
 }
 
-// pop-quiz helper
 function finishPopQuiz(lobby, io) {
   if (!lobby.activeQuiz) return;
   if (lobby.gameStatus !== "popQuiz") return;
 
+  if (lobby.gameTimer) {
+    clearTimeout(lobby.gameTimer);
+    lobby.gameTimer = null;
+  }
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+  if (lobby.activeQuiz.status === "correct") {
+    currentPlayer.money += Number(lobby.edition.tiles[currentPlayer.position].money);
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: "got ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering correctly.",
+    });
+  }
+  else if (lobby.activeQuiz.status === "timerExpired" || lobby.activeQuiz.status === "incorrect") {
+    currentPlayer.money -= Number(lobby.edition.tiles[currentPlayer.position].money);
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: "paid ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering incorrectly.",
+    });
+  }
+
   lobby.activeQuiz = null;
 
   startNextTurn(lobby, io, broadcastGameState);
+}
+
+function startQuizTimer(lobby, io) {
+  if (lobby.gameTimer) {
+    clearTimeout(lobby.gameTimer);
+  }
+
+  const timer = setTimeout(async () => {
+    const currentLobby = getLobby(lobby.lobbyCode);
+    if (currentLobby && currentLobby.gameStatus === "popQuiz" && currentLobby.activeQuiz) {
+      currentLobby.activeQuiz.status = "timerExpired";
+      broadcastGameState(io, currentLobby);
+
+      await sleep(2500);
+      finishPopQuiz(currentLobby, io);
+    }
+  }, 15000);
+
+  // enumurable false prevents this field from being sent to the client
+  Object.defineProperty(lobby, "gameTimer", {
+    value: timer,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
 }
 
 export function setupSocketEvents(io) {
@@ -90,6 +137,13 @@ export function setupSocketEvents(io) {
         } else {
           lobby.activeQuiz.status = "incorrect";
         }
+
+        // Clear active timer since an answer has been submitted
+        if (lobby.gameTimer) {
+          clearTimeout(lobby.gameTimer);
+          lobby.gameTimer = null;
+        }
+
         broadcastGameState(io, lobby);
 
         await sleep(2500);
@@ -208,6 +262,8 @@ export function setupSocketEvents(io) {
       }
 
       if (landingResult.lobby.gameStatus === "popQuiz") {
+        startQuizTimer(landingResult.lobby, io);
+
         broadcastGameState(io, landingResult.lobby);
         return;
       }

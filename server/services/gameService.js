@@ -401,6 +401,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
     activeAuction: null,
+    gameTimer: null, // timer for MINIGAMES ONLY, holds reference to timer so we can clearTimeout if needed
     activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },

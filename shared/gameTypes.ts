@@ -110,6 +110,7 @@ export type GameState = {
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
   activeAuction: ActiveAuction | null; // unless gameStatus is auction
+  // gameTimer: is not given a type since the server does not send this field over to the client
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;
