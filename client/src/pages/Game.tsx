@@ -7,6 +7,8 @@ import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 import { GameLog } from "../components/game/GameLog";
 import { Button } from "../components/common/Button";
+import { useEffect, useRef } from "react";
+import { useToast } from "../context/ToastContext";
 
 type GameProps = {
   gameState: GameState;
@@ -19,11 +21,31 @@ function formatMoney(amount: number) {
   return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
 }
 
+// mini-function to check whether a log entry is a completed auction
+function isAuctionWinLog(message: string) {
+  return message.includes("won") && message.includes("at auction");
+}
+
+// turns a game log into a toast only if it deserves it
+function getAuctionToastFromLog(log: GameState["log"][number]) {
+  if (!isAuctionWinLog(log.message)) return null;
+
+  return {
+    variant: "success" as const,
+    title: "Auction Won",
+    message: `${log.username} ${log.message}`,
+  };
+}
+
 export default function Game({ gameState }: GameProps) {
   //for debugging (KEEP THIS)
   console.log(gameState);
 
   const { uid } = useAuth();
+  const { showToast } = useToast();
+
+  // remember last log toasted so rerendering doesn't make a duplicate
+  const lastToastedLogIdRef = useRef<string | null>(null);
 
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -58,6 +80,24 @@ export default function Game({ gameState }: GameProps) {
       lobbyCode: gameState.lobbyCode,
     });
   };
+
+  // show a toast that an auction was successful
+  // I noticed that when an auction is stopped, it ends abruptly
+  useEffect(() => {
+    const newestLog = gameState.log[gameState.log.length - 1];
+
+    if (!newestLog) return;
+
+    // prevent duplicate toasts for the same log entry
+    if (lastToastedLogIdRef.current === newestLog.id) return;
+
+    const toast = getAuctionToastFromLog(newestLog);
+    if (!toast) return;
+
+    lastToastedLogIdRef.current = newestLog.id;
+
+    showToast(toast);
+  }, [gameState.log, showToast]);
 
   return (
     <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
