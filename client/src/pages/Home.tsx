@@ -289,11 +289,9 @@ function Home() {
             </div>
 
             {/* Create Room Btn */}
-            <div 
-              style={{filter: shared_styles.activeGlow}}
-              className={`bg-[#FDAF5D] shadow-sm cursor-default w-full ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}>
-                CREATE LOBBY
-            </div>
+            <Button size="xl" glow className="w-full sm:w-56">
+              CREATE LOBBY
+            </Button>
           </div> {/* Spring Public/Private Option Menu */}
 
           {/* Enter Code */}
