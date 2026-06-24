@@ -61,7 +61,7 @@ export default function ActiveLobbies() {
     <main className="h-[calc(100vh-64px)] bg-white flex flex-col items-center justify-start select-none relative overflow-hidden">
       
       {/* Centered Grid Workspace */}
-      <div className="w-full max-w-6xl mx-auto px-6 py-16 flex-grow flex flex-col items-center">
+      <div className="w-full max-w-6xl mx-auto px-3 py-8 flex-grow flex flex-col items-center min-h-0">
         
         {loading ? (
           <div className="flex-grow flex items-center justify-center">
@@ -73,21 +73,20 @@ export default function ActiveLobbies() {
           </div>
         ) : (
           /* Grid Layout For Lobby Codes */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-12 gap-y-16 overflow-y-auto p-4">
+          <div className="w-full flex flex-col gap-10 overflow-y-auto px-2 py-4 h-full">
             {availableLobbies.map((lobby) => (
-              <div key={lobby.code} className="flex flex-col items-center gap-2">
-                <button 
-                  key={lobby.code}
-                  onClick={() => handleJoin(lobby)}
-                  className={`bg-[#FDAF5D] hover:bg-[#FF9513] h-16 w-52 rounded-[30px] text-3xl ${shared_styles.textFormat} ${shared_styles.btnTransition}`}
-                >
-                  {lobby.code}
-                </button>
-
-                {/* Player Count Text */}
-                <span className="text-[#FDAF5D] font-jersey text-[1.35rem] tracking-widest uppercase">
-                  PLAYERS: {lobby.players}/{lobby.maxPlayers}
-                </span>
+              <div key={lobby.code} className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full items-center text-center text-[#FDAF5D] text-2xl lg:text-[1.5rem] font-jersey tracking-widest uppercase">
+                <span>HOST: {lobby.host}</span>
+                <span>EDITION: {lobby.edition}</span>
+                <span>PLAYERS: {lobby.players}/{lobby.maxPlayers}</span>
+                
+                <div className="flex justify-center">
+                  <button 
+                    onClick={() => handleJoin(lobby)}
+                    className={`bg-[#FDAF5D] hover:bg-[#FF9513] h-12 w-43 rounded-[30px] text-3xl ${shared_styles.textFormat} ${shared_styles.btnTransition}`}>
+                    {lobby.code}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -95,10 +94,10 @@ export default function ActiveLobbies() {
       </div>
       
       {/* Footer W/ Back To Home Btn */}
-      <div className="w-full bg-[#FFC17E] flex justify-center items-center h-20 lg:h-20 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)] z-20">
+      <div className="w-full bg-[#FFC17E] flex justify-center items-center h-16 lg:h-16 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)] z-20">
         <button
           onClick={() => navigate("/home")}
-          className="px-10 h-[50px] lg:h-[50px] rounded-2xl text-2xl lg:text-3xl font-jersey tracking-widest text-white transition-all duration-300 border-none bg-[#FF9513] hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
+          className="px-10 h-[50px] lg:h-[50px] rounded-[30px] text-2xl lg:text-3xl font-jersey tracking-widest text-white transition-all duration-300 border-none bg-[#FF9513] hover:scale-105 active:scale-95 shadow-sm cursor-pointer"
         >
           BACK TO HOME
         </button>

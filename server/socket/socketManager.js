@@ -21,6 +21,7 @@ import {
   placeAuctionBid,
   resolveAuction,
   lobbies,
+  updateLobbyEdition
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
@@ -522,6 +523,15 @@ export function setupSocketEvents(io) {
         lobby.gameStatus = "idling";
         broadcastGameState(io, lobby);
       }, 2500);
+    });
+
+    // Update game edition handler
+    socket.on(GAME_EVENTS.LOBBY_UPDATE_EDITION, ({ lobbyCode, editionName }) => {
+      const { lobby } = updateLobbyEdition(lobbyCode, editionName);
+  
+      if (lobby) {
+        broadcastGameState(io, lobby);
+      }
     });
 
     socket.on("disconnect", () => {

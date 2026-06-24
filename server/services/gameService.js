@@ -386,7 +386,7 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, isPrivate = false, edition = DEFAULT_EDITION) {
+export function createLobby(hostUid, hostUsername, isPrivate = false) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -399,7 +399,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
-    edition,
+    edition: {},
     currentPlayerIndex: 0,
     lastRoll: null,
     winnerUid: null,
@@ -493,15 +493,9 @@ export function startGame(lobbyCode, hostUid, options = {}) {
 
   if (options.tiles) {
     lobby.edition = {
-      startingPoints: options.startingPoints,
-      tiles: options.tiles,
-    };
-  }
-
-  if (typeof options.startingPoints === "number") {
-    lobby.edition = {
       ...lobby.edition,
       startingPoints: options.startingPoints,
+      tiles: options.tiles,
     };
   }
 
@@ -1114,4 +1108,18 @@ export function disconnectPlayer(socketId) {
     }
   }
   return { lobby: null, error: "Socket not found" };
+}
+
+export function updateLobbyEdition(lobbyCode, editionName) {
+  const lobby = getLobby(lobbyCode);
+  
+  if (lobby) {
+    if (!lobby.edition) {
+      lobby.edition = {};
+    }
+    // Update the name so the API endpoint picks it up instantly
+    lobby.edition.name = editionName; 
+  }
+  
+  return { lobby, error: null };
 }
