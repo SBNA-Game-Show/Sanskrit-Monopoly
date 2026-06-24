@@ -78,11 +78,14 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
   };
 
   const handleStartGame = async () => {
+    console.log("STARTING GAME");
     if (!canStart || !lobbyCode || !uid || !selectedEdition) return;
 
     const docRef = doc(db, "game_editions", selectedEdition);
     const docSnap = await getDoc(docRef);
     const editionData = docSnap.data();
+
+    console.log("EDITION DATA:", editionData);
 
     const coloredTiles = editionData.tiles.map(tile => ({
       ...tile,
