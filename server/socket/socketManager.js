@@ -13,6 +13,7 @@ import {
   disconnectPlayer,
   startNextTurn,
   resolveLandingAction,
+  applyCardEffect,
   resolveBankruptcy,
   declareBankruptcy,
   buyPendingProperty,
@@ -203,6 +204,21 @@ export function setupSocketEvents(io) {
       }
 
       if (
+        landingResult.lobby.gameStatus === "chance" ||
+        landingResult.lobby.gameStatus === "community"
+      ) {
+        broadcastGameState(io, landingResult.lobby);
+        await sleep(2500);
+
+        const lobby = landingResult.lobby;
+        const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+        applyCardEffect(lobby, currentPlayer, lobby.activeCard);
+
+        broadcastGameState(io, lobby);
+      }
+
+      if (
         landingResult.lobby.gameStatus === "buyProperty" ||
         landingResult.lobby.gameStatus === "bankruptcy" ||
         landingResult.lobby.gameStatus === "jail"
@@ -219,14 +235,6 @@ export function setupSocketEvents(io) {
       if (landingResult.lobby.gameStatus === "miniGame") {
         broadcastGameState(io, landingResult.lobby);
         return;
-      }
-
-      if (
-        landingResult.lobby.gameStatus === "chance" ||
-        landingResult.lobby.gameStatus === "community"
-      ) {
-        broadcastGameState(io, landingResult.lobby);
-        await sleep(2500);
       }
 
       landingResult.lobby.gameStatus = "turnEnded";
@@ -384,7 +392,7 @@ export function setupSocketEvents(io) {
     socket.on(GAME_EVENTS.GAME_DECLARE_BANKRUPTCY, ({ lobbyCode, uid }) => {
       if (!lobbyCode || !uid) {
         emitGameError(socket, "Missing bankruptcy declaration data");
-        return; 
+        return;
       }
 
       // player chooses to declare bankruptcy
@@ -396,7 +404,7 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
- 
+
       // If bankruptcy eliminated the second-last player, game is probably already over
       if (result.lobby.status !== "finished") {
         startNextTurn(result.lobby, io, broadcastGameState);
