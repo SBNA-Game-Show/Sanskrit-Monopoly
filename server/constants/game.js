@@ -27,13 +27,13 @@ export const CHANCE_CARDS = [
   //   points: 0,
   //   effect: "none",
   // },
-  {
-    id: "chance-bank-dividend",
-    title: "कोषलाभः — Bank Dividend",
-    message: "The royal treasury pays you a dividend. Collect 50 points.",
-    points: 50,
-    effect: "money",
-  },
+  // {
+  //   id: "chance-bank-dividend",
+  //   title: "कोषलाभः — Bank Dividend",
+  //   message: "The royal treasury pays you a dividend. Collect 50 points.",
+  //   points: 50,
+  //   effect: "money",
+  // },
   // {
   //   id: "chance-get-out-jail",
   //   title: "मुक्तिपत्रम् — Get Out of Jail Free",
@@ -62,13 +62,13 @@ export const CHANCE_CARDS = [
   //   points: 0,
   //   effect: "none",
   // },
-  {
-    id: "chance-speeding-fine",
-    title: "अतिवेगदण्डः — Speeding Fine",
-    message: "You moved too quickly on the royal road. Pay 15 points.",
-    points: -15,
-    effect: "money",
-  },
+  // {
+  //   id: "chance-speeding-fine",
+  //   title: "अतिवेगदण्डः — Speeding Fine",
+  //   message: "You moved too quickly on the royal road. Pay 15 points.",
+  //   points: -15,
+  //   effect: "money",
+  // },
   // {
   //   id: "chance-chairman-board",
   //   title: "सभापतिः — Chairman of the Board",
@@ -76,13 +76,13 @@ export const CHANCE_CARDS = [
   //   points: 0,
   //   effect: "none",
   // },
-  {
-    id: "chance-building-loan",
-    title: "ऋणसमाप्तिः — Building Loan Matures",
-    message: "Your building loan matures. Collect 150 points.",
-    points: 150,
-    effect: "money",
-  },
+  // {
+  //   id: "chance-building-loan",
+  //   title: "ऋणसमाप्तिः — Building Loan Matures",
+  //   message: "Your building loan matures. Collect 150 points.",
+  //   points: 150,
+  //   effect: "money",
+  // },
 ];
 
 export const COMMUNITY_CHEST_CARDS = [
