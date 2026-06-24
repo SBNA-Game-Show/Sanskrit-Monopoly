@@ -6,7 +6,7 @@ import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import type { GameState } from "../types/game/gameTypes";
-import { TILE_TYPE_COLORS } from "../constants/zim/board";
+import { TILE_TYPE_COLORS, PROPERTY_GROUP_COLORS } from "../constants/zim/board";
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
 
@@ -86,7 +86,9 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
     const coloredTiles = editionData.tiles.map(tile => ({
       ...tile,
-      color: tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
+      color: tile.group
+        ? PROPERTY_GROUP_COLORS[tile.group] ?? tile.color ?? TILE_TYPE_COLORS[tile.type] ?? "#ffffff"
+        : tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
     }));
 
     const questions = editionData.activities;

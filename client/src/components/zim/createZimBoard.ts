@@ -212,6 +212,12 @@ function drawTile(
     new zim.Rectangle(w, h, tile.color, "transparent", 0).addTo(group);
   }
 
+  let labelWidth = w - 12;
+  const bar = 22;
+  if (tile.type === "property" && (side === "left" || side === "right")) {
+    labelWidth = w - bar - 12;
+  }
+
   const label = new zim.Label({
     text: tile.name,
     size: 12,
@@ -219,13 +225,18 @@ function drawTile(
     color: "#2a1c12",
     font: "Georgia",
     align: "center",
-    lineWidth: side === "top" || side === "bottom" ? w - 6 : h - 6,
+    lineWidth: labelWidth,
   });
 
   label.center(group);
 
-  if (side === "left") label.rot(90);
-  if (side === "right") label.rot(-90);
+  if (tile.type === "property") {
+    if (side === "left") {
+      label.x -= bar / 2;
+    } else if (side === "right") {
+      label.x += bar / 2;
+    }
+  }
 }
 
 function drawDice(board: zim.Container, diceValue: number | null | undefined) {

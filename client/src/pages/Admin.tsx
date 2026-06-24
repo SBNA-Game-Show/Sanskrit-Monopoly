@@ -24,7 +24,7 @@ interface MonopolyTile {
   price?: string;
   rent?: string;
   sellValue?: string;
-  group?: "red" | "brown" | "light blue" | "pink" | "orange" | "yellow" | "green" | "dark blue" | "" ;
+  group?: "red" | "brown" | "lightBlue" | "pink" | "orange" | "yellow" | "green" | "darkBlue" | "" ;
 }
 
 interface GameEdition {
@@ -631,12 +631,12 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                               <option value="">-- Select Color Group --</option>
                               <option value="red">Red</option>
                               <option value="brown">Brown</option>
-                              <option value="light blue">Light Blue</option>
+                              <option value="lightBlue">Light Blue</option>
                               <option value="pink">Pink</option>
                               <option value="orange">Orange</option>
                               <option value="yellow">Yellow</option>
                               <option value="green">Green</option>
-                              <option value="dark blue">Dark Blue</option>
+                              <option value="darkBlue">Dark Blue</option>
                             </select>
                           </div>
                         </div>

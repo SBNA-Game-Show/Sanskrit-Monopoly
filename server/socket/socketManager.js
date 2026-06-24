@@ -266,6 +266,7 @@ export function setupSocketEvents(io) {
         applyCardEffect(lobby, currentPlayer, lobby.activeCard);
 
         broadcastGameState(io, lobby);
+        await sleep(2500);
       }
 
       if (
