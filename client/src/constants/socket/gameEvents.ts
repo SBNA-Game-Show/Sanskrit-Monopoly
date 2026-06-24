@@ -22,6 +22,7 @@ export const GAME_EVENTS = {
   // property-related stuff
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
+  GAME_SELL_PROPERTY: "game:sell-property",
 
   // bankruptcy
   GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
