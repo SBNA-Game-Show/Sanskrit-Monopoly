@@ -192,7 +192,7 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
   return -1;
 }
 
-function applyCardEffect(lobby, player, card) {
+export function applyCardEffect(lobby, player, card) {
   switch (card.effect) {
     case "goToJail": {
       const jailIndex = lobby.edition.tiles.findIndex(
@@ -271,7 +271,6 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomChanceCard();
     lobby.activeCard = randomCard;
 
-    applyCardEffect(lobby, currentPlayer, randomCard);
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
@@ -291,7 +290,6 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomCommunityChestCard();
     lobby.activeCard = randomCard;
 
-    applyCardEffect(lobby, currentPlayer, randomCard);
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
