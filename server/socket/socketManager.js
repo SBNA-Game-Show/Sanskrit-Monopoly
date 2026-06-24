@@ -17,6 +17,9 @@ import {
   declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
+  sellProperty,
+  placeAuctionBid,
+  resolveAuction,
   lobbies,
 } from "../services/gameService.js";
 
