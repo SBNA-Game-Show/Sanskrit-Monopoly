@@ -20,7 +20,7 @@ function getTilePrice(tile: GameTile) {
 }
 
 function getSellValue(tile: GameTile) {
-  return Math.round(getTilePrice(tile) * 0.5);
+  return Number(tile.sellValue);
 }
 
 function getPlayerProperties(gameState: GameState, player: PlayerState | null) {

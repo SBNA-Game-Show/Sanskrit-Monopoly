@@ -98,12 +98,16 @@ function findTileOwner(lobby, tileId) {
 }
 
 function getTilePrice(tile) {
-  if (typeof tile?.price === "number") return tile.price;
+  //rn the admin page saves the price as a string instead of a number
+  //fix later
+  return Number(tile.price);
 
-  if (tile?.type === "railroad") return 200;
-  if (tile?.type === "utility") return 150;
+  // if (typeof tile?.price === "number") return tile.price;
 
-  return 100;
+  // if (tile?.type === "railroad") return 200;
+  // if (tile?.type === "utility") return 150;
+
+  // return 100;
 }
 
 function getTaxAmount(tile) {
@@ -135,7 +139,7 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
     return diceRoll * (utilityCount >= 2 ? 10 : 4);
   }
 
-  return typeof tile.rent === "number" ? tile.rent : 10;
+  return Number(tile.rent)
 }
 
 // ---- bankruptcy related helper functions
@@ -862,8 +866,7 @@ export function sellProperty(lobbyCode, uid, propertyId) {
     return { lobby, error: "This property cannot be sold" };
   }
 
-  const price = getTilePrice(tile);
-  const sellValue = Math.round(price * 0.5);
+  const sellValue = Number(tile.sellValue);
 
   player.properties = player.properties.filter(
     (currentPropertyId) => currentPropertyId !== propertyId,

@@ -41,6 +41,7 @@ export type GameTile = {
   points?: number;
   price?: number;
   rent?: number;
+  sellValue?: number;
   amount?: number;
   group?: string;
   description?: string;

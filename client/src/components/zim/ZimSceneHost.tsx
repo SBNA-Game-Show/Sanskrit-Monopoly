@@ -47,7 +47,6 @@ export function ZimSceneHost<TState, TActions = undefined>({
       ready: () => {
         //if edtion is passed down as a prop, create scene with edition as addtional argument
         if (edition) {
-          console.log("EDITION AVAILABLE", edition);
           controllerRef.current = createScene(frame.stage, latestStateRef.current, actions, edition);
         //otherwise, just create the scene without the edition
         } else {
