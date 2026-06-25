@@ -21,7 +21,8 @@ export function PopQuizOverlay({
 }: PopQuizOverlayProps) {
   const [now, setNow] = useState(Date.now());
 
-  const isCurrentPlayer = uid === gameState.players[gameState.currentPlayerIndex].uid;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const isCurrentPlayer = uid === currentPlayer.uid;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -51,13 +52,13 @@ export function PopQuizOverlay({
 
   if (quiz.status === "correct") {
     return (
-      <GameOverlayShell>
-        <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
+      <GameOverlayShell status="success">
+        <p className="mb-2 text-base font-extrabold uppercase tracking-wide text-green-700">
           Correct Answer!
         </p>
         <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
         <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
-          You answered correctly!
+          {currentPlayer.username} answered correctly!
         </p>
       </GameOverlayShell>
     );
@@ -65,13 +66,13 @@ export function PopQuizOverlay({
 
   if (quiz.status === "incorrect") {
     return (
-      <GameOverlayShell>
-        <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
+      <GameOverlayShell status="failure">
+        <p className="mb-2 text-base font-extrabold uppercase tracking-wide text-red-800">
           Incorrect Answer!
         </p>
         <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
         <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
-          You answered incorrectly!
+          {currentPlayer.username} answered incorrectly!
         </p>
       </GameOverlayShell>
     );
@@ -79,13 +80,13 @@ export function PopQuizOverlay({
 
   if (quiz.status === "timerExpired") {
     return (
-      <GameOverlayShell>
+      <GameOverlayShell status="failure">
         <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
           Time's Up!
         </p>
         <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
         <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
-          Time expired! You didn't answer in time.
+          Time expired! {currentPlayer.username} didn't answer in time.
         </p>
       </GameOverlayShell>
     );
