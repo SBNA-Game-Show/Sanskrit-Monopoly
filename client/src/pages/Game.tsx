@@ -6,6 +6,7 @@ import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 import { GameLog } from "../components/game/GameLog";
+import { Button } from "../components/common/Button";
 import { useEffect, useRef } from "react";
 import { useToast } from "../context/ToastContext";
 import { SellPropertyPanel } from "../components/game/SellPropertyPanel";
@@ -223,39 +224,23 @@ export default function Game({ gameState }: GameProps) {
           <div className="flex flex-col items-center gap-5">
             {isHost ? (
               <>
-                <button
-                  onClick={handleRollDice}
-                  disabled={gameState.gameStatus !== "idling"}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
                   Force Roll
-                </button>
-                <button
-                  onClick={handleSkipTurn}
-                  disabled={gameState.gameStatus !== "idling"}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                </Button>
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
                   Skip Turn
-                </button>
-                <button
-                  onClick={handleEndGame}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
-                >
+                </Button>
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleEndGame}>
                   End Game
-                </button>
+                </Button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={handleRollDice}
-                disabled={
+              <Button variant="action" size="lg" disabled={
                   currentPlayer?.uid !== uid ||
                   gameState.gameStatus !== "idling"
-                }
-                className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Roll Dice
-              </button>
+                } onClick={handleRollDice}>
+                  Roll Dice
+                </Button>
             )}
           </div>
           {!isHost && <SellPropertyPanel gameState={gameState} uid={uid} />}

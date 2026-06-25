@@ -9,6 +9,7 @@ import type { GameState } from "../types/game/gameTypes";
 import { TILE_TYPE_COLORS, PROPERTY_GROUP_COLORS } from "../constants/zim/board";
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
+import { Button } from "../components/common/Button";
 
 // Define the incoming props from Lobby.tsx
 interface LobbyWaitingProps {
@@ -354,20 +355,9 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
       {/* Start Button Footer */}
       <div className="w-full bg-[#FFC17E] flex justify-center items-center h-20 lg:h-20 shrink-0 z-20">
-        <button
-          disabled={!canStart}
-          onClick={handleStartGame}
-          className={`
-            w-55 h-12.5 lg:w-55 lg:h-12.5 rounded-2xl text-2xl lg:text-3xl font-jersey tracking-widest text-white transition-all duration-300 relative bottom-0 border-none
-            ${
-              canStart
-                ? "bg-[#FF9513] animate-neon hover:bg-[#FFA545] hover:scale-105 active:scale-95 active:shadow-none"
-                : "bg-[#FF8C00] opacity-60 cursor-not-allowed"
-            }
-          `}
-        >
+        <Button size="xl" neon disabled={!canStart} onClick={handleStartGame} className="w-52 bg-[#FF9513] disabled:bg-[#FF8C00]">
           START
-        </button>
+        </Button>
       </div>
     </main>
   );
