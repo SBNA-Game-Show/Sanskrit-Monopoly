@@ -12,13 +12,6 @@ function formatMoney(amount: number) {
   return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
 }
 
-function getTilePrice(tile: GameTile) {
-  if (typeof tile.price === "number") return tile.price;
-  if (tile.type === "railroad") return 200;
-  if (tile.type === "utility") return 150;
-  return 100;
-}
-
 function getSellValue(tile: GameTile) {
   return Number(tile.sellValue);
 }

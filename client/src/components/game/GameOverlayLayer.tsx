@@ -1,4 +1,3 @@
-import { useAuth } from "../../context/AuthContext";
 import type { GameState } from "../../types/game/gameTypes";
 import StartOfTurnOverlay from "./overlays/StartOfTurnOverlay";
 import { PopQuizOverlay } from "./overlays/PopQuizOverlay";

@@ -400,8 +400,6 @@ function drawPlayers(
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
     const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
-    const x = center.x + offset.dx;
-    const y = center.y + offset.dy;
     const isCurrentTurn = player.uid === currentTurnUid;
     const TOKEN_SIZE = 34;
     const TOKEN_SIZE_ACTIVE = 42;
@@ -481,7 +479,7 @@ function drawPlayers(
 export function createZimBoard(
   stage: zim.Stage,
   initialState: ZimBoardState,
-  actions?: any, //keep this here or board will break
+  _actions?: any, //keep this here or board will break (and keep the underscore too)
   edition?: GameEdition,
 ): ZimBoardController {
   if (!edition) {
@@ -497,8 +495,8 @@ export function createZimBoard(
       board = null;
     }
 
-    board = drawStaticBoard(edition, stage, state);
-    drawOwnershipMarkers(edition, board, state.ownedTiles);
+    board = drawStaticBoard(edition!, stage, state);
+    drawOwnershipMarkers(edition!, board, state.ownedTiles);
     drawPlayers(board, state.players, state.currentTurnUid, prevPositions);
     stage.update();
   }

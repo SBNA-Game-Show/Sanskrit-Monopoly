@@ -61,13 +61,6 @@ export default function Game({ gameState }: GameProps) {
     });
   };
 
-  const handleSkipTurn = () => {
-    if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_HOST_SKIP_TURN, {
-      lobbyCode: gameState.lobbyCode,
-    });
-  };
-
   const handleKickPlayer = (uid: string) => {
     if (!gameState.lobbyCode || !uid) return;
     socket.emit(GAME_EVENTS.GAME_HOST_KICK_PLAYER, {

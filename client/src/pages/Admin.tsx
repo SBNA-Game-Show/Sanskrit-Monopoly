@@ -505,7 +505,7 @@ const handleOptionChangeLocally = (index: number, val: string) => {
                               {idx !== 0 && (
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>
-                                    {tile.type === "goToJail" ? "Go To Jail" : tile.type}
+                                    {displayLabel}
                                   </span>
                                   {tile.type === "property" ? (
                                   <div className="flex flex-wrap gap-1.5 items-center">

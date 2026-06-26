@@ -88,11 +88,16 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
     console.log("EDITION DATA:", editionData);
 
-    const coloredTiles = editionData.tiles.map(tile => ({
+    if (!editionData) {
+      alert("Edition data not found.");
+      return;
+    }
+
+    const coloredTiles = editionData.tiles.map((tile: any) => ({
       ...tile,
       color: tile.group
-        ? PROPERTY_GROUP_COLORS[tile.group] ?? tile.color ?? TILE_TYPE_COLORS[tile.type] ?? "#ffffff"
-        : tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
+        ? PROPERTY_GROUP_COLORS[tile.group as keyof typeof PROPERTY_GROUP_COLORS] ?? tile.color ?? TILE_TYPE_COLORS[tile.type as keyof typeof TILE_TYPE_COLORS] ?? "#ffffff"
+        : tile.color || TILE_TYPE_COLORS[tile.type as keyof typeof TILE_TYPE_COLORS] || "#ffffff",
     }));
 
     const questions = editionData.activities;
