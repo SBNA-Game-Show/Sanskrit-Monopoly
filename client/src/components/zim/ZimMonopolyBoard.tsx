@@ -47,11 +47,30 @@ export function ZimMonopolyBoard({
     }),
     [activePlayers, currentTurnUid, lastRoll, ownedTiles],
   );
+  
+  const boardStateKey = useMemo(
+    () =>
+      [
+        currentTurnUid ?? "",
+        lastRoll ?? "",
+        ...players.map((player) =>
+          [
+            player.uid,
+            player.token ?? "",
+            player.position,
+            player.isEliminated ? 1 : 0,
+            player.properties.join(","),
+          ].join(":"),
+        ),
+      ].join("|"),
+    [players, currentTurnUid, lastRoll],
+  );
 
   return (
     <ZimSceneHost
       edition={edition}
       state={boardState}
+      stateKey={boardStateKey}
       createScene={createZimBoard}
       width={900}
       height={900}
