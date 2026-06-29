@@ -93,6 +93,22 @@ function buildTilePath(from: number, to: number): number[] {
   return path;
 }
 
+function buildTilePathBackward(from: number, to: number): number[] {
+  const path = [from];
+  let pos = from;
+  while (pos !== to) {
+    pos = (pos - 1 + TILE_COUNT) % TILE_COUNT;
+    path.push(pos);
+  }
+  return path;
+}
+
+function buildBestTilePath(from: number, to: number): number[] {
+  const forward = buildTilePath(from, to);
+  const backward = buildTilePathBackward(from, to);
+  return backward.length < forward.length ? backward : forward;
+}
+
 function isGoToJailTeleport(
   edition: GameEdition,
   from: number,
@@ -390,104 +406,7 @@ function drawOwnershipMarkers(
   });
 }
 
-function drawPlayers(
-  board: zim.Container,
-  edition: GameEdition,
-  players: ZimBoardState["players"],
-  currentTurnUid: string | null,
-  prevPositions: Map<string, number>,
-) {
-  players.forEach((player, playerIndex) => {
-    const center = getTileCenter(player.position);
-    const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
-    const x = center.x + offset.dx;
-    const y = center.y + offset.dy;
-    const isCurrentTurn = player.uid === currentTurnUid;
-    const TOKEN_SIZE = 34;
-    const TOKEN_SIZE_ACTIVE = 42;
-    const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
 
-    const tokenUrl =
-      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
-
-    const prevPosition = prevPositions.get(player.uid);
-    const shouldAnimate =
-      prevPosition != null && prevPosition !== player.position;
-    const startCenter = shouldAnimate
-      ? getTileCenter(prevPosition)
-      : center;
-    const startX = startCenter.x + offset.dx;
-    const startY = startCenter.y + offset.dy;
-
-    let token: zim.Pic | zim.Container;
-
-    if (tokenUrl) {
-      token = new zim.Pic({ file: tokenUrl })
-        .siz(size)
-        .loc(startX - size / 2, startY - size / 2, board);
-    } else {
-      const radius = isCurrentTurn ? 19 : 15;
-      token = new zim.Container(size, size).loc(
-        startX - size / 2,
-        startY - size / 2,
-        board,
-      );
-
-      new zim.Circle(
-        radius,
-        PLAYER_COLORS[playerIndex] ?? "#000",
-        "#111",
-        3,
-      ).center(token);
-
-      new zim.Label({
-        text: `${playerIndex + 1}`,
-        size: 13,
-        bold: true,
-        color: "#fff",
-        font: "Arial",
-        align: "center",
-      }).center(token);
-    }
-
-    if (shouldAnimate && prevPosition != null) {
-      const destX = x - size / 2;
-      const destY = y - size / 2;
-      if (isGoToJailTeleport(edition, prevPosition, player.position)) {
-        // Go to Jail → Jail: direct slide (do not pass Go)
-        token.animate({
-          props: { x: destX, y: destY },
-          time: 0.4,
-          ease: "sineInOut",
-        });
-      } else {
-        const path = buildTilePath(prevPosition, player.position);
-        const stepTime = 0.4 / Math.max(path.length - 1, 1);
-
-        let step = 1;
-        const walk = () => {
-          if (step >= path.length) return;
-          const next = getTileCenter(path[step]);
-          token.animate({
-            props: {
-              x: next.x + offset.dx - size / 2,
-              y: next.y + offset.dy - size / 2,
-            },
-            time: stepTime,
-            ease: "linear",
-            call: () => {
-              step += 1;
-              if (step < path.length) walk();
-            },
-          });
-        };
-        walk();
-      }
-    }
-
-    prevPositions.set(player.uid, player.position);
-  });
-}
 
 export function createZimBoard(
   stage: zim.Stage,
@@ -500,17 +419,135 @@ export function createZimBoard(
   }
   let board: zim.Container | null = null;
   const prevPositions = new Map<string, number>();
+  let isAnimating = false;
+  let latestState = initialState;
+  function finishAnimation() {
+    isAnimating = false;
+    draw(latestState);
+  }
 
+  function drawPlayers(
+    board: zim.Container,
+    edition: GameEdition,
+    players: ZimBoardState["players"],
+    currentTurnUid: string | null,
+    prevPositions: Map<string, number>,
+    onAnimationComplete: () => void,
+  ) {
+    let pendingAnimations = 0;
+    const handleAnimationComplete = () => {
+      pendingAnimations -= 1;
+      if (pendingAnimations === 0) {
+        onAnimationComplete();
+      }
+    };
+    players.forEach((player, playerIndex) => {
+      const center = getTileCenter(player.position);
+      const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+      const x = center.x + offset.dx;
+      const y = center.y + offset.dy;
+      const isCurrentTurn = player.uid === currentTurnUid;
+      const TOKEN_SIZE = 34;
+      const TOKEN_SIZE_ACTIVE = 42;
+      const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
+
+      const tokenUrl =
+        player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
+
+      const prevPosition = prevPositions.get(player.uid);
+      const shouldAnimate =
+        prevPosition != null && prevPosition !== player.position;
+      const startCenter = shouldAnimate
+        ? getTileCenter(prevPosition)
+        : center;
+      const startX = startCenter.x + offset.dx;
+      const startY = startCenter.y + offset.dy;
+
+      let token: zim.Pic | zim.Container;
+
+      if (tokenUrl) {
+        token = new zim.Pic({ file: tokenUrl })
+          .siz(size)
+          .loc(startX - size / 2, startY - size / 2, board);
+      } else {
+        const radius = isCurrentTurn ? 19 : 15;
+        token = new zim.Container(size, size).loc(
+          startX - size / 2,
+          startY - size / 2,
+          board,
+        );
+
+        new zim.Circle(
+          radius,
+          PLAYER_COLORS[playerIndex] ?? "#000",
+          "#111",
+          3,
+        ).center(token);
+
+        new zim.Label({
+          text: `${playerIndex + 1}`,
+          size: 13,
+          bold: true,
+          color: "#fff",
+          font: "Arial",
+          align: "center",
+        }).center(token);
+      }
+
+      if (shouldAnimate && prevPosition != null) {
+        const destX = x - size / 2;
+        const destY = y - size / 2;
+        if (isGoToJailTeleport(edition, prevPosition, player.position)) {
+          pendingAnimations += 1;
+          isAnimating = true;
+
+          token.animate({
+            props: { x: destX, y: destY },
+            time: 0.4,
+            ease: "sineInOut",
+            call: handleAnimationComplete,
+          });
+        } else {
+          const path = buildBestTilePath(prevPosition, player.position);
+          const stepTime = 0.4 / Math.max(path.length - 1, 1);
+          pendingAnimations += 1;
+          isAnimating = true;
+          let step = 1;
+          const walk = () => {
+            if (step >= path.length) {
+              handleAnimationComplete();
+              return;
+            }
+            const next = getTileCenter(path[step]);
+            token.animate({
+              props: {
+                x: next.x + offset.dx - size / 2,
+                y: next.y + offset.dy - size / 2,
+              },
+              time: stepTime,
+              ease: "linear",
+              call: () => {
+                step += 1;
+                walk();
+              },
+            });
+          };
+          walk();
+        }
+      }
+
+      prevPositions.set(player.uid, player.position);
+    });
+  }
   function draw(state: ZimBoardState) {
     if (board) {
       board.removeFrom();
-
       board = null;
     }
 
     board = drawStaticBoard(edition, stage, state);
     drawOwnershipMarkers(edition, board, state.ownedTiles);
-    drawPlayers(board, edition, state.players, state.currentTurnUid, prevPositions);
+    drawPlayers(board, edition, state.players, state.currentTurnUid, prevPositions, finishAnimation);
     stage.update();
   }
 
@@ -518,6 +555,8 @@ export function createZimBoard(
 
   return {
     update(nextState: ZimBoardState) {
+      latestState = nextState;
+      if (isAnimating) return;
       draw(nextState);
     },
 
