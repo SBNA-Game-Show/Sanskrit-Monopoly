@@ -93,6 +93,16 @@ function buildTilePath(from: number, to: number): number[] {
   return path;
 }
 
+function isGoToJailTeleport(
+  edition: GameEdition,
+  from: number,
+  to: number,
+): boolean {
+  const fromTile = edition.tiles[from];
+  const toTile = edition.tiles[to];
+  return fromTile?.type === "goToJail" && toTile?.type === "jail";
+}
+
 function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const center = getTileCenter(tileIndex);
   const normalizedIndex = tileIndex % 40;
@@ -382,6 +392,7 @@ function drawOwnershipMarkers(
 
 function drawPlayers(
   board: zim.Container,
+  edition: GameEdition,
   players: ZimBoardState["players"],
   currentTurnUid: string | null,
   prevPositions: Map<string, number>,
@@ -439,28 +450,39 @@ function drawPlayers(
       }).center(token);
     }
 
-    if (shouldAnimate) {
-      const path = buildTilePath(prevPosition, player.position);
-      const stepTime = 0.4 / Math.max(path.length - 1, 1);
-
-      let step = 1;
-      const walk = () => {
-        if (step >= path.length) return;
-        const next = getTileCenter(path[step]);
+    if (shouldAnimate && prevPosition != null) {
+      const destX = x - size / 2;
+      const destY = y - size / 2;
+      if (isGoToJailTeleport(edition, prevPosition, player.position)) {
+        // Go to Jail → Jail: direct slide (do not pass Go)
         token.animate({
-          props: {
-            x: next.x + offset.dx - size / 2,
-            y: next.y + offset.dy - size / 2,
-          },
-          time: stepTime,
-          ease: "linear",
-          call: () => {
-            step += 1;
-            if (step < path.length) walk();
-          },
+          props: { x: destX, y: destY },
+          time: 0.4,
+          ease: "sineInOut",
         });
-      };
-      walk();
+      } else {
+        const path = buildTilePath(prevPosition, player.position);
+        const stepTime = 0.4 / Math.max(path.length - 1, 1);
+
+        let step = 1;
+        const walk = () => {
+          if (step >= path.length) return;
+          const next = getTileCenter(path[step]);
+          token.animate({
+            props: {
+              x: next.x + offset.dx - size / 2,
+              y: next.y + offset.dy - size / 2,
+            },
+            time: stepTime,
+            ease: "linear",
+            call: () => {
+              step += 1;
+              if (step < path.length) walk();
+            },
+          });
+        };
+        walk();
+      }
     }
 
     prevPositions.set(player.uid, player.position);
@@ -488,7 +510,7 @@ export function createZimBoard(
 
     board = drawStaticBoard(edition, stage, state);
     drawOwnershipMarkers(edition, board, state.ownedTiles);
-    drawPlayers(board, state.players, state.currentTurnUid, prevPositions);
+    drawPlayers(board, edition, state.players, state.currentTurnUid, prevPositions);
     stage.update();
   }
 

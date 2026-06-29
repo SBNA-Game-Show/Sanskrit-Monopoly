@@ -31,7 +31,8 @@ export type GameTileType =
   | "reward"
   | "chance"
   | "community"
-  | "jail";
+  | "jail"
+  | "goToJail";
 
 export type GameTile = {
   id: string;
