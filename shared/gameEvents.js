@@ -24,10 +24,15 @@ export const GAME_EVENTS = {
   // property-related stuff
   GAME_BUY_PROPERTY: "game:buy-property",
   GAME_DECLINE_PROPERTY: "game:decline-property",
+  GAME_SELL_PROPERTY: "game:sell-property",
 
   // for bankrptcy
   GAME_RESOLVE_BANKRUPTCY: "game:resolve-bankruptcy",
   GAME_DECLARE_BANKRUPTCY: "game:declare-bankruptcy",
+
+  // auctioning
+  GAME_PLACE_AUCTION_BID: "game:place-auction-bid",
+  GAME_RESOLVE_AUCTION: "game:resolve-auction",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 };

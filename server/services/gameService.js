@@ -31,23 +31,41 @@ export function addLog(lobbyCode, entry) {
 // helper function for quiz questions
 const POP_QUIZ_DURATION_MS = 15000;
 
-function getRandomQuizQuestion() {
-  const index = Math.floor(Math.random() * QUIZ_QUESTIONS.length);
-  return QUIZ_QUESTIONS[index];
+function getRandomQuizQuestion(questions) {
+  const index = Math.floor(Math.random() * questions.length);
+  return questions[index];
 }
 
-function createActiveQuiz() {
-  const question = getRandomQuizQuestion();
+function createActiveQuiz(questions) {
+  const question = getRandomQuizQuestion(questions);
 
   return {
     id: `quiz-${Date.now()}`,
     question: question.question,
     options: question.options,
-    correctOptionId: question.correctOptionId,
-    answers: {},
+    correctAnswer: question.correctAnswer,
     status: "answering",
     endsAt: Date.now() + POP_QUIZ_DURATION_MS,
   };
+}
+
+// helper function for auctioning
+function createActiveAuction(tile) {
+  return {
+    tileId: tile.id,
+    highestBid: 0,
+    highestBidderUid: null,
+  };
+}
+
+function getEligibleAuctionBidders(lobby, minimumBid = 1) {
+  // only real active players with enough money count as auction competitors
+  return lobby.players.filter(
+    (player) =>
+      !player.isEliminated &&
+      !player.isBankrupt &&
+      player.money >= minimumBid,
+  );
 }
 
 function getRandomChanceCard() {
@@ -80,12 +98,16 @@ function findTileOwner(lobby, tileId) {
 }
 
 function getTilePrice(tile) {
-  if (typeof tile?.price === "number") return tile.price;
+  //rn the admin page saves the price as a string instead of a number
+  //fix later
+  return Number(tile.price);
 
-  if (tile?.type === "railroad") return 200;
-  if (tile?.type === "utility") return 150;
+  // if (typeof tile?.price === "number") return tile.price;
 
-  return 100;
+  // if (tile?.type === "railroad") return 200;
+  // if (tile?.type === "utility") return 150;
+
+  // return 100;
 }
 
 function getTaxAmount(tile) {
@@ -117,7 +139,7 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
     return diceRoll * (utilityCount >= 2 ? 10 : 4);
   }
 
-  return typeof tile.rent === "number" ? tile.rent : 10;
+  return Number(tile.rent)
 }
 
 // ---- bankruptcy related helper functions
@@ -134,7 +156,7 @@ function setBankruptcyActionIfNeeded(lobby, player) {
   }
 
   lobby.gameStatus = "bankruptcy"; // pause normal turn flow until bankruptcy is resolved
-  
+
   addLog(lobby.lobbyCode, {
     uid: player.uid,
     username: player.username,
@@ -192,6 +214,44 @@ function getNextActivePlayerIndex(lobby, fromIndex) {
   return -1;
 }
 
+export function applyCardEffect(lobby, player, card) {
+  switch (card.effect) {
+    case "goToJail": {
+      const jailIndex = lobby.edition.tiles.findIndex(
+        (tile) => tile.type === "jail",
+      );
+      if (jailIndex !== -1) {
+        player.position = jailIndex;
+        player.jailed = true;
+        lobby.gameStatus = "jail";
+      }
+
+      break;
+    }
+
+    case "goBack3":
+      const totalTiles = lobby.edition.tiles.length;
+      player.position = (player.position - 3 + totalTiles) % totalTiles;
+      break;
+
+    case "advanceToGo":
+      player.position = 0;
+      player.money += card.points;
+      break;
+
+    case "money":
+      player.money += card.points;
+      break;
+
+    default:
+      if (typeof card.points === "number") {
+        player.money += card.points;
+      }
+      break;
+  }
+}
+
+
 // ***************************************************************
 // ****************** MONOPOLY GAME LOGIC HELPERS ****************
 // ***************************************************************
@@ -233,12 +293,15 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomChanceCard();
     lobby.activeCard = randomCard;
 
-    currentPlayer.money += randomCard.points;
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a chance card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
+      message:
+        randomCard.points === 0
+          ? `drew a chance card: ${randomCard.title}.`
+          : `drew a chance card and ${randomCard.points > 0 ? "received" : "lost"
+          } ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
@@ -249,12 +312,15 @@ export function resolveLandingAction(lobby) {
     const randomCard = getRandomCommunityChestCard();
     lobby.activeCard = randomCard;
 
-    currentPlayer.money += randomCard.points;
 
     addLog(lobby.lobbyCode, {
       uid: currentPlayer.uid,
       username: currentPlayer.username,
-      message: `drew a community chest card and ${randomCard.points >= 0 ? "received" : "lost"} ₩${Math.abs(randomCard.points)}.`,
+      message:
+        randomCard.points === 0
+          ? `drew a community chest card: ${randomCard.title}.`
+          : `drew a community chest card and ${randomCard.points > 0 ? "received" : "lost"
+          } ₩${Math.abs(randomCard.points)}.`,
     });
 
     return { lobby, error: null };
@@ -276,6 +342,12 @@ export function resolveLandingAction(lobby) {
       });
     }
 
+    return { lobby, error: null };
+  }
+
+  if (landedTile.type === "quiz") {
+    lobby.gameStatus = "popQuiz";
+    lobby.activeQuiz = createActiveQuiz(lobby.edition.questions);
     return { lobby, error: null };
   }
 
@@ -376,6 +448,8 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     status: "waiting",
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
+    activeAuction: null,
+    gameTimer: null, // timer for MINIGAMES ONLY, holds reference to timer so we can clearTimeout if needed
     activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
@@ -471,10 +545,11 @@ export function startGame(lobbyCode, hostUid, options = {}) {
     return { lobby: null, error: "Lobby not found" };
   }
 
-  if (options.tiles) {
+  if (options.tiles && options.questions) {
     lobby.edition = {
       startingPoints: options.startingPoints,
       tiles: options.tiles,
+      questions: options.questions,
     };
   }
 
@@ -506,6 +581,7 @@ export function startGame(lobbyCode, hostUid, options = {}) {
   lobby.status = "playing";
   lobby.gameStatus = "startOfTurn"; // show start of turn overlay for 1st player when starting game
   lobby.activeQuiz = null;
+  lobby.activeAuction = null;
   lobby.activeCard = null;
   lobby.lastRoll = null;
   lobby.winnerUid = null;
@@ -712,12 +788,98 @@ export function declinePendingProperty(lobbyCode, uid) {
     return { lobby, error: "This property is already owned" };
   }
 
+  const eligibleBidders = getEligibleAuctionBidders(lobby);
+
+  // skip auction if less than 2 players can bid
+  // property stays unowned and turn ends
+  if (eligibleBidders.length < 2) {
+    addLog(lobby.lobbyCode, {
+      uid,
+      username: currentPlayer.username,
+      message: `declined to buy ${tile.name}. Not enough players could bid, so no auction started.`,
+    });
+
+    lobby.activeAuction = null;
+    lobby.gameStatus = "turnEnded";
+
+    return { lobby, error: null };
+  }
+
+  // start auction for property the player declined
+  lobby.activeAuction = createActiveAuction(tile);
+  lobby.gameStatus = "auction";
+
   addLog(lobby.lobbyCode, {
     uid,
     username: currentPlayer.username,
-    message: `declined to buy ${tile.name}.`,
+    message: `declined to buy ${tile.name}. Auction started.`,
   });
-  lobby.gameStatus = "turnEnded";
+
+  return { lobby, error: null };
+}
+
+export function sellProperty(lobbyCode, uid, propertyId) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.status !== "playing") {
+    return { lobby, error: "Game is not currently active" };
+  }
+
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+  if (!currentPlayer) {
+    return { lobby, error: "Current player not found" };
+  }
+
+  if (currentPlayer.uid !== uid) {
+    return { lobby, error: "You can only sell property on your turn" };
+  }
+
+  const allowedStatuses = ["idling", "buyProperty"];
+
+  if (!allowedStatuses.includes(lobby.gameStatus)) {
+    return {
+      lobby,
+      error: "You can only sell before rolling dice or while deciding to buy a property",
+    };
+  }
+
+  const player = lobby.players.find((currentPlayer) => currentPlayer.uid === uid);
+
+  if (!player) {
+    return { lobby, error: "Player not found" };
+  }
+
+  if (!player.properties.includes(propertyId)) {
+    return { lobby, error: "You do not own this property" };
+  }
+
+  const tile = lobby.edition.tiles.find(
+    (currentTile) => currentTile.id === propertyId,
+  );
+
+  if (!tile || !isBuyableTile(tile)) {
+    return { lobby, error: "This property cannot be sold" };
+  }
+
+  const sellValue = Number(tile.sellValue);
+
+  player.properties = player.properties.filter(
+    (currentPropertyId) => currentPropertyId !== propertyId,
+  );
+
+  player.money += sellValue;
+  updateBankruptcyStatus(player);
+
+  addLog(lobby.lobbyCode, {
+    uid: player.uid,
+    username: player.username,
+    message: `sold ${tile.name} for ₩${sellValue}.`,
+  });
 
   return { lobby, error: null };
 }
@@ -810,6 +972,116 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: null };
   }
 
+  lobby.gameStatus = "turnEnded";
+
+  return { lobby, error: null };
+}
+
+// set amount of money that can be bid
+const AUCTION_BID_INCREMENTS = [1, 5, 10, 25];
+
+// function that dictates how placing bids in an auction works
+export function placeAuctionBid(lobbyCode, uid, bidIncrement) {
+  const lobby = getLobby(lobbyCode);
+  if (!lobby) return { lobby: null, error: "Lobby not found" };
+
+  // only accept bids during an active auction
+  if (lobby.gameStatus !== "auction" || !lobby.activeAuction) {
+    return { lobby, error: "No auction is active" };
+  }
+
+  const player = lobby.players.find((currentPlayer) => currentPlayer.uid === uid);
+  
+  // block bankrupt/eliminated players from auctioning
+  if (!player || player.isEliminated || player.isBankrupt) {
+    return { lobby, error: "Player not found" };
+  }
+
+  // incremental bidding so it's easier to click
+  const increment = Number(bidIncrement);
+
+  // only allow the fixed Monopoly-style bid buttons
+  if (!AUCTION_BID_INCREMENTS.includes(increment)) {
+    return { lobby, error: "Invalid bid increment" };
+  }
+
+  // avoid players accidentally bidding against themself
+  if (lobby.activeAuction.highestBidderUid === uid) {
+    return { lobby, error: "You are already the highest bidder" };
+  }
+
+  // new bid is current highest bid plus clicked increment
+  const bid = lobby.activeAuction.highestBid + increment;
+
+  // prevent player from bidding higher than amount of money they have
+  if (player.money < bid) {
+    return { lobby, error: "Not enough money for that bid" };
+  }
+
+  lobby.activeAuction.highestBid = bid;
+  lobby.activeAuction.highestBidderUid = uid;
+
+  addLog(lobby.lobbyCode, {
+    uid,
+    username: player.username,
+    message: `bid ₩${bid} in the auction.`,
+  });
+
+  return { lobby, error: null };
+}
+
+// function that dictates what to do when an auction ends
+export function resolveAuction(lobbyCode, hostUid) {
+  const lobby = getLobby(lobbyCode);
+  if (!lobby) return { lobby: null, error: "Lobby not found" };
+
+  // Host resolves auction manually (for now)
+  if (lobby.host.uid !== hostUid) {
+    return { lobby, error: "Only the host can resolve auctions" };
+  }
+
+  // check if an auction is currently active
+  if (lobby.gameStatus !== "auction" || !lobby.activeAuction) {
+    return { lobby, error: "No auction is active" };
+  }
+
+  const auction = lobby.activeAuction;
+  const tile = lobby.edition.tiles.find((currentTile) => currentTile.id === auction.tileId);
+  
+  if (!tile) return { lobby, error: "Auction tile not found" };
+
+  const winner = auction.highestBidderUid
+    ? lobby.players.find((player) => player.uid === auction.highestBidderUid)
+    : null;
+
+  if (winner) {
+
+    // defensive check in case winner's money changed after bidding
+    if (winner.money < auction.highestBid) {
+      return { lobby, error: "Winning bidder can no longer afford the bid" };
+    }
+
+    // winner pays their bid then receives auctioned property
+    winner.money -= auction.highestBid;
+    winner.properties.push(tile.id);
+
+    // current rules prevent this from being true (overbidding is blocked... for now)
+    updateBankruptcyStatus(winner);
+    
+    addLog(lobby.lobbyCode, {
+      uid: winner.uid,
+      username: winner.username,
+      message: `won ${tile.name} at auction for ₩${auction.highestBid}.`,
+    });
+  } else {
+    addLog(lobby.lobbyCode, {
+      uid: lobby.host.uid,
+      username: lobby.host.username,
+      message: `${tile.name} received no auction bids.`,
+    });
+  }
+
+  lobby.activeAuction = null;
   lobby.gameStatus = "turnEnded";
 
   return { lobby, error: null };
