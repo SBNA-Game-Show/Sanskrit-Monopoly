@@ -487,17 +487,6 @@ function drawPlayers(
 
     let token: zim.Pic | zim.Container;
 
-    const prevPosition = prevPositions.get(player.uid);
-    const shouldAnimate =
-      prevPosition != null && prevPosition !== player.position;
-    const startCenter = shouldAnimate
-      ? getTileCenter(prevPosition)
-      : center;
-    const startX = startCenter.x + offset.dx;
-    const startY = startCenter.y + offset.dy;
-
-    let token: zim.Pic | zim.Container;
-
     if (tokenUrl) {
       token = new zim.Pic({ file: tokenUrl })
         .siz(size)

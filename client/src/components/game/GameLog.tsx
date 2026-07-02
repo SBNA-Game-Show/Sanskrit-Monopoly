@@ -1,6 +1,11 @@
 import type { GameState } from "../../types/game/gameTypes";
+import { useState } from "react";
 
 export function GameLog({ gameState, uid }: { gameState: GameState, uid: string }) {
+
+  // Track if log is collapsed or not
+  const {isCollapsed, setIsCollapsed} = useState(false);
+  
   return (
     <>
       <style>{gameLogStyles}</style>
