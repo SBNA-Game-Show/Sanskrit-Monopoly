@@ -22,6 +22,7 @@ import {
   placeAuctionBid,
   resolveAuction,
   lobbies,
+  updateLobbyEdition
 } from "../services/gameService.js";
 
 import { GAME_EVENTS } from "../../shared/gameEvents.js";
@@ -583,6 +584,16 @@ export function setupSocketEvents(io) {
         lobby.gameStatus = "idling";
         broadcastGameState(io, lobby);
       }, 2500);
+    });
+
+    // Update game edition handler
+    socket.on("GAME_UPDATE_EDITION", ({ lobbyCode, editionName }) => {
+      const { lobby } = updateLobbyEdition(lobbyCode, editionName);
+  
+      if (lobby) {
+        // Broadcast the update so players currently in the waiting room see it sync up
+        io.to(lobbyCode).emit("GAME_UPDATED", lobby);
+      }
     });
 
     socket.on("disconnect", () => {

@@ -1169,3 +1169,17 @@ export function disconnectPlayer(socketId) {
   }
   return { lobby: null, error: "Socket not found" };
 }
+
+export function updateLobbyEdition(lobbyCode, editionName) {
+  const lobby = getLobby(lobbyCode);
+  
+  if (lobby) {
+    if (!lobby.edition) {
+      lobby.edition = {};
+    }
+    // Update the name so the API endpoint picks it up instantly
+    lobby.edition.name = editionName; 
+  }
+  
+  return { lobby, error: null };
+}

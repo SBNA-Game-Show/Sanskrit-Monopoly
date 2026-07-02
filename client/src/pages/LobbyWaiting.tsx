@@ -282,7 +282,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
         </div>
 
         {/* Game Setting Grid */}
-        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
+        <div className="lg:col-span-2 bg-[#FFC17E] p-4 lg:p-4 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
           <h2 className="text-3xl lg:text-4xl text-center mb-8 lg:mb-2 tracking-widest text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             GAME SETTINGS
           </h2>
@@ -301,7 +301,13 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
                       <button
                         key={edition.id}
                         disabled={!isHost}
-                        onClick={() => setSelectedEdition(edition.id)}
+                        onClick={() => {
+                          setSelectedEdition(edition.id); 
+                          socket.emit("GAME_UPDATE_EDITION", {
+                            lobbyCode, 
+                            editionName: edition.name
+                          });
+                        }}
                         className={`text-base lg:text-lg rounded-xl p-2 px-5 tracking-wider transition-all text-white ${
                           isSelected
                             ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-1"
