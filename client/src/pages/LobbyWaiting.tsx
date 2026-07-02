@@ -6,9 +6,10 @@ import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 
 import { GAME_EVENTS } from "../constants/socket/gameEvents";
 import type { GameState } from "../types/game/gameTypes";
-import { TILE_TYPE_COLORS } from "../constants/zim/board";
+import { TILE_TYPE_COLORS, PROPERTY_GROUP_COLORS } from "../constants/zim/board";
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
+import { Button } from "../components/common/Button";
 
 // Define the incoming props from Lobby.tsx
 interface LobbyWaitingProps {
@@ -78,21 +79,34 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
   };
 
   const handleStartGame = async () => {
+    console.log("STARTING GAME");
     if (!canStart || !lobbyCode || !uid || !selectedEdition) return;
 
     const docRef = doc(db, "game_editions", selectedEdition);
     const docSnap = await getDoc(docRef);
     const editionData = docSnap.data();
 
-    const coloredTiles = editionData.tiles.map(tile => ({
+    console.log("EDITION DATA:", editionData);
+
+    if (!editionData) {
+      alert("Edition data not found.");
+      return;
+    }
+
+    const coloredTiles = editionData.tiles.map((tile: any) => ({
       ...tile,
-      color: tile.color || TILE_TYPE_COLORS[tile.type] || "#ffffff",
+      color: tile.group
+        ? PROPERTY_GROUP_COLORS[tile.group as keyof typeof PROPERTY_GROUP_COLORS] ?? tile.color ?? TILE_TYPE_COLORS[tile.type as keyof typeof TILE_TYPE_COLORS] ?? "#ffffff"
+        : tile.color || TILE_TYPE_COLORS[tile.type as keyof typeof TILE_TYPE_COLORS] || "#ffffff",
     }));
+
+    const questions = editionData.activities;
 
     socket.emit(GAME_EVENTS.GAME_START, {
       lobbyCode,
       hostUid: uid,
       tiles: coloredTiles, 
+      questions: questions,
       startingPoints: startingMoney ?? 0,
     });
   };
@@ -351,21 +365,10 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
       </div>
 
       {/* Start Button Footer */}
-      <div className="w-full bg-[#FFC17E] flex justify-center items-center h-16 lg:h-16 shrink-0 z-20">
-        <button
-          disabled={!canStart}
-          onClick={handleStartGame}
-          className={`
-            w-55 h-12.5 lg:w-55 lg:h-12.5 rounded-2xl text-2xl lg:text-3xl font-jersey tracking-widest text-white transition-all duration-300 relative bottom-0 border-none
-            ${
-              canStart
-                ? "bg-[#FF9513] animate-neon hover:bg-[#FFA545] hover:scale-105 active:scale-95 active:shadow-none"
-                : "bg-[#FF8C00] opacity-60 cursor-not-allowed"
-            }
-          `}
-        >
+      <div className="w-full bg-[#FFC17E] flex justify-center items-center h-20 lg:h-20 shrink-0 z-20">
+        <Button size="xl" neon disabled={!canStart} onClick={handleStartGame} className="w-52 bg-[#FF9513] disabled:bg-[#FF8C00]">
           START
-        </button>
+        </Button>
       </div>
     </main>
   );

@@ -12,6 +12,7 @@ export type GamePhase =
   | "buyProperty"
   | "jail"
   | "bankruptcy"
+  | "auction"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -27,7 +28,10 @@ export type GameTileType =
   | "railroad"
   | "utility"
   | "penalty"
-  | "reward";
+  | "reward"
+  | "chance"
+  | "community"
+  | "jail";
 
 export type GameTile = {
   id: string;
@@ -37,6 +41,7 @@ export type GameTile = {
   points?: number;
   price?: number;
   rent?: number;
+  sellValue?: number;
   amount?: number;
   group?: string;
   description?: string;
@@ -50,24 +55,20 @@ export type GameEdition = {
   tiles: GameTile[];
 };
 
-export type QuizOption = {
-  id: string;
-  text: string;
-};
-
 export type ActiveQuiz = {
   id: string;
   question: string;
-  options: QuizOption[];
-
-  // Keep optional because clients may not need to know the answer until reveal phase
-  correctOptionId?: string;
-
-  // player uid -> option id
-  answers: Record<string, string>;
-
-  status: "answering" | "revealing" | "closed";
+  options: string[];
+  correctAnswer: string;
+  status: "answering" | "correct" | "incorrect" | "timerExpired";
   endsAt: number;
+};
+
+// basic auction state. Might add more 
+export type ActiveAuction = {
+  tileId: string;
+  highestBid: number;
+  highestBidderUid: string | null;
 };
 
 export type ActiveCard = {
@@ -112,6 +113,8 @@ export type GameState = {
   gameStatus: GamePhase; // mini-games integration test
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
+  activeAuction: ActiveAuction | null; // unless gameStatus is auction
+  // gameTimer: is not given a type since the server does not send this field over to the client
   host: GameHost;
   players: PlayerState[];
   edition: GameEdition;

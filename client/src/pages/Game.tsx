@@ -6,6 +6,11 @@ import { socket } from "../socket";
 import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 import { GameOverlayLayer } from "../components/game/GameOverlayLayer";
 import { GameLog } from "../components/game/GameLog";
+import { Button } from "../components/common/Button";
+import { useEffect, useRef } from "react";
+import { useToast } from "../context/ToastContext";
+import { SellPropertyPanel } from "../components/game/SellPropertyPanel";
+
 
 type GameProps = {
   gameState: GameState;
@@ -18,11 +23,31 @@ function formatMoney(amount: number) {
   return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
 }
 
+// mini-function to check whether a log entry is a completed auction
+function isAuctionWinLog(message: string) {
+  return message.includes("won") && message.includes("at auction");
+}
+
+// turns a game log into a toast only if it deserves it
+function getAuctionToastFromLog(log: GameState["log"][number]) {
+  if (!isAuctionWinLog(log.message)) return null;
+
+  return {
+    variant: "success" as const,
+    title: "Auction Won",
+    message: `${log.username} ${log.message}`,
+  };
+}
+
 export default function Game({ gameState }: GameProps) {
   //for debugging (KEEP THIS)
   console.log(gameState);
 
   const { uid } = useAuth();
+  const { showToast } = useToast();
+
+  // remember last log toasted so rerendering doesn't make a duplicate
+  const lastToastedLogIdRef = useRef<string | null>(null);
 
   const isHost = gameState.host.uid === uid;
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
@@ -33,13 +58,6 @@ export default function Game({ gameState }: GameProps) {
     socket.emit(GAME_EVENTS.GAME_ROLL_DICE, {
       lobbyCode: gameState.lobbyCode,
       uid,
-    });
-  };
-
-  const handleSkipTurn = () => {
-    if (!gameState.lobbyCode || !uid) return;
-    socket.emit(GAME_EVENTS.GAME_HOST_SKIP_TURN, {
-      lobbyCode: gameState.lobbyCode,
     });
   };
 
@@ -57,6 +75,24 @@ export default function Game({ gameState }: GameProps) {
       lobbyCode: gameState.lobbyCode,
     });
   };
+
+  // show a toast that an auction was successful
+  // I noticed that when an auction is stopped, it ends abruptly
+  useEffect(() => {
+    const newestLog = gameState.log[gameState.log.length - 1];
+
+    if (!newestLog) return;
+
+    // prevent duplicate toasts for the same log entry
+    if (lastToastedLogIdRef.current === newestLog.id) return;
+
+    const toast = getAuctionToastFromLog(newestLog);
+    if (!toast) return;
+
+    lastToastedLogIdRef.current = newestLog.id;
+
+    showToast(toast);
+  }, [gameState.log, showToast]);
 
   return (
     <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
@@ -181,42 +217,27 @@ export default function Game({ gameState }: GameProps) {
           <div className="flex flex-col items-center gap-5">
             {isHost ? (
               <>
-                <button
-                  onClick={handleRollDice}
-                  disabled={gameState.gameStatus !== "idling"}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
                   Force Roll
-                </button>
-                <button
-                  onClick={handleSkipTurn}
-                  disabled={gameState.gameStatus !== "idling"}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                </Button>
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
                   Skip Turn
-                </button>
-                <button
-                  onClick={handleEndGame}
-                  className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f]"
-                >
+                </Button>
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleEndGame}>
                   End Game
-                </button>
+                </Button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={handleRollDice}
-                disabled={
+              <Button variant="action" size="lg" disabled={
                   currentPlayer?.uid !== uid ||
                   gameState.gameStatus !== "idling"
-                }
-                className="h-[58px] w-[230px] rounded-[22px] border-[6px] border-[#ffa23b] bg-[#e84a15] text-lg font-bold text-white shadow-md hover:bg-[#ff7a2f] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Roll Dice
-              </button>
+                } onClick={handleRollDice}>
+                  Roll Dice
+                </Button>
             )}
           </div>
-          <GameLog gameState={gameState} uid={uid} />
+          {!isHost && <SellPropertyPanel gameState={gameState} uid={uid} />}
+          <GameLog gameState={gameState} uid={uid ?? ""} />
         </aside>
       </section>
     </main>

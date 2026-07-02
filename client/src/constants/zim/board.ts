@@ -63,8 +63,21 @@ export const TILE_TYPE_COLORS = {
   jail: "#bcbed0ff",
   goToJail: "#cdb7d6ff",
   chance: "#ffd09dff",
-  community: "#aee1ffff"
+  community: "#aee1ffff",
+  quiz: "#89ffb2ff"
 };
+
+export const PROPERTY_GROUP_COLORS = {
+  brown: "#8b4513",
+  lightBlue: "#aae0fa",
+  pink: "#d93a96",  
+  orange: "#f7941d",
+  red: "#ed1b24",
+  yellow: "#fef200",
+  green: "#1fb25a",
+  darkBlue: "#0072bb",
+};
+
 
 export const PLAYER_COLORS = [
   "#d72638",

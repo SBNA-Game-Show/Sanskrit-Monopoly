@@ -81,6 +81,18 @@ function getTileCenter(tileIndex: number): TileCenter {
   };
 }
 
+const TILE_COUNT = 40;
+
+function buildTilePath(from: number, to: number): number[] {
+  const path = [from];
+  let pos = from;
+  while (pos !== to) {
+    pos = (pos + 1) % TILE_COUNT;
+    path.push(pos);
+  }
+  return path;
+}
+
 function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const center = getTileCenter(tileIndex);
   const normalizedIndex = tileIndex % 40;
@@ -200,6 +212,12 @@ function drawTile(
     new zim.Rectangle(w, h, tile.color, "transparent", 0).addTo(group);
   }
 
+  let labelWidth = w - 12;
+  const bar = 22;
+  if (tile.type === "property" && (side === "left" || side === "right")) {
+    labelWidth = w - bar - 12;
+  }
+
   const label = new zim.Label({
     text: tile.name,
     size: 12,
@@ -207,13 +225,18 @@ function drawTile(
     color: "#2a1c12",
     font: "Georgia",
     align: "center",
-    lineWidth: side === "top" || side === "bottom" ? w - 6 : h - 6,
+    lineWidth: labelWidth,
   });
 
   label.center(group);
 
-  if (side === "left") label.rot(90);
-  if (side === "right") label.rot(-90);
+  if (tile.type === "property") {
+    if (side === "left") {
+      label.x -= bar / 2;
+    } else if (side === "right") {
+      label.x += bar / 2;
+    }
+  }
 }
 
 function drawDice(board: zim.Container, diceValue: number | null | undefined) {
@@ -372,6 +395,7 @@ function drawPlayers(
   board: zim.Container,
   players: ZimBoardState["players"],
   currentTurnUid: string | null,
+  prevPositions: Map<string, number>,
 ) {
   // Grouping players by board position to handle multiple players on the same tile
   const playersByPosition: Record<number, number[]> = {};
@@ -450,20 +474,38 @@ function drawPlayers(
     const TOKEN_SIZE_ACTIVE = 42;
     const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
 
-    const tokenUrl = player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
+    const tokenUrl =
+      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
+
+    const prevPosition = prevPositions.get(player.uid);
+    const shouldAnimate =
+      prevPosition != null && prevPosition !== player.position;
+    const startCenter = shouldAnimate
+      ? getTileCenter(prevPosition)
+      : center;
+    const startX = startCenter.x + offset.dx;
+    const startY = startCenter.y + offset.dy;
+
+    let token: zim.Pic | zim.Container;
 
     if (tokenUrl) {
-      new zim.Pic({ file: tokenUrl })
+      token = new zim.Pic({ file: tokenUrl })
         .siz(size)
-        .loc(x - size / 2, y - size / 2, board);
+        .loc(startX - size / 2, startY - size / 2, board);
     } else {
       const radius = isCurrentTurn ? 19 : 15;
+      token = new zim.Container(size, size).loc(
+        startX - size / 2,
+        startY - size / 2,
+        board,
+      );
+
       new zim.Circle(
         radius,
         PLAYER_COLORS[playerIndex] ?? "#000",
         "#111",
         3,
-      ).loc(x - radius, y - radius, board);
+      ).center(token);
 
       new zim.Label({
         text: `${playerIndex + 1}`,
@@ -472,15 +514,41 @@ function drawPlayers(
         color: "#fff",
         font: "Arial",
         align: "center",
-      }).loc(x - 7, y - 8, board);
+      }).center(token);
     }
+
+    if (shouldAnimate) {
+      const path = buildTilePath(prevPosition, player.position);
+      const stepTime = 0.4 / Math.max(path.length - 1, 1);
+
+      let step = 1;
+      const walk = () => {
+        if (step >= path.length) return;
+        const next = getTileCenter(path[step]);
+        token.animate({
+          props: {
+            x: next.x + offset.dx - size / 2,
+            y: next.y + offset.dy - size / 2,
+          },
+          time: stepTime,
+          ease: "linear",
+          call: () => {
+            step += 1;
+            if (step < path.length) walk();
+          },
+        });
+      };
+      walk();
+    }
+
+    prevPositions.set(player.uid, player.position);
   });
 }
 
 export function createZimBoard(
   stage: zim.Stage,
   initialState: ZimBoardState,
-  actions?: any, //keep this here or board will break
+  _actions?: any, //keep this here or board will break (and keep the underscore too)
   edition?: GameEdition,
 ): ZimBoardController {
   if (!edition) {
@@ -489,6 +557,7 @@ export function createZimBoard(
   const activeEdition: GameEdition = edition;
 
   let board: zim.Container | null = null;
+  const prevPositions = new Map<string, number>();
 
   function draw(state: ZimBoardState) {
     if (board) {
@@ -497,9 +566,9 @@ export function createZimBoard(
       board = null;
     }
 
-    board = drawStaticBoard(activeEdition, stage, state);
-    drawOwnershipMarkers(activeEdition, board, state.ownedTiles);
-    drawPlayers(board, state.players, state.currentTurnUid);
+    board = drawStaticBoard(edition!, stage, state);
+    drawOwnershipMarkers(edition!, board, state.ownedTiles);
+    drawPlayers(board, state.players, state.currentTurnUid, prevPositions);
     stage.update();
   }
 

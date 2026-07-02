@@ -37,34 +37,34 @@ export function PenaltyActivityOverlay({
     let tileTitle = "Tile Result";
     let tileDescription = "You landed on this tile.";
     let resultText = "No point change";
-    let resultColor = "text-[#6b3f1d]";
+    let _resultColor = "text-[#6b3f1d]";
 
     if (isRewardTile) {
       tileTitle = "Reward Tile";
       tileDescription = "You received a reward for landing here.";
       resultText = points > 0 ? `+${points} points` : "Reward received";
-      resultColor = "text-[#1f7a3f]";
+      _resultColor = "text-[#1f7a3f]";
     } else if (isPenaltyTile) {
       tileTitle = "Penalty Tile";
       tileDescription = "Penalty activity will be shown.";
-      resultText = points < 0 ? `₩{points} points` : "Penalty activity";
-      resultColor = "text-[#b33a3a]";
+      resultText = points < 0 ? `${points} points` : "Penalty activity";
+      _resultColor = "text-[#b33a3a]";
     } else if (isSiteTile) {
       tileTitle = "Cultural Site";
       tileDescription =
         "This site can be owned, purchased, or used for rent rules.";
       resultText = "Rent / buy property action available";
-      resultColor = "text-[#6b3f1d]";
+      _resultColor = "text-[#6b3f1d]";
     } else if (isSpecialTile) {
       tileTitle = "Special Tile";
       tileDescription = "This tile can trigger a special game event.";
       resultText = "Special action available";
-      resultColor = "text-[#6b3f1d]";
+      _resultColor = "text-[#6b3f1d]";
     } else if (isCornerTile) {
       tileTitle = "Corner Tile";
       tileDescription = "You landed on a board corner.";
       resultText = "No point change";
-      resultColor = "text-[#6b3f1d]";
+      _resultColor = "text-[#6b3f1d]";
     }
 
     return (
@@ -88,7 +88,7 @@ export function PenaltyActivityOverlay({
             {tileDescription}
           </p>
 
-          <p className={`mt-3 text-[24px] font-extrabold ₩{resultColor}`}>
+          <p className={`mt-3 text-[24px] font-extrabold ${_resultColor}`}>
             {resultText}
           </p>
         </div>

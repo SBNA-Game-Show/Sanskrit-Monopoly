@@ -7,7 +7,7 @@ import RequireAdmin from "./components/RequireAdmin";
 import RequireAuth from "./components/RequireAuth";
 
 //Pages
-import Admin from "./pages/Admin";
+import Admin from "./pages/admin/Admin";
 import Login from "./pages/Login";
 import RootLayout from "./pages/RootLayout";
 import Home from "./pages/Home";

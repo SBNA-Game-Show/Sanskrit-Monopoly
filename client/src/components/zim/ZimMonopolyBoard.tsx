@@ -29,7 +29,9 @@ export function ZimMonopolyBoard({
       if (!player.token) return;
 
       player.properties.forEach((tileId) => {
-        ownershipByTileId[tileId] = player.token;
+        if (player.token) {
+          ownershipByTileId[tileId] = player.token;
+        }
       });
     });
 

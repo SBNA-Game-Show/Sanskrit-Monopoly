@@ -1,25 +1,28 @@
-import type { ActiveQuiz, PlayerState } from "../../../types/game/gameTypes";
+import type { GameState, ActiveQuiz } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
 import { useEffect, useState } from "react";
 import { socket } from "../../../socket";
 import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 
 type PopQuizOverlayProps = {
+  gameState: GameState;
   quiz: ActiveQuiz;
-  players: PlayerState[];
   isHost: boolean;
   lobbyCode: string;
   uid: string | null;
 };
 
 export function PopQuizOverlay({
+  gameState,
   quiz,
-  players,
   isHost,
   lobbyCode,
   uid,
 }: PopQuizOverlayProps) {
   const [now, setNow] = useState(Date.now());
+
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const isCurrentPlayer = uid === currentPlayer.uid;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -37,19 +40,58 @@ export function PopQuizOverlay({
   const pad = (n: number) => String(n).padStart(2, "0");
   const displayTime = `${pad(Math.floor(remainingSeconds / 60))}:${pad(remainingSeconds % 60)}`;
 
-  const handleAnswerClick = (optionId: string) => {
+  const handleSubmitAnswer = (answer: string) => {
     if (isHost || !uid) return;
 
     socket.emit(GAME_EVENTS.QUIZ_SUBMIT_ANSWER, {
       lobbyCode,
       uid,
-      optionId,
+      answer,
     });
   };
 
-  // commented out but retained in case needed for the future
-  // console.log("quiz.endsAt:", quiz.endsAt, typeof quiz.endsAt);
-  // console.log("quiz:", quiz);
+  if (quiz.status === "correct") {
+    return (
+      <GameOverlayShell status="success">
+        <p className="mb-2 text-base font-extrabold uppercase tracking-wide text-green-700">
+          Correct Answer!
+        </p>
+        <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
+        <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
+          {currentPlayer.username} answered correctly!
+        </p>
+      </GameOverlayShell>
+    );
+  }
+
+  if (quiz.status === "incorrect") {
+    return (
+      <GameOverlayShell status="failure">
+        <p className="mb-2 text-base font-extrabold uppercase tracking-wide text-red-800">
+          Incorrect Answer!
+        </p>
+        <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
+        <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
+          {currentPlayer.username} answered incorrectly!
+        </p>
+      </GameOverlayShell>
+    );
+  }
+
+  if (quiz.status === "timerExpired") {
+    return (
+      <GameOverlayShell status="failure">
+        <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
+          Time's Up!
+        </p>
+        <h2 className="text-[34px] font-extrabold text-[#160f08]">Pop Quiz</h2>
+        <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
+          Time expired! {currentPlayer.username} didn't answer in time.
+        </p>
+      </GameOverlayShell>
+    );
+  }
+
   return (
     <GameOverlayShell>
       <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#b33a3a]">
@@ -72,32 +114,28 @@ export function PopQuizOverlay({
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-4">
-        {quiz.options.map((option) => (
+        {quiz.options.map((option, index) => (
           <button
-            key={option.id}
+            key={index}
             type="button"
-            disabled={isHost}
-            onClick={() => handleAnswerClick(option.id)}
+            disabled={isHost || !isCurrentPlayer}
+            onClick={() => handleSubmitAnswer(option)}
             className={`rounded-2xl border-[5px] border-[#ffa23b] px-4 py-4 text-lg font-bold shadow-md transition ${
-              !isHost
+              !isHost && isCurrentPlayer
                 ? "bg-[#e84a15] text-white hover:bg-[#ff7a2f]"
                 : "cursor-not-allowed bg-[#fff4dc] text-[#6b3f1d] opacity-70"
             }`}
           >
-            {option.text}
+            {option}
           </button>
         ))}
       </div>
 
-      {isHost && (
+      {(isHost || !isCurrentPlayer) && (
         <p className="mt-5 text-sm font-semibold text-[#6b3f1d]">
-          You can see the question, but only players can answer.
+          You can see the question, but only the current player can answer.
         </p>
       )}
-
-      <p className="mt-4 text-sm font-semibold text-[#6b3f1d]">
-        Answers submitted: {Object.keys(quiz.answers).length} / {players.length}
-      </p>
     </GameOverlayShell>
   );
 }

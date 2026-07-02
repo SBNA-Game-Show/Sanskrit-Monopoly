@@ -13,10 +13,14 @@ import {
   disconnectPlayer,
   startNextTurn,
   resolveLandingAction,
+  applyCardEffect,
   resolveBankruptcy,
   declareBankruptcy,
   buyPendingProperty,
   declinePendingProperty,
+  sellProperty,
+  placeAuctionBid,
+  resolveAuction,
   lobbies,
   updateLobbyEdition
 } from "../services/gameService.js";
@@ -33,18 +37,61 @@ function broadcastGameState(io, lobby) {
   io.to(lobby.lobbyCode).emit(GAME_EVENTS.GAME_UPDATED, lobby);
 }
 
-// pop-quiz helper
 function finishPopQuiz(lobby, io) {
   if (!lobby.activeQuiz) return;
   if (lobby.gameStatus !== "popQuiz") return;
 
-  lobby.activeQuiz.status = "closed";
-  lobby.activeQuiz = null;
-  lobby.gameStatus = "turnEnded";
+  if (lobby.gameTimer) {
+    clearTimeout(lobby.gameTimer);
+    lobby.gameTimer = null;
+  }
 
-  broadcastGameState(io, lobby);
+  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+  if (lobby.activeQuiz.status === "correct") {
+    currentPlayer.money += Number(lobby.edition.tiles[currentPlayer.position].money);
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: "got ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering correctly.",
+    });
+  }
+  else if (lobby.activeQuiz.status === "timerExpired" || lobby.activeQuiz.status === "incorrect") {
+    currentPlayer.money -= Number(lobby.edition.tiles[currentPlayer.position].money);
+    addLog(lobby.lobbyCode, {
+      uid: currentPlayer.uid,
+      username: currentPlayer.username,
+      message: "paid ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering incorrectly.",
+    });
+  }
+
+  lobby.activeQuiz = null;
 
   startNextTurn(lobby, io, broadcastGameState);
+}
+
+function startQuizTimer(lobby, io) {
+  if (lobby.gameTimer) {
+    clearTimeout(lobby.gameTimer);
+  }
+
+  const timer = setTimeout(async () => {
+    const currentLobby = getLobby(lobby.lobbyCode);
+    if (currentLobby && currentLobby.gameStatus === "popQuiz" && currentLobby.activeQuiz) {
+      currentLobby.activeQuiz.status = "timerExpired";
+      broadcastGameState(io, currentLobby);
+
+      await sleep(2500);
+      finishPopQuiz(currentLobby, io);
+    }
+  }, 15000);
+
+  // enumurable false prevents this field from being sent to the client
+  Object.defineProperty(lobby, "gameTimer", {
+    value: timer,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
 }
 
 export function setupSocketEvents(io) {
@@ -53,9 +100,8 @@ export function setupSocketEvents(io) {
 
     // server handler for quiz submission
     socket.on(
-      GAME_EVENTS.QUIZ_SUBMIT_ANSWER,
-      ({ lobbyCode, uid, optionId }) => {
-        if (!lobbyCode || !uid || !optionId) {
+      GAME_EVENTS.QUIZ_SUBMIT_ANSWER, async ({ lobbyCode, uid, answer }) => {
+        if (!lobbyCode || !uid || !answer) {
           emitGameError(socket, "Missing quiz answer data");
           return;
         }
@@ -87,17 +133,24 @@ export function setupSocketEvents(io) {
           return;
         }
 
-        lobby.activeQuiz.answers[uid] = optionId;
+        // check answer correctness
+        if (answer === lobby.activeQuiz.correctAnswer) {
+          lobby.activeQuiz.status = "correct";
+        } else {
+          lobby.activeQuiz.status = "incorrect";
+        }
 
-        const answeredCount = Object.keys(lobby.activeQuiz.answers).length;
-        const playerCount = lobby.players.length;
-
-        if (answeredCount >= playerCount) {
-          finishPopQuiz(lobby, io);
-          return;
+        // Clear active timer since an answer has been submitted
+        if (lobby.gameTimer) {
+          clearTimeout(lobby.gameTimer);
+          lobby.gameTimer = null;
         }
 
         broadcastGameState(io, lobby);
+
+        await sleep(2500);
+
+        finishPopQuiz(lobby, io);
       },
     );
 
@@ -140,7 +193,7 @@ export function setupSocketEvents(io) {
 
     socket.on(
       GAME_EVENTS.GAME_START,
-      ({ lobbyCode, hostUid, tiles, startingPoints }) => {
+      ({ lobbyCode, hostUid, tiles, questions, startingPoints }) => {
         if (!lobbyCode || !hostUid) {
           emitGameError(socket, "Missing start game data");
           return;
@@ -148,6 +201,7 @@ export function setupSocketEvents(io) {
 
         const result = startGame(lobbyCode, hostUid, {
           tiles,
+          questions,
           startingPoints,
         });
 
@@ -201,6 +255,22 @@ export function setupSocketEvents(io) {
       }
 
       if (
+        landingResult.lobby.gameStatus === "chance" ||
+        landingResult.lobby.gameStatus === "community"
+      ) {
+        broadcastGameState(io, landingResult.lobby);
+        await sleep(2500);
+
+        const lobby = landingResult.lobby;
+        const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+
+        applyCardEffect(lobby, currentPlayer, lobby.activeCard);
+
+        broadcastGameState(io, lobby);
+        await sleep(2500);
+      }
+
+      if (
         landingResult.lobby.gameStatus === "buyProperty" ||
         landingResult.lobby.gameStatus === "bankruptcy" ||
         landingResult.lobby.gameStatus === "jail"
@@ -210,6 +280,8 @@ export function setupSocketEvents(io) {
       }
 
       if (landingResult.lobby.gameStatus === "popQuiz") {
+        startQuizTimer(landingResult.lobby, io);
+
         broadcastGameState(io, landingResult.lobby);
         return;
       }
@@ -217,14 +289,6 @@ export function setupSocketEvents(io) {
       if (landingResult.lobby.gameStatus === "miniGame") {
         broadcastGameState(io, landingResult.lobby);
         return;
-      }
-
-      if (
-        landingResult.lobby.gameStatus === "chance" ||
-        landingResult.lobby.gameStatus === "community"
-      ) {
-        broadcastGameState(io, landingResult.lobby);
-        await sleep(2500);
       }
 
       landingResult.lobby.gameStatus = "turnEnded";
@@ -268,7 +332,48 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+
+      // auction path stays paused in the auction overlay
+      // but non-auction path should advance normally
+      if (result.lobby.gameStatus === "turnEnded") {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
+    });
+
+    // auction handler
+    socket.on(
+      GAME_EVENTS.GAME_PLACE_AUCTION_BID,
+      ({ lobbyCode, uid, bidIncrement }) => {
+        const result = placeAuctionBid(lobbyCode, uid, bidIncrement);
+        if (result.error) return emitGameError(socket, result.error);
+
+        broadcastGameState(io, result.lobby);
+      },
+    );
+
+    socket.on(GAME_EVENTS.GAME_RESOLVE_AUCTION, ({ lobbyCode, hostUid }) => {
+      const result = resolveAuction(lobbyCode, hostUid);
+      if (result.error) return emitGameError(socket, result.error);
+
+      broadcastGameState(io, result.lobby);
       startNextTurn(result.lobby, io, broadcastGameState);
+    });
+
+    // sell property handler
+    socket.on(GAME_EVENTS.GAME_SELL_PROPERTY, ({ lobbyCode, uid, propertyId }) => {
+      if (!lobbyCode || !uid || !propertyId) {
+        emitGameError(socket, "Missing sell property data");
+        return;
+      }
+
+      const result = sellProperty(lobbyCode, uid, propertyId);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      broadcastGameState(io, result.lobby);
     });
 
     // jail
@@ -341,7 +446,7 @@ export function setupSocketEvents(io) {
     socket.on(GAME_EVENTS.GAME_DECLARE_BANKRUPTCY, ({ lobbyCode, uid }) => {
       if (!lobbyCode || !uid) {
         emitGameError(socket, "Missing bankruptcy declaration data");
-        return; 
+        return;
       }
 
       // player chooses to declare bankruptcy
@@ -353,7 +458,7 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
- 
+
       // If bankruptcy eliminated the second-last player, game is probably already over
       if (result.lobby.status !== "finished") {
         startNextTurn(result.lobby, io, broadcastGameState);
@@ -454,6 +559,7 @@ export function setupSocketEvents(io) {
       lobby.startTime = Date.now();
       lobby.endTime = null;
       lobby.currentPlayerIndex = 0;
+      lobby.activeAuction = null;
       lobby.lastRoll = null;
       lobby.winnerUid = null;
 
