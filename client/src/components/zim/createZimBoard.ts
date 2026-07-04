@@ -410,6 +410,7 @@ function drawPlayers(
   players.forEach((player, playerIndex) => {
     const center = getTileCenter(player.position);
     const normalizedIndex = player.position % 40;
+    const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
 
     // Determine where player sits w/in shared tile space
     const group = playersByPosition[player.position];
