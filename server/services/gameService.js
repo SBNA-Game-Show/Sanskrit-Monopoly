@@ -460,6 +460,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     startTime: null,
     endTime: null,
     log: [],
+    availableTokens: ["dog", "shoe", "cat", "boat"],
   };
   console.log(lobbies);
   return lobbies[lobbyCode];
@@ -493,6 +494,17 @@ export function joinLobby(lobbyCode, playerData) {
     return { lobby, error: null };
   }
 
+  let assignedToken = null;
+  let startingMoney = 0;
+
+  if (lobby.status === "playing") {
+    // Get whatever token first in list
+    if (lobby.availableTokens.length > 0) {
+      assignedToken = lobby.availableTokens.shift();
+    }
+    startingMoney = lobby.edition?.startingPoints ?? 1500;
+  }
+
   // push player info
   lobby.players.push({
     uid: playerData.uid,
@@ -507,6 +519,9 @@ export function joinLobby(lobbyCode, playerData) {
     isConnected: true,
     isBankrupt: false,
     isEliminated: false,
+    token: assignedToken,
+    points: startingMoney,
+    money: startingMoney,
   });
   return { lobby, error: null };
 }
@@ -526,6 +541,19 @@ export function updatePlayerToken(lobbyCode, uid, token) {
     return { lobby, error: "Player not found" };
   }
 
+  // If someone already has token, reject
+  if (!lobby.availableTokens.includes(token)) {
+    return { lobby, error: "Token already taken" };
+  }
+
+  // If player already has token, remove it from available tokens
+  if (player.token) {
+    lobby.availableTokens.push(player.token);
+  }
+
+  // Remove new token from available tokens
+  lobby.availableTokens = lobby.availableTokens.filter(t => t !== token);
+
   const tokenTaken = lobby.players.some(
     (currentPlayer) =>
       currentPlayer.uid !== uid && currentPlayer.token === token,
@@ -534,6 +562,7 @@ export function updatePlayerToken(lobbyCode, uid, token) {
   if (tokenTaken) {
     return { lobby, error: "Token already taken" };
   }
+
   player.token = token;
   return { lobby, error: null };
 }
@@ -1138,11 +1167,22 @@ export function kickPlayer(lobbyCode, uid) {
     return { error: "Lobby not found" };
   }
 
+  // Find player host is trying to kick out
+  const playerToKick = lobby.players.find((p) => p.uid === uid);
+
+  // Return kicked out players' token to available pool
+  if (playerToKick && playerToKick.token) {
+    if (!lobby.availableTokens.includes(playerToKick.token)) {
+      lobby.availableTokens.push(playerToKick.token);
+    }
+  }
+
+  // Now remove the player from the lobby
+  lobby.players = lobby.players.filter((player) => player.uid !== uid);
+
   if (lobby.players.length <= 2) {
     return { error: "Cannot remove player. Minimum 2 players required." };
   }
-
-  lobby.players = lobby.players.filter((player) => player.uid !== uid);
 
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
@@ -1164,6 +1204,13 @@ export function disconnectPlayer(socketId) {
     if (player) {
       player.socketId = null;
       player.isConnected = false;
+
+      // Return token to pool if player leaves the game
+      if (player.token && !lobby.availableTokens.includes(player.token)) {
+        lobby.availableTokens.push(player.token);
+        player.token = null;
+      }
+
       return { lobby, error: null };
     }
   }
