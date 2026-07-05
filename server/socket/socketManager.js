@@ -10,6 +10,7 @@ import {
   showMiniGame,
   forceSkipTurn,
   kickPlayer,
+  leaveLobby,
   disconnectPlayer,
   startNextTurn,
   resolveLandingAction,
@@ -484,6 +485,23 @@ export function setupSocketEvents(io) {
         emitGameError(socket, result.error);
         return;
       }
+
+      broadcastGameState(io, result.lobby);
+    });
+    socket.on(GAME_EVENTS.LOBBY_LEAVE, ({ lobbyCode, uid }) => {
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing lobby leave data");
+        return;
+      }
+
+      const result = leaveLobby(lobbyCode, uid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      socket.leave(lobbyCode);
 
       broadcastGameState(io, result.lobby);
     });

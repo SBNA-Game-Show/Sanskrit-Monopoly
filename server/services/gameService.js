@@ -991,7 +991,7 @@ export function placeAuctionBid(lobbyCode, uid, bidIncrement) {
   }
 
   const player = lobby.players.find((currentPlayer) => currentPlayer.uid === uid);
-  
+
   // block bankrupt/eliminated players from auctioning
   if (!player || player.isEliminated || player.isBankrupt) {
     return { lobby, error: "Player not found" };
@@ -1047,7 +1047,7 @@ export function resolveAuction(lobbyCode, hostUid) {
 
   const auction = lobby.activeAuction;
   const tile = lobby.edition.tiles.find((currentTile) => currentTile.id === auction.tileId);
-  
+
   if (!tile) return { lobby, error: "Auction tile not found" };
 
   const winner = auction.highestBidderUid
@@ -1067,7 +1067,7 @@ export function resolveAuction(lobbyCode, hostUid) {
 
     // current rules prevent this from being true (overbidding is blocked... for now)
     updateBankruptcyStatus(winner);
-    
+
     addLog(lobby.lobbyCode, {
       uid: winner.uid,
       username: winner.username,
@@ -1147,6 +1147,38 @@ export function kickPlayer(lobbyCode, uid) {
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
   }
+
+  return { lobby, error: null };
+}
+
+export function leaveLobby(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.host.uid === uid) {
+    return { lobby, error: "Host cannot leave the lobby" };
+  }
+
+  const leavingPlayer = lobby.players.find((player) => player.uid === uid);
+
+  if (!leavingPlayer) {
+    return { lobby, error: "Player not found" };
+  }
+
+  lobby.players = lobby.players.filter((player) => player.uid !== uid);
+
+  if (lobby.currentPlayerIndex >= lobby.players.length) {
+    lobby.currentPlayerIndex = 0;
+  }
+
+  addLog(lobby.lobbyCode, {
+    uid: leavingPlayer.uid,
+    username: leavingPlayer.username,
+    message: "left the lobby.",
+  });
 
   return { lobby, error: null };
 }

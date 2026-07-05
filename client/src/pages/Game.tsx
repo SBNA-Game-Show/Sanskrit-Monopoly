@@ -10,6 +10,7 @@ import { Button } from "../components/common/Button";
 import { useEffect, useRef } from "react";
 import { useToast } from "../context/ToastContext";
 import { SellPropertyPanel } from "../components/game/SellPropertyPanel";
+import { useNav } from "../components/TransitionOverlay";
 
 
 type GameProps = {
@@ -44,6 +45,7 @@ export default function Game({ gameState }: GameProps) {
   console.log(gameState);
 
   const { uid } = useAuth();
+  const navigate = useNav();
   const { showToast } = useToast();
 
   // remember last log toasted so rerendering doesn't make a duplicate
@@ -67,6 +69,16 @@ export default function Game({ gameState }: GameProps) {
       lobbyCode: gameState.lobbyCode,
       uid,
     });
+  };
+  const handleLeaveLobby = () => {
+    if (!gameState.lobbyCode || !uid || isHost) return;
+
+    socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+    });
+
+    navigate("/home");
   };
 
   const handleEndGame = () => {
@@ -110,13 +122,12 @@ export default function Game({ gameState }: GameProps) {
               return (
                 <div
                   key={player.uid}
-                  className={`rounded-2xl border-[6px] p-4 shadow-md ${
-                    player.isEliminated
-                      ? "border-[#7a5c42] bg-[#b89775] opacity-60 grayscale"
-                      : isCurrentTurn
-                        ? "border-[#6b3f1d] bg-[#ffd7a3]"
-                        : "border-[#ffa23b] bg-[#ffb45c]"
-                  }`}
+                  className={`rounded-2xl border-[6px] p-4 shadow-md ${player.isEliminated
+                    ? "border-[#7a5c42] bg-[#b89775] opacity-60 grayscale"
+                    : isCurrentTurn
+                      ? "border-[#6b3f1d] bg-[#ffd7a3]"
+                      : "border-[#ffa23b] bg-[#ffb45c]"
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="text-[15px] leading-[1.45]">
@@ -228,12 +239,21 @@ export default function Game({ gameState }: GameProps) {
                 </Button>
               </>
             ) : (
-              <Button variant="action" size="lg" disabled={
+              <>
+                <Button variant="action" size="lg" disabled={
                   currentPlayer?.uid !== uid ||
                   gameState.gameStatus !== "idling"
                 } onClick={handleRollDice}>
                   Roll Dice
                 </Button>
+                <Button
+                  variant="action"
+                  size="lg"
+                  onClick={handleLeaveLobby}
+                >
+                  Leave Lobby
+                </Button>
+              </>
             )}
           </div>
           {!isHost && <SellPropertyPanel gameState={gameState} uid={uid} />}
