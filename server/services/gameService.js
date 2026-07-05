@@ -1180,7 +1180,7 @@ export function kickPlayer(lobbyCode, uid) {
   // Now remove the player from the lobby
   lobby.players = lobby.players.filter((player) => player.uid !== uid);
 
-  if (lobby.players.length <= 2) {
+  if (lobby.players.length < 2) {
     return { error: "Cannot remove player. Minimum 2 players required." };
   }
 

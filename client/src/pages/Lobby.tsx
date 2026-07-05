@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 import Game from "./Game";
 import Result from "./Result";
@@ -15,6 +16,7 @@ export default function Lobby() {
   const { lobbyCode } = useParams<{ lobbyCode: string }>();
   const { uid, username, authLoading } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (authLoading) return;
@@ -54,7 +56,12 @@ export default function Lobby() {
 
     // If lobby data exists but the user is neither the host nor a player, navigate them away
     if (!isHost && !isPlayer) {
-      alert("The host kicked you out. Redirecting to home page.");
+      showToast({
+        variant: "error",
+        title: "Disconnected",
+        message: "You have been removed from the lobby by the host.",
+      });
+
       navigate("/");
     }
   }, [lobbyState, uid, navigate]);

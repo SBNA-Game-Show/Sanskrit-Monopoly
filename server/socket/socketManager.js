@@ -496,6 +496,10 @@ export function setupSocketEvents(io) {
         return;
       }
 
+      // Check if player being kicked out is currently taking their turn
+      const isTheirTurn = lobby.status === "playing" && lobby.players[lobby.currentPlayerIndex]?.uid === uid;
+
+      // Kick the player out
       const result = kickPlayer(lobbyCode, uid);
 
       if (result.error) {
@@ -503,7 +507,29 @@ export function setupSocketEvents(io) {
         return;
       }
 
-      broadcastGameState(io, result.lobby);
+      // If the kicked player was taking their turn, advance to the next turn
+      if (isTheirTurn && result.lobby.status === "playing") {
+        result.lobby.gameStatus = "startOfTurn";
+
+        addLog(lobbyCode, {
+          uid: result.lobby.players[result.lobby.currentPlayerIndex].uid,
+          username: result.lobby.players[result.lobby.currentPlayerIndex].username,
+          message: "started their turn.",
+        });
+
+        broadcastGameState(io, result.lobby);
+
+        setTimeout(() => {
+          const currentPlayer = result.lobby.players[result.lobby.currentPlayerIndex];
+          if (currentPlayer) {
+            result.lobby.gameStatus = currentPlayer.jailed ? "jail" : "idling";
+            broadcastGameState(io, result.lobby);
+          }
+        }, 2000);
+      } else {
+        // If it wasn't their turn, just broadcast the updated game state
+        broadcastGameState(io, result.lobby);
+      }
     });
 
     socket.on(GAME_EVENTS.GAME_HOST_END_GAME, async ({ lobbyCode }) => {
