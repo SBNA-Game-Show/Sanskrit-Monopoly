@@ -19,7 +19,22 @@ function getTilePrice(tile: GameTile) {
 }
 
 function getTileRent(tile: GameTile) {
+  if (tile.type === "railroad") return tile.rent ?? 25;
+  if (tile.type === "utility") return tile.rent ?? 4;
+
   return tile.rent ?? Math.max(10, Math.round(getTilePrice(tile) * 0.1));
+}
+
+function getRentRulesText(tile: GameTile, rent: number) {
+  if (tile.type === "railroad") {
+    return `Base rent is ${formatMoney(rent)}. Rent doubles for each railroad the owner has.`;
+  }
+
+  if (tile.type === "utility") {
+    return `Rent is based on the dice roll. With one utility, rent is dice roll × ${rent}. With two utilities, rent uses the higher multiplier.`;
+  }
+
+  return `Base rent is ${formatMoney(rent)}. If the player owns the full color set, rent becomes ${formatMoney(rent * 2)}.`;
 }
 
 function getSellValue(tile: GameTile) {
@@ -76,7 +91,7 @@ export function BuyPropertyOverlay({
     "A Sanskrit Monopoly property card. Buy it to collect rent when other players land here.";
 
   const rent = getTileRent(tile);
-  const rentWithSet = rent * 2;
+  getRentRulesText(tile, rent)
   const sellValue = getSellValue(tile);
 
   const selectedSellValue = selectedSellProperty
@@ -193,8 +208,7 @@ export function BuyPropertyOverlay({
               Rent Rules
             </p>
             <p className="mt-2 text-sm font-semibold text-[#160f08]">
-              Base rent is {formatMoney(rent)}. If the player owns the full
-              color set, rent becomes {formatMoney(rentWithSet)}.
+              {getRentRulesText(tile, rent)}
             </p>
           </div>
 

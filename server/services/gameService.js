@@ -98,16 +98,26 @@ function findTileOwner(lobby, tileId) {
 }
 
 function getTilePrice(tile) {
-  //rn the admin page saves the price as a string instead of a number
-  //fix later
-  return Number(tile.price);
+   const price = Number(tile?.price);
 
-  // if (typeof tile?.price === "number") return tile.price;
+  if (Number.isFinite(price) && price > 0) {
+    return price;
+  }
 
-  // if (tile?.type === "railroad") return 200;
-  // if (tile?.type === "utility") return 150;
+  if (tile?.type === "railroad") return 200;
+  if (tile?.type === "utility") return 150;
 
-  // return 100;
+  return 100;
+}
+
+function getTileSellValue(tile) {
+  const sellValue = Number(tile?.sellValue);
+
+  if (Number.isFinite(sellValue) && sellValue > 0) {
+    return sellValue;
+  }
+
+  return Math.round(getTilePrice(tile) * 0.5);
 }
 
 function getTaxAmount(tile) {
@@ -131,15 +141,23 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
 
   if (tile.type === "railroad") {
     const railroadCount = getOwnedTileCountByType(lobby, owner, "railroad");
-    return [0, 25, 50, 100, 200][railroadCount] ?? 25;
+    const baseRailroadRent = Number(tile.rent) || 25;
+
+    return baseRailroadRent * Math.pow(2, Math.max(railroadCount - 1, 0));
   }
 
   if (tile.type === "utility") {
     const utilityCount = getOwnedTileCountByType(lobby, owner, "utility");
-    return diceRoll * (utilityCount >= 2 ? 10 : 4);
+    const singleUtilityMultiplier = Number(tile.rent) || 4;
+    const multiplier =
+      utilityCount >= 2
+        ? Math.round(singleUtilityMultiplier * 2.5)
+        : singleUtilityMultiplier;
+
+    return diceRoll * multiplier;
   }
 
-  return Number(tile.rent)
+  return Number(tile.rent) || 0;
 }
 
 // ---- bankruptcy related helper functions
@@ -866,7 +884,7 @@ export function sellProperty(lobbyCode, uid, propertyId) {
     return { lobby, error: "This property cannot be sold" };
   }
 
-  const sellValue = Number(tile.sellValue);
+  const sellValue = getTileSellValue(tile);
 
   player.properties = player.properties.filter(
     (currentPropertyId) => currentPropertyId !== propertyId,
