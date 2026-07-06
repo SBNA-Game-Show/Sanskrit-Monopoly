@@ -38,7 +38,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
       index: editingTileIndex,
       name: targetTileName,
       type: tileType,
-      money: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
+      points: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
       price: tileType === "property" ? propertyCost : 0,
       rent: tileType === "property" ? rentCost : 0,
       sellValue: tileType === "property" ? sellingCost : 0,
@@ -89,8 +89,8 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               let displayLabel = tile.type.toUpperCase();
 
               if (tile.type === "property") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-              else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.money ?? 0} pts`; }
-              else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.money ?? 0} pts`; }
+              else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.points ?? 0} pts`; }
+              else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.points ?? 0} pts`; }
               else if (tile.type === "tax") { badgeColor = "text-red-600 bg-red-50 border-red-200"; displayLabel = "Tax • 200 pts"; }
               else if (tile.type === "jail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Jail"; }
               else if (tile.type === "goToJail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Go To Jail"; }
@@ -116,7 +116,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                               <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shadow-sm">Sell: {tile.sellValue ?? 0} Pts</span>
                             </div>
                           ) : (
-                            (tile.type === "minigame" || tile.type === "quiz") && <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">Points: {tile.money ?? 0} Pts</span>
+                            (tile.type === "minigame" || tile.type === "quiz") && <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">Points: {tile.points ?? 0} Pts</span>
                           )}
                         </div>
                       )}
@@ -125,7 +125,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                   {idx === 0 ? (
                     <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl border italic select-none">STARTING POINT</span>
                   ) : (
-                    <button type="button" onClick={() => { setEditingTileIndex(idx); setTargetTileName(tile.name); setTileType(tile.type); setTileValue(tile.money ?? 0); setPropertyCost(tile.price ?? 0); setRentCost(tile.rent ?? 0); setSellingCost(tile.sellValue ?? 0); setPropertyGroup(tile.group || ""); }} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
+                    <button type="button" onClick={() => { setEditingTileIndex(idx); setTargetTileName(tile.name); setTileType(tile.type); setTileValue(tile.points ?? 0); setPropertyCost(tile.price ?? 0); setRentCost(tile.rent ?? 0); setSellingCost(tile.sellValue ?? 0); setPropertyGroup(tile.group || ""); }} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
                   )}
                 </div>
               );
@@ -194,7 +194,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               ) : (
                 (tileType === "minigame" || tileType === "quiz") && (
                   <div className="animate-fade-in">
-                    <label className="block font-bold text-slate-700 mb-1">Money Modifier Value (Gain/Loss)</label>
+                    <label className="block font-bold text-slate-700 mb-1">Points Modifier Value (Gain/Loss)</label>
                     <input type="number" min="0" value={tileValue} onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))} className="w-full p-2.5 rounded-xl border border-orange-300 font-bold focus:outline-none text-base bg-white text-slate-900 shadow-sm" />
                   </div>
                 )

@@ -14,10 +14,11 @@ function Admin() {
 
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
   const [editNameValue, setEditNameValue] = useState<string>("");
-  const [routePath, setRoutePath] = useState<string>("/admin");
+  const [routePath, setRoutePath] = useState<string>(window.location.pathname);
   const selectedIdRef = useRef<string | null>(null);
 
   const navigateTo = (path: string, params?: Record<string, string>) => {
+    window.history.pushState({}, "", path);
     setRoutePath(path);
     if (params?.editionId) {
       selectedIdRef.current = params.editionId;
@@ -31,6 +32,11 @@ function Admin() {
       setSelectedEdition(null);
     }
   };
+  useEffect(() => {
+    const handlePopState = () => setRoutePath(window.location.pathname);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     const editionsCollectionRef = collection(db, "game_editions");
@@ -43,22 +49,29 @@ function Admin() {
       } as GameEdition));
       
       setEditions(liveEditions);
-      
+      const pathSegments = window.location.pathname.split("/");
+      if (pathSegments.length === 3 && pathSegments[2] !== "create") {
+        selectedIdRef.current = pathSegments[2];
+      }
+
       if (selectedIdRef.current) {
         const currentMatch = liveEditions.find(e => e.id === selectedIdRef.current);
-        if (currentMatch) setSelectedEdition(currentMatch);
+        if (currentMatch) {
+          setSelectedEdition(currentMatch);
+          setEditNameValue(currentMatch.name);
+        }
       }
       setLoading(false);
     });
     return () => unsubscribe(); 
-  }, [editions.length]); // Added array dependency tracking to safely resolve race conditions
+  }, [routePath]); // Added array dependency tracking to safely resolve race conditions
 
   const handleCreateEdition = async (name: string) => {
     const baselineTiles: MonopolyTile[] = Array.from({ length: 40 }, (_, index) => ({
       id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
       name: `Tile ${index}`,
       type: "property", 
-      money: 0, price: 100, rent: 10, sellValue: 50, group: ""
+      points: 0, price: 100, rent: 10, sellValue: 50, group: ""
     }));
     try {
       await addDoc(collection(db, "game_editions"), { name: name.trim(), tiles: baselineTiles, activities: [] });
@@ -137,7 +150,7 @@ function Admin() {
         <AdminCreate onCreate={handleCreateEdition} navigateTo={navigateTo} />
       )}
 
-      {routePath.startsWith("/admin/") && routePath !== "/admin/create" && (
+      {routePath.startsWith("/admin/") && routePath !== "/admin/create" && (selectedEdition || editions.find(e => e.id === routePath.split("/")[2])) && (
         <AdminEditEdition 
           selectedEdition={selectedEdition || editions.find(e => e.id === routePath.split("/")[2])!} 
           isRenaming={isRenaming} setIsRenaming={setIsRenaming}
