@@ -7,8 +7,9 @@ import type {
 import type { GameEdition } from "../../types/game/gameTypes";
 
 type ZimSceneHostProps<TState, TActions = undefined> = {
-  edition?: GameEdition
+  edition?: GameEdition;
   state: TState;
+  stateKey?: string;
   // make createZimScene have an optional arugment for edtion
   createScene: CreateZimScene<TState, TActions>;
   actions?: TActions;
@@ -20,6 +21,7 @@ type ZimSceneHostProps<TState, TActions = undefined> = {
 export function ZimSceneHost<TState, TActions = undefined>({
   edition,
   state,
+  stateKey,
   createScene,
   actions,
   width = 900,
@@ -32,11 +34,21 @@ export function ZimSceneHost<TState, TActions = undefined>({
   const frameRef = useRef<zim.Frame | null>(null);
   const controllerRef = useRef<ZimSceneController<TState> | null>(null);
   const latestStateRef = useRef(state);
+  const lastAppliedStateKeyRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     latestStateRef.current = state;
+
+    if (stateKey && lastAppliedStateKeyRef.current === stateKey) {
+      return;
+    }
+
+    lastAppliedStateKeyRef.current = stateKey;
+
+    console.count("ZIM board update");
+
     controllerRef.current?.update(state);
-  }, [state]);
+  }, [state, stateKey]);
 
   useEffect(() => {
     const frame = new zim.Frame({
@@ -47,10 +59,19 @@ export function ZimSceneHost<TState, TActions = undefined>({
       ready: () => {
         //if edtion is passed down as a prop, create scene with edition as addtional argument
         if (edition) {
-          controllerRef.current = createScene(frame.stage, latestStateRef.current, actions, edition);
-        //otherwise, just create the scene without the edition
+          controllerRef.current = createScene(
+            frame.stage,
+            latestStateRef.current,
+            actions,
+            edition,
+          );
+          //otherwise, just create the scene without the edition
         } else {
-          controllerRef.current = createScene(frame.stage, latestStateRef.current, actions);
+          controllerRef.current = createScene(
+            frame.stage,
+            latestStateRef.current,
+            actions,
+          );
         }
       },
     });

@@ -30,7 +30,7 @@ app.get("/api/lobbies", (req, res) => {
       host: lobby.host?.username || "Unknown Host",
       players: lobby.players?.length || 1,
       maxPlayers: 4,
-      edition: lobby.edition?.name || "Standard Edition"
+      edition: lobby.edition?.name || "----"
     }));
 
     res.status(200).json({ lobbies: allLobbies });

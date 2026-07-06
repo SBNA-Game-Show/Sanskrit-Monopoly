@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 import Game from "./Game";
 import Result from "./Result";
@@ -14,6 +15,8 @@ export default function Lobby() {
   const [lobbyState, setLobbyState] = useState<GameState | null>(null);
   const { lobbyCode } = useParams<{ lobbyCode: string }>();
   const { uid, username, authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (authLoading) return;
@@ -42,6 +45,26 @@ export default function Lobby() {
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
     };
   }, [authLoading]);
+
+  // Kick detection: If the user is not part of the lobby, navigate them away
+  useEffect(() => {
+    // Don't do anything if lobby hasn't loaded or no UID
+    if (!lobbyState || !uid) return;
+
+    const isHost = lobbyState.host.uid === uid;
+    const isPlayer = lobbyState.players.some((player) => player.uid === uid);
+
+    // If lobby data exists but the user is neither the host nor a player, navigate them away
+    if (!isHost && !isPlayer) {
+      showToast({
+        variant: "error",
+        title: "Disconnected",
+        message: "You have been removed from the lobby by the host.",
+      });
+
+      navigate("/");
+    }
+  }, [lobbyState, uid, navigate]);
 
   // --- TRAFFIC CONTROLLER ROUTING ---
 
