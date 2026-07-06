@@ -89,6 +89,7 @@ const TILE_ECONOMY = {
   39: { group: "darkBlue", price: 400, rent: 50 },
 };
 
+// unused now
 export const DEFAULT_EDITION = {
   id: "default",
   name: "Default Sanskrit Monopoly",
