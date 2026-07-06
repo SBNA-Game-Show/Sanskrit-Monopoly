@@ -158,7 +158,7 @@ export function BuyPropertyOverlay({
         <div className="p-6">
           <div className="text-left">
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-[#6b3f1d]">
-              Property Title Card
+              Purchase {tile.type}
             </p>
 
             <h2 className="mt-2 text-[34px] font-extrabold leading-tight text-[#160f08]">
