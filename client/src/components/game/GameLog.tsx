@@ -1,33 +1,47 @@
 import type { GameState } from "../../types/game/gameTypes";
+import { useState } from "react";
 
 export function GameLog({ gameState, uid }: { gameState: GameState, uid: string }) {
+
+  // Track if log is collapsed or not
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
   return (
     <>
       <style>{gameLogStyles}</style>
-      <div className="mt-5 flex flex-col flex-1 min-h-[200px] max-h-[475px]">
-        <div className="flex-1 overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-[#6b3f1d] scrollbar-track-transparent">
-          {[...gameState.log].reverse().map((log, index) => (
-            <div
-              key={log.id}
-              className={`rounded-xl border-[#6b3f1d] p-3 shadow-sm ${
-                index === 0
-                  ? "animate-new-log-entry"
-                  : "border-[4px]"
-              } ${
-                log.uid === uid
-                  ? "bg-[#E8E8B5] border-[#2d6a27]"
-                  : "bg-[#ffd7a3]"
-              }`}
-            >
-              <p className="font-extrabold text-[15px] text-[#160f08] mb-1">
-                {log.username}
-              </p>
-              <p className="text-[14px] text-[#2a1c12] font-semibold leading-snug">
-                <strong>{log.username}</strong> {log.message}
-              </p>
-            </div>
-          ))}
+      <div className="mt-5 flex flex-col flex-1">
+
+        {/* Toggle Btn / Collapsed View */}
+        <div 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="mb-3 flex w-full cursor-pointer select-none items-center justify-center rounded-xl border-[4px] border-[#6b3f1d] bg-[#ffd7a3] p-3 shadow-sm transition-colors hover:bg-[#ffc985] relative">
+            <span className="text-[16px] font-extrabold uppercase trackingp-widest text-[#16-f08]">
+              Game Log
+            </span>
+            <span className="absolute right-4 text-sm text-[#6b3f1d]">
+              {isCollapsed ? "▼" : "▲"}
+            </span>
         </div>
+
+        {/* Expanded Log */}
+        {!isCollapsed && (
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[200px] max-h-[425px] scrollbar-thin scrollbar-thumb-[#6b3f1d] scrollbar-track-transparent">
+            {[...gameState.log].reverse().map((log, index) => (
+              <div
+                key={log.id}
+                className={`rounded-xl border-[#6b3f1d] p-3 shadow-sm ${index === 0 ? "animate-new-log-entry" : "border-[4px]"} 
+                ${log.uid === uid ? "bg-[#E8E8B5] border-[#2d6a27]" : "bg-[#ffd7a3]"}`}>
+                  <p className="font-extrabold text-[15px] text=[#160f08] mb-1">
+                    {log.username}
+                  </p>
+                  <p className="text-[14px] text-[#2a1c12] font-semibold leading-snug">
+                    {log.message}
+                  </p>
+                </div>
+            ))}
+          </div>
+        )}
+        
       </div>
     </>
   );
