@@ -71,14 +71,19 @@ export default function Game({ gameState }: GameProps) {
     });
   };
   const handleLeaveLobby = () => {
-    if (!gameState.lobbyCode || !uid || isHost) return;
 
+    if (!gameState.lobbyCode || !uid || isHost) {
+      console.log("Leave blocked", { lobbyCode: gameState.lobbyCode, uid, isHost });
+      return;
+    }
     socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
       lobbyCode: gameState.lobbyCode,
       uid,
-    });
-
-    navigate("/home");
+    },
+      () => {
+        navigate("/home");
+      },
+    );
   };
 
   const handleEndGame = () => {

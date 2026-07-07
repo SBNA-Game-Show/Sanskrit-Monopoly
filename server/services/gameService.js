@@ -1168,7 +1168,15 @@ export function leaveLobby(lobbyCode, uid) {
     return { lobby, error: "Player not found" };
   }
 
+  const leavingPlayerIndex = lobby.players.findIndex(
+    (player) => player.uid === uid,
+  );
+
   lobby.players = lobby.players.filter((player) => player.uid !== uid);
+
+  if (lobby.currentPlayerIndex > leavingPlayerIndex) {
+    lobby.currentPlayerIndex -= 1;
+  }
 
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
@@ -1179,6 +1187,13 @@ export function leaveLobby(lobbyCode, uid) {
     username: leavingPlayer.username,
     message: "left the lobby.",
   });
+
+  if (lobby.status === "playing" && lobby.players.length < 2) {
+    lobby.status = "finished";
+    lobby.gameStatus = "turnEnded";
+    lobby.endTime = Date.now();
+    lobby.winnerUid = lobby.players[0]?.uid ?? null;
+  }
 
   return { lobby, error: null };
 }

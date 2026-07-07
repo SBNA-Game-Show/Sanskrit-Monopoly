@@ -86,9 +86,12 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
       lobbyCode,
       uid,
-    });
+    },
+      () => {
 
-    navigate("/home");
+        navigate("/home");
+      },
+    );
   };
   const handleStartGame = async () => {
     console.log("STARTING GAME");

@@ -488,13 +488,16 @@ export function setupSocketEvents(io) {
 
       broadcastGameState(io, result.lobby);
     });
-    socket.on(GAME_EVENTS.LOBBY_LEAVE, ({ lobbyCode, uid }) => {
+    socket.on(GAME_EVENTS.LOBBY_LEAVE, ({ lobbyCode, uid }, callback) => {
+
       if (!lobbyCode || !uid) {
         emitGameError(socket, "Missing lobby leave data");
         return;
       }
 
       const result = leaveLobby(lobbyCode, uid);
+
+      console.log("leaveLobby result", result.error);
 
       if (result.error) {
         emitGameError(socket, result.error);
@@ -504,6 +507,10 @@ export function setupSocketEvents(io) {
       socket.leave(lobbyCode);
 
       broadcastGameState(io, result.lobby);
+
+      if (typeof callback === "function") {
+        callback();
+      }
     });
 
     socket.on(GAME_EVENTS.GAME_HOST_KICK_PLAYER, ({ lobbyCode, uid }) => {
