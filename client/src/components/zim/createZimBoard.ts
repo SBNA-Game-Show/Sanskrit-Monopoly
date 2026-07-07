@@ -253,11 +253,7 @@ function drawDice(board: zim.Container, diceValue: number | null | undefined) {
   }).center(dice);
 }
 
-function drawStaticBoard(
-  edition: GameEdition,
-  stage: zim.Stage,
-  state: ZimBoardState,
-) {
+function drawStaticBoard(edition: GameEdition, stage: zim.Stage) {
   stage.removeAllChildren();
 
   const board = new zim.Container(BOARD_SIZE, BOARD_SIZE).center(stage);
@@ -352,8 +348,6 @@ function drawStaticBoard(
     );
   }
 
-  drawDice(board, state.lastRoll);
-
   return board;
 }
 
@@ -391,159 +385,34 @@ function drawOwnershipMarkers(
   });
 }
 
-function drawPlayers(
-  board: zim.Container,
-  players: ZimBoardState["players"],
-  currentTurnUid: string | null,
-  prevPositions: Map<string, number>,
-) {
-  // Grouping players by board position to handle multiple players on the same tile
-  const playersByPosition: Record<number, number[]> = {};
+// dynamic layer keys let the board skip work when only unrelated game state changes
+// static tile art draws when dice, ownership markers, and players update on their own
 
-  players.forEach((player, index) => {
-    if (!playersByPosition[player.position]) {
-      playersByPosition[player.position] = [];
-    }
-    playersByPosition[player.position].push(index);
-  });
+function getDiceLayerKey(state: ZimBoardState) {
+  return String(state.lastRoll ?? "");
+}
 
-  players.forEach((player, playerIndex) => {
-    const center = getTileCenter(player.position);
-    const normalizedIndex = player.position % 40;
-    const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+// ownership markers only depend on tile ownership not player position or turn state
+function getOwnershipLayerKey(state: ZimBoardState) {
+  return Object.entries(state.ownedTiles ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tileId, ownerToken]) => `${tileId}:${ownerToken}`)
+    .join("|");
+}
 
-    // Determine where player sits w/in shared tile space
-    const group = playersByPosition[player.position];
-    const groupSize = group.length;
-    const indexInGroup = group.indexOf(playerIndex);
-
-    let dx = 0;
-    let dy = 0;
-
-    // Distance to push tokens inward
-    const PUSH_INWARD = 40;
-    // Spacing between tokens when multiple players on same tile
-    const STACK_SPACING = 40;
-    // Calc. staggered layer so it sits side by side
-    const inwardDistance = PUSH_INWARD + (indexInGroup * STACK_SPACING);
-
-    // Bottom Edge --> Push Up (-Y), stagger X
-    if (normalizedIndex >= 1 && normalizedIndex <= 9) {
-      dy = -inwardDistance;
-    }
-    // Left Edge --> Push Right (+X), stagger Y
-    else if (normalizedIndex >= 11 && normalizedIndex <= 19) {
-      dx = inwardDistance;
-    }
-    // Top Edge --> Push Down (+Y), stagger X
-    else if (normalizedIndex >= 21 && normalizedIndex <= 29) {
-      dy = inwardDistance;
-    }
-    // Right Edge --> Push Left (-X), stagger Y
-    else if (normalizedIndex >= 31 && normalizedIndex <= 39) {
-      dx = -inwardDistance;
-    }
-    // Corners (0, 10, 20, 30) -> Stack diagonally towards center
-    else {
-        // GO (0)
-        if (normalizedIndex === 0) {
-            dx = -inwardDistance * 0.7;
-            dy = -inwardDistance * 0.7;
-        }
-        // Jail (10)
-        else if (normalizedIndex === 10) {
-            dx = inwardDistance * 0.7;
-            dy = -inwardDistance * 0.7;
-        }
-        // Free Parking (20)
-        else if (normalizedIndex === 20) {
-            dx = inwardDistance * 0.7;
-            dy = inwardDistance * 0.7;
-        }
-        // Go to Jail (30)
-        else if (normalizedIndex === 30) {
-            dx = -inwardDistance * 0.7;
-            dy = inwardDistance * 0.7;
-        }
-    }
-
-    const x = center.x + dx;
-    const y = center.y + dy;
-
-    const isCurrentTurn = player.uid === currentTurnUid;
-    const TOKEN_SIZE = 34;
-    const TOKEN_SIZE_ACTIVE = 42;
-    const size = isCurrentTurn ? TOKEN_SIZE_ACTIVE : TOKEN_SIZE;
-
-    const tokenUrl =
-      player.token != null ? TOKEN_IMAGE_BY_ID[player.token] : null;
-
-    const prevPosition = prevPositions.get(player.uid);
-    const shouldAnimate =
-      prevPosition != null && prevPosition !== player.position;
-    const startCenter = shouldAnimate
-      ? getTileCenter(prevPosition)
-      : center;
-    const startX = startCenter.x + offset.dx;
-    const startY = startCenter.y + offset.dy;
-
-    let token: zim.Pic | zim.Container;
-
-    if (tokenUrl) {
-      token = new zim.Pic({ file: tokenUrl })
-        .siz(size)
-        .loc(startX - size / 2, startY - size / 2, board);
-    } else {
-      const radius = isCurrentTurn ? 19 : 15;
-      token = new zim.Container(size, size).loc(
-        startX - size / 2,
-        startY - size / 2,
-        board,
-      );
-
-      new zim.Circle(
-        radius,
-        PLAYER_COLORS[playerIndex] ?? "#000",
-        "#111",
-        3,
-      ).center(token);
-
-      new zim.Label({
-        text: `${playerIndex + 1}`,
-        size: 13,
-        bold: true,
-        color: "#fff",
-        font: "Arial",
-        align: "center",
-      }).center(token);
-    }
-
-    if (shouldAnimate) {
-      const path = buildTilePath(prevPosition, player.position);
-      const stepTime = 0.4 / Math.max(path.length - 1, 1);
-
-      let step = 1;
-      const walk = () => {
-        if (step >= path.length) return;
-        const next = getTileCenter(path[step]);
-        token.animate({
-          props: {
-            x: next.x + offset.dx - size / 2,
-            y: next.y + offset.dy - size / 2,
-          },
-          time: stepTime,
-          ease: "linear",
-          call: () => {
-            step += 1;
-            if (step < path.length) walk();
-          },
-        });
-      };
-      walk();
-    }
-
-    prevPositions.set(player.uid, player.position);
-  });
+// player visuals depend on turn highlight, token identity, position, and elimination
+function getPlayersLayerKey(state: ZimBoardState) {
+  return [
+    state.currentTurnUid ?? "",
+    ...state.players.map((player) =>
+      [
+        player.uid,
+        player.token ?? "",
+        player.position,
+        player.isEliminated ? 1 : 0,
+      ].join(":"),
+    ),
+  ].join("|");
 }
 
 export function createZimBoard(
@@ -555,35 +424,274 @@ export function createZimBoard(
   if (!edition) {
     throw new Error("GameEdition is required for createZimBoard");
   }
-  const activeEdition: GameEdition = edition;
-
   let board: zim.Container | null = null;
+  let ownershipLayer: zim.Container | null = null;
+  let playerLayer: zim.Container | null = null;
+  let diceLayer: zim.Container | null = null;
+  let lastDiceLayerKey: string | null = null;
+  let lastOwnershipLayerKey: string | null = null;
+  let lastPlayersLayerKey: string | null = null;
   const prevPositions = new Map<string, number>();
 
-  function draw(state: ZimBoardState) {
-    if (board) {
-      board.removeFrom();
+  // player token displays are cached so movement can reuse existing ZIM objects
+  // image tokens can resize in place when only active/inactive turn size changes
+  type PlayerDisplay = {
+    node: zim.Pic | zim.Container;
+    tokenId: string | null;
+    size: number;
+    isImageToken: boolean;
+  };
 
-      board = null;
-    }
+  const playerDisplays = new Map<string, PlayerDisplay>();
 
-    board = drawStaticBoard(edition!, stage, state);
-    drawOwnershipMarkers(edition!, board, state.ownedTiles);
-    drawPlayers(board, state.players, state.currentTurnUid, prevPositions);
-    stage.update();
+  // function that updates existing token displays instead of clearing / recreating player layer
+  function updatePlayers(
+    layer: zim.Container,
+    players: ZimBoardState["players"],
+    currentTurnUid: string | null,
+    prevPositions: Map<string, number>,
+    playerDisplays: Map<string, PlayerDisplay>,
+  ) {
+    const activePlayerUids = new Set(players.map((player) => player.uid));
+
+    playerDisplays.forEach((display, uid) => {
+      if (!activePlayerUids.has(uid)) {
+        display.node.removeFrom();
+        playerDisplays.delete(uid);
+        prevPositions.delete(uid);
+      }
+    });
+
+    players.forEach((player, playerIndex) => {
+      const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
+      const isCurrentTurn = player.uid === currentTurnUid;
+      const size = isCurrentTurn ? 42 : 34;
+      const tokenId = player.token ?? null;
+
+      const prevPosition = prevPositions.get(player.uid);
+      const shouldAnimate =
+        prevPosition != null && prevPosition !== player.position;
+
+      const display =
+        playerDisplays.get(player.uid) ??
+        createPlayerDisplay(layer, player, playerIndex, size);
+
+      const needsRecreate =
+        display.tokenId !== tokenId ||
+        (!display.isImageToken && display.size !== size);
+
+      const nextDisplay = needsRecreate
+        ? recreatePlayerDisplay(
+            layer,
+            playerDisplays,
+            player,
+            playerIndex,
+            size,
+          )
+        : display;
+
+      if (
+        !needsRecreate &&
+        nextDisplay.isImageToken &&
+        nextDisplay.size !== size
+      ) {
+        nextDisplay.node.siz(size);
+        nextDisplay.size = size;
+      }
+
+      playerDisplays.set(player.uid, nextDisplay);
+
+      const startCenter = shouldAnimate
+        ? getTileCenter(prevPosition)
+        : getTileCenter(player.position);
+
+      nextDisplay.node.loc(
+        startCenter.x + offset.dx - size / 2,
+        startCenter.y + offset.dy - size / 2,
+      );
+
+      if (shouldAnimate) {
+        animatePlayerToPosition(
+          nextDisplay.node,
+          prevPosition,
+          player.position,
+          offset,
+          size,
+        );
+      }
+
+      prevPositions.set(player.uid, player.position);
+    });
   }
 
-  draw(initialState);
+  // function that creates token display once, then stores it in playerDisplays to be reused
+  function createPlayerDisplay(
+    layer: zim.Container,
+    player: ZimBoardState["players"][number],
+    playerIndex: number,
+    size: number,
+  ): PlayerDisplay {
+    const tokenId = player.token ?? null;
+    const tokenUrl = tokenId ? TOKEN_IMAGE_BY_ID[tokenId] : null;
+
+    if (tokenUrl) {
+      return {
+        node: new zim.Pic({ file: tokenUrl }).siz(size).addTo(layer),
+        tokenId,
+        size,
+        isImageToken: true,
+      };
+    }
+
+    // fallback for dev state where player has no valid token image
+    const node = new zim.Container(size, size).addTo(layer);
+    const radius = size / 2 - 2;
+
+    new zim.Circle(
+      radius,
+      PLAYER_COLORS[playerIndex] ?? "#000",
+      "#111",
+      3,
+    ).center(node);
+
+    new zim.Label({
+      text: `${playerIndex + 1}`,
+      size: 13,
+      bold: true,
+      color: "#fff",
+      font: "Arial",
+      align: "center",
+    }).center(node);
+
+    return { node, tokenId, size, isImageToken: false };
+  }
+
+  // recreate only when the token identity changes or for fallback shape resizing
+  function recreatePlayerDisplay(
+    layer: zim.Container,
+    playerDisplays: Map<string, PlayerDisplay>,
+    player: ZimBoardState["players"][number],
+    playerIndex: number,
+    size: number,
+  ) {
+    playerDisplays.get(player.uid)?.node.removeFrom();
+    return createPlayerDisplay(layer, player, playerIndex, size);
+  }
+
+  // create static board art once while dynamic layers sit above it
+  function createLayers(initialState: ZimBoardState) {
+    board = drawStaticBoard(edition!, stage);
+
+    ownershipLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(board);
+    playerLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(board);
+    diceLayer = new zim.Container(BOARD_SIZE, BOARD_SIZE).addTo(board);
+
+    redrawDynamicLayers(initialState);
+  }
+
+  // function that has the tokens walk tile-by-tile
+  function animatePlayerToPosition(
+    node: zim.Pic | zim.Container,
+    fromPosition: number,
+    toPosition: number,
+    offset: { dx: number; dy: number },
+    size: number,
+  ) {
+    const path = buildTilePath(fromPosition, toPosition);
+    const stepTime = 0.4 / Math.max(path.length - 1, 1);
+
+    let step = 1;
+
+    const walk = () => {
+      if (step >= path.length) return;
+
+      const next = getTileCenter(path[step]);
+
+      node.animate({
+        props: {
+          x: next.x + offset.dx - size / 2,
+          y: next.y + offset.dy - size / 2,
+        },
+        time: stepTime,
+        ease: "linear",
+        call: () => {
+          step += 1;
+          if (step < path.length) walk();
+        },
+      });
+    };
+
+    walk();
+  }
+
+  // function that compares layer keys and updates only layers where the visible inputs have changed
+  function redrawDynamicLayers(state: ZimBoardState) {
+    const diceLayerKey = getDiceLayerKey(state);
+    const ownershipLayerKey = getOwnershipLayerKey(state);
+    const playersLayerKey = getPlayersLayerKey(state);
+
+    let didUpdate = false;
+
+    // each dynamic layer redraws only when its own inputs are changed that are board-visible
+    
+    // for ownership when buying and selling is done
+    if (ownershipLayer && ownershipLayerKey !== lastOwnershipLayerKey) {
+      ownershipLayer.removeAllChildren();
+      drawOwnershipMarkers(edition!, ownershipLayer, state.ownedTiles);
+      lastOwnershipLayerKey = ownershipLayerKey;
+      didUpdate = true;
+
+      console.count("ZIM ownership layer"); // for debugging
+    }
+
+    // for general player movement on the board
+    if (playerLayer && playersLayerKey !== lastPlayersLayerKey) {
+      updatePlayers(
+        playerLayer,
+        state.players,
+        state.currentTurnUid,
+        prevPositions,
+        playerDisplays,
+      );
+
+      lastPlayersLayerKey = playersLayerKey;
+      didUpdate = true;
+
+      console.count("ZIM player layer"); // for debugging
+    }
+
+    // dice. Pretty self-explanatory
+    if (diceLayer && diceLayerKey !== lastDiceLayerKey) {
+      diceLayer.removeAllChildren();
+      drawDice(diceLayer, state.lastRoll);
+      lastDiceLayerKey = diceLayerKey;
+      didUpdate = true;
+
+      console.count("ZIM dice layer"); // for debugging
+    }
+
+    if (didUpdate) {
+      stage.update();
+    }
+  }
+
+  createLayers(initialState);
 
   return {
     update(nextState: ZimBoardState) {
-      draw(nextState);
+      redrawDynamicLayers(nextState);
     },
 
     dispose() {
       stage.removeAllChildren();
       stage.update();
+
       board = null;
+      ownershipLayer = null;
+      playerLayer = null;
+      diceLayer = null;
+      playerDisplays.clear();
+      prevPositions.clear();
     },
   };
 }

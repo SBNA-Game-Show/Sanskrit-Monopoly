@@ -7,7 +7,7 @@ import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 function Result({ gameState }: any) {
   const navigate = useNav();
   const sortedPlayers = [...gameState.players].sort(
-    (a, b) => b.points - a.points,
+    (a, b) => (b.points || 0) - (a.points || 0),
   );
 
   const winner = sortedPlayers[0];
@@ -43,9 +43,8 @@ function Result({ gameState }: any) {
             {sortedPlayers.map((player, index) => (
               <div
                 key={player.uid}
-                className={`result-player-card ${
-                  index === 0 ? "winner-card" : ""
-                }`}
+                className={`result-player-card ${index === 0 ? "winner-card" : ""
+                  }`}
               >
                 {index === 0 && <div className="winner-ribbon">WINNER</div>}
                 {index === 0 && <div className="winner-crown">👑</div>}
