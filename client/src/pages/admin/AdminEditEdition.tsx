@@ -20,7 +20,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
 }) => {
   const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
   const [targetTileName, setTargetTileName] = useState("");
-  const [tileType, setTileType] = useState<MonopolyTile["type"] | "">("");
+  const [tileType, setTileType] = useState<MonopolyTile["type"]>("property");
   const [tileValue, setTileValue] = useState<number>(0);
   const [propertyCost, setPropertyCost] = useState<number>(0);
   const [rentCost, setRentCost] = useState<number>(0);
@@ -34,13 +34,6 @@ export const AdminEditEdition: React.FC<EditProps> = ({
   const handleTileSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingTileIndex === null) return;
-    if (!tileType) return;
-
-    const isPurchasableTile =
-      tileType === "property" ||
-      tileType === "railroad" ||
-      tileType === "utility";
-
     await handleSaveTileRules({
       index: editingTileIndex,
       name: targetTileName,
@@ -51,7 +44,6 @@ export const AdminEditEdition: React.FC<EditProps> = ({
       sellValue: tileType === "property" ? sellingCost : 0,
       group: tileType === "property" ? (propertyGroup as any) : ""
     });
-
     setEditingTileIndex(null);
   };
 
@@ -97,8 +89,6 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               let displayLabel = tile.type.toUpperCase();
 
               if (tile.type === "property") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-              else if (tile.type === "railroad") { badgeColor = "text-slate-700 bg-slate-100 border-slate-300"; displayLabel = "Railroad";} 
-              else if (tile.type === "utility") { badgeColor = "text-cyan-700 bg-cyan-50 border-cyan-200"; displayLabel = "Utility";}
               else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.points ?? 0} pts`; }
               else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.points ?? 0} pts`; }
               else if (tile.type === "tax") { badgeColor = "text-red-600 bg-red-50 border-red-200"; displayLabel = "Tax • 200 pts"; }
@@ -118,7 +108,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                       {idx !== 0 && (
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>{displayLabel}</span>
-                          {(tile.type === "property" || tile.type === "railroad" || tile.type === "utility") ? (
+                          {tile.type === "property" ? (
                             <div className="flex flex-wrap gap-1.5 items-center">
                               {tile.group && <span className="text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider bg-white shadow-sm border-gray-300 text-slate-700 capitalize">{tile.group}</span>}
                               <span className="text-[10px] font-bold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border shadow-sm">Cost: {tile.price ?? 0} Pts</span>
@@ -158,122 +148,34 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
                 <div className="bg-white p-1 rounded-xl border border-orange-300">
-                  <select
-                    value={tileType}
-                    onChange={(e) => {
-                      const nextType = e.target.value as MonopolyTile["type"] | "";
-
-                      setTileType(nextType);
-                      setTileValue(0);
-
-                      if (nextType === "railroad") {
-                        setPropertyGroup("railroad");
-                        setPropertyCost(200);
-                        setRentCost(25);
-                        setSellingCost(100);
-                      } else if (nextType === "utility") {
-                        setPropertyGroup("utility");
-                        setPropertyCost(150);
-                        setRentCost(4);
-                        setSellingCost(75);
-                      }
-                    }}
-                    className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
-                  >
-                    <option value="">-- Select Rule Type --</option>
+                  <select value={tileType} onChange={(e) => { setTileType(e.target.value as any); setTileValue(0); }} className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs">
                     <option value="property">Property</option>
-                    <option value="railroad">Railroad</option>
-                    <option value="utility">Utility</option>
-                    <option value="tax">Tax</option>
+                    <option value="quiz">Quiz</option>
+                    <option value="minigame">Minigame</option>
+                    <option value="tax">Tax </option>
                     <option value="jail">Jail</option>
                     <option value="goToJail">Go To Jail</option>
                     <option value="chance">Chance</option>
                     <option value="community">Community Chest</option>
-                    <option value="minigame">Mini Game</option>
-                    <option value="quiz">Quiz</option>
                   </select>
                 </div>
               </div>
-              {tileType === "property" || tileType === "railroad" || tileType === "utility" ? (
-                    <div className="space-y-3">
-                      {tileType === "property" ? (
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Property Color Set Group
-                        </label>
-
-                        <div className="bg-white p-1 rounded-xl border border-orange-300">
-                          <select
-                            value={propertyGroup}
-                            onChange={(e) => setPropertyGroup(e.target.value)}
-                            className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize"
-                          >
-                            <option value="">-- Select Color Group --</option>
-                            <option value="red">Red</option>
-                            <option value="brown">Brown</option>
-                            <option value="lightBlue">Light Blue</option>
-                            <option value="pink">Pink</option>
-                            <option value="orange">Orange</option>
-                            <option value="yellow">Yellow</option>
-                            <option value="green">Green</option>
-                            <option value="darkBlue">Dark Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                    ) : tileType === "railroad" ? (
-                      <div>
-                        <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[11px] font-bold text-slate-700">
-                          Railroad rent starts at the rent value below and doubles based on how many
-                          railroads the owner has.
-                        </p>
-                      </div>
-                    ) : tileType === "utility" ? (
-                      <div>
-                        <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[11px] font-bold text-slate-700">
-                          Utility rent is based on the current dice roll. Use the rent field as the
-                          single-utility multiplier. Monopoly default is 4.
-                        </p>
-                      </div>
-                    ) : null}
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Property Purchase Cost
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={propertyCost}
-                          onChange={(e) => setPropertyCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Rent Price
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={rentCost}
-                          onChange={(e) => setRentCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Selling Price
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={sellingCost}
-                          onChange={(e) => setSellingCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
-                      </div>
+              {tileType === "property" ? (
+                <div className="space-y-3 animate-fade-in">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Property Color Set Group</label>
+                    <div className="bg-white p-1 rounded-xl border border-orange-300">
+                      <select value={propertyGroup} onChange={(e) => setPropertyGroup(e.target.value)} className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize">
+                        <option value="">-- Select Color Group --</option>
+                        <option value="red">Red</option>
+                        <option value="brown">Brown</option>
+                        <option value="lightBlue">Light Blue</option>
+                        <option value="pink">Pink</option>
+                        <option value="orange">Orange</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="green">Green</option>
+                        <option value="darkBlue">Dark Blue</option>
+                      </select>
                     </div>
                   </div>
                   <div>
