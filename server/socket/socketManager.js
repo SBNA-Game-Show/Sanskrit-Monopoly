@@ -16,6 +16,10 @@ import {
   applyCardEffect,
   resolveBankruptcy,
   declareBankruptcy,
+  setBankruptcyActionIfNeeded,
+  startBankruptcyAuction,
+  clearBankruptcyAuctions,
+  clearBankruptcyProperty,
   buyPendingProperty,
   declinePendingProperty,
   sellProperty,
@@ -64,6 +68,13 @@ function finishPopQuiz(lobby, io) {
   }
 
   lobby.activeQuiz = null;
+
+  // incorrect quiz answers can push a player below zero
+  // need to check here too
+  if (setBankruptcyActionIfNeeded(lobby, currentPlayer)) {
+    broadcastGameState(io, lobby);
+    return;
+  }
 
   startNextTurn(lobby, io, broadcastGameState);
 }
@@ -340,23 +351,93 @@ export function setupSocketEvents(io) {
     });
 
     // auction handler
-    socket.on(
-      GAME_EVENTS.GAME_PLACE_AUCTION_BID,
-      ({ lobbyCode, uid, bidIncrement }) => {
-        const result = placeAuctionBid(lobbyCode, uid, bidIncrement);
-        if (result.error) return emitGameError(socket, result.error);
+    socket.on(GAME_EVENTS.GAME_PLACE_AUCTION_BID, ({ lobbyCode, uid, bidIncrement }) => {        
+      const result = placeAuctionBid(lobbyCode, uid, bidIncrement);
+      
+      if (result.error) return emitGameError(socket, result.error);
 
-        broadcastGameState(io, result.lobby);
-      },
-    );
+      broadcastGameState(io, result.lobby);
+    },  
+  );
 
     socket.on(GAME_EVENTS.GAME_RESOLVE_AUCTION, ({ lobbyCode, hostUid }) => {
       const result = resolveAuction(lobbyCode, hostUid);
       if (result.error) return emitGameError(socket, result.error);
 
       broadcastGameState(io, result.lobby);
-      startNextTurn(result.lobby, io, broadcastGameState);
+
+      if (
+        result.lobby.gameStatus === "turnEnded" &&
+        result.lobby.status !== "finished"
+      ) {
+        // Bankruptcy auctions can queue another auction, so only advance after the queue ends.
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
     });
+
+    socket.on(GAME_EVENTS.GAME_START_BANKRUPTCY_AUCTION, ({ lobbyCode, hostUid, propertyId }) => {
+      if (!lobbyCode || !hostUid || !propertyId) {
+        emitGameError(socket, "Missing bankruptcy auction data");
+        return;      
+      }
+      
+      const result = startBankruptcyAuction(lobbyCode, hostUid, propertyId);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+      broadcastGameState(io, result.lobby);   
+    },
+  );
+
+    socket.on(GAME_EVENTS.GAME_CLEAR_BANKRUPTCY_PROPERTY, ({ lobbyCode, hostUid, propertyId }) => {
+        if (!lobbyCode || !hostUid || !propertyId) {
+          emitGameError(socket, "Missing bankruptcy property clear data");
+          return;
+        }
+
+        const result = clearBankruptcyProperty(lobbyCode, hostUid, propertyId);
+
+        if (result.error) {
+          emitGameError(socket, result.error);
+          return;
+        }
+
+        broadcastGameState(io, result.lobby);
+
+        if (
+          result.lobby.gameStatus === "turnEnded" &&
+          result.lobby.status !== "finished"
+        ) {
+          startNextTurn(result.lobby, io, broadcastGameState);
+        }
+      },
+    );
+
+    socket.on(GAME_EVENTS.GAME_CLEAR_BANKRUPTCY_AUCTIONS, ({ lobbyCode, hostUid }) => {
+      if (!lobbyCode || !hostUid) {
+        emitGameError(socket, "Missing bankruptcy auction clear data");
+        return;      
+      }
+      
+      const result = clearBankruptcyAuctions(lobbyCode, hostUid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;      
+      }
+      
+      broadcastGameState(io, result.lobby);
+
+      if (
+        result.lobby.gameStatus === "turnEnded" &&
+        result.lobby.status !== "finished"
+      ) {
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
+    },  
+  );
 
     // sell property handler
     socket.on(GAME_EVENTS.GAME_SELL_PROPERTY, ({ lobbyCode, uid, propertyId }) => {
@@ -373,6 +454,14 @@ export function setupSocketEvents(io) {
       }
 
       broadcastGameState(io, result.lobby);
+
+      if (
+        result.lobby.gameStatus === "turnEnded" &&
+        result.lobby.status !== "finished"
+      ) {
+        // A bankruptcy sale can recover the player and finish the blocked turn.
+        startNextTurn(result.lobby, io, broadcastGameState);
+      }
     });
 
     // jail
@@ -394,6 +483,12 @@ export function setupSocketEvents(io) {
         message: "paid ₩50 to get out of jail.",
       });
 
+      // bail can also push a player below zero if called server-side
+      if (setBankruptcyActionIfNeeded(lobby, currentPlayer)) {
+        broadcastGameState(io, lobby);
+        return;
+      }
+
       broadcastGameState(io, lobby);
       startNextTurn(lobby, io, broadcastGameState);
     });
@@ -408,11 +503,23 @@ export function setupSocketEvents(io) {
       const lobby = lobbies[lobbyCode];
       const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
-      addLog(lobbyCode, {
-        uid: currentPlayer.uid,
-        username: currentPlayer.username,
-        message: "passed their turn.",
-      });
+            
+      if (lobby.gameStatus === "jail" && currentPlayer.jailed) {
+        // passing from jail serves the jail turn and prevents an infinite jail loop
+        currentPlayer.jailed = false;
+
+        addLog(lobbyCode, {
+          uid: currentPlayer.uid,
+          username: currentPlayer.username,
+          message: "served their jail turn and left jail.",
+        });
+      } else {
+        addLog(lobbyCode, {
+          uid: currentPlayer.uid,
+          username: currentPlayer.username,
+          message: "passed their turn.",
+        });
+      }
 
       startNextTurn(lobby, io, broadcastGameState);
     });
@@ -435,7 +542,11 @@ export function setupSocketEvents(io) {
 
         broadcastGameState(io, result.lobby);
 
-        if (result.lobby.status !== "finished") {
+        if (
+          result.lobby.gameStatus === "turnEnded" &&
+          result.lobby.status !== "finished"
+        ) {
+          // Forced elimination may start auctions, so wait until bankruptcy is fully resolved.
           startNextTurn(result.lobby, io, broadcastGameState);
         }
       },
@@ -458,8 +569,11 @@ export function setupSocketEvents(io) {
 
       broadcastGameState(io, result.lobby);
 
-      // If bankruptcy eliminated the second-last player, game is probably already over
-      if (result.lobby.status !== "finished") {
+      if (
+        result.lobby.gameStatus === "turnEnded" &&
+        result.lobby.status !== "finished"
+      ) {
+        // Declared bankruptcy may start asset auctions before the next turn begins.
         startNextTurn(result.lobby, io, broadcastGameState);
       }
     });

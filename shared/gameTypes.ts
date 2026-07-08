@@ -72,7 +72,6 @@ export type ActiveAuction = {
   highestBidderUid: string | null;
   source?: "declinedProperty" | "bankruptcy";
   bankruptPlayerUid?: string | null;
-  remainingTileIds?: string[]; // Holds the rest of a bankrupt player's assets
 };
 
 // for auctioning properties from bankrupt player
