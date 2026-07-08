@@ -85,7 +85,7 @@ function getDynamicTokenOffset(tileIndex: number, orderIndex: number): { dx: num
   // Space between tokens in pixels
   if (orderIndex === 0) return { dx: 0, dy: 0 };
 
-  const jumpDistance = (CORNER_SIZE / 2) + 25 + ((orderIndex - 1) * 34);
+  const jumpDistance = (CORNER_SIZE / 2) + 25 + ((orderIndex - 0.8) * 50);
 
   // Centers 4 players around 0
   const normalizedIndex = tileIndex % 40;
