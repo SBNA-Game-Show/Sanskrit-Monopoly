@@ -10,6 +10,7 @@ import { TILE_TYPE_COLORS, PROPERTY_GROUP_COLORS } from "../constants/zim/board"
 import { TOKEN_OPTIONS } from "../constants/game/tokenOptions";
 import hostImg from "../assets/monopoly_host.png";
 import { Button } from "../components/common/Button";
+import { useNav } from "../components/TransitionOverlay";
 
 // Define the incoming props from Lobby.tsx
 interface LobbyWaitingProps {
@@ -19,10 +20,11 @@ interface LobbyWaitingProps {
 
 export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProps) {
   const { uid } = useAuth();
+  const navigate = useNav();
 
   const [selectedEdition, setSelectedEdition] = useState<string | null>(null);
   const [startingMoney, setStartingMoney] = useState<number | null>(null);
-  const [availableEditions, setAvailableEditions] = useState<{id: string, name: string}[]>([]);
+  const [availableEditions, setAvailableEditions] = useState<{ id: string, name: string }[]>([]);
 
   const host = lobbyState.host;
   const players = lobbyState.players ?? [];
@@ -36,15 +38,15 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     isHost &&
     selectedEdition !== null &&
     startingMoney !== null &&
-    players.length > 0 && 
-    allPlayersHaveTokens; 
+    players.length > 0 &&
+    allPlayersHaveTokens;
 
   // Fetch Editions from Firebase
   useEffect(() => {
     const editionsRef = collection(db, "game_editions");
 
-    const unsubscribe = onSnapshot(editionsRef, (snapshot) => { 
-      const liveEditions = snapshot.docs.map((doc) => {return {id: doc.id, name: doc.data().name}});
+    const unsubscribe = onSnapshot(editionsRef, (snapshot) => {
+      const liveEditions = snapshot.docs.map((doc) => { return { id: doc.id, name: doc.data().name } });
       setAvailableEditions(liveEditions);
     }, (error) => {
       console.log(error);
@@ -78,6 +80,19 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     e.preventDefault();
   };
 
+  const handleLeaveLobby = () => {
+    if (!lobbyCode || !uid || isHost) return;
+
+    socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
+      lobbyCode,
+      uid,
+    },
+      () => {
+
+        navigate("/home");
+      },
+    );
+  };
   const handleStartGame = async () => {
     console.log("STARTING GAME");
     if (!canStart || !lobbyCode || !uid || !selectedEdition) return;
@@ -105,7 +120,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     socket.emit(GAME_EVENTS.GAME_START, {
       lobbyCode,
       hostUid: uid,
-      tiles: coloredTiles, 
+      tiles: coloredTiles,
       questions: questions,
       startingPoints: startingMoney ?? 0,
     });
@@ -172,7 +187,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
       </style>
 
       <div className="w-full max-w-6xl mx-auto px-4 py-2 lg:py-4 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 items-center grow min-h-0">
-        
+
         {/* Token Selection Grids */}
         <div className="lg:col-span-3 flex flex-col items-center justify-center space-y-4 w-full h-full">
           <div className="w-full flex flex-col space-y-3 max-w-xl">
@@ -254,16 +269,15 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
                     <div
                       draggable
                       onDragStart={(e) => handleDragStart(e, token.id)}
-                      className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${
-                          token.id === "dog"
-                            ? "dog-token-shake"
-                            : token.id === "shoe"
-                              ? "shoe-token-jump"
-                              : token.id === "cat"
-                                ? "cat-token-walk"
-                                : token.id === "boat"
-                                  ? "boat-token-rock"
-                                  : "hover:scale-110 transition-transform"
+                      className={`w-full h-full bg-white border-4 border-[#FFC17E] rounded-2xl flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform shadow-sm ${token.id === "dog"
+                        ? "dog-token-shake"
+                        : token.id === "shoe"
+                          ? "shoe-token-jump"
+                          : token.id === "cat"
+                            ? "cat-token-walk"
+                            : token.id === "boat"
+                              ? "boat-token-rock"
+                              : "hover:scale-110 transition-transform"
                         }`}
                     >
                       <img
@@ -282,7 +296,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
         </div>
 
         {/* Game Setting Grid */}
-        <div className="lg:col-span-2 bg-[#FFC17E] p-6 lg:p-6 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
+        <div className="lg:col-span-2 bg-[#FFC17E] p-4 lg:p-4 rounded-3xl flex flex-col shadow-[0px_0px_4px_2px_rgba(0,0,0,0.3)] w-full h-fit max-h-full overflow-y-auto">
           <h2 className="text-3xl lg:text-4xl text-center mb-8 lg:mb-2 tracking-widest text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
             GAME SETTINGS
           </h2>
@@ -295,23 +309,29 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
 
               <div className="flex flex-wrap gap-3 lg:gap-4">
                 {availableEditions.map((edition) => {
-                    const isSelected = selectedEdition === edition.id;
+                  const isSelected = selectedEdition === edition.id;
 
                     return (
                       <button
                         key={edition.id}
                         disabled={!isHost}
-                        onClick={() => setSelectedEdition(edition.id)}
+                        onClick={() => {
+                          setSelectedEdition(edition.id); 
+                          socket.emit(GAME_EVENTS.LOBBY_UPDATE_EDITION, {
+                            lobbyCode, 
+                            editionName: edition.name
+                          });
+                        }}
                         className={`text-base lg:text-lg rounded-xl p-2 px-5 tracking-wider transition-all text-white ${
                           isSelected
                             ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-1"
                             : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
                         }`}
-                      >
-                        {edition.name}
-                      </button>
-                    );
-                  },
+                    >
+                      {edition.name}
+                    </button>
+                  );
+                },
                 )}
               </div>
             </div>
@@ -330,11 +350,10 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
                       key={amount}
                       disabled={!isHost}
                       onClick={() => setStartingMoney(amount)}
-                      className={`flex-1 text-base lg:text-lg rounded-xl p-2 tracking-wider transition-all text-white ${
-                        isSelected
-                          ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-1"
-                          : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
-                      }`}
+                      className={`flex-1 text-base lg:text-lg rounded-xl p-2 tracking-wider transition-all text-white ${isSelected
+                        ? "bg-[#FF8C00] shadow-[inset_0_4px_8px_rgba(0,0,0,0.4)] translate-y-1"
+                        : "bg-[#FFA545] border-b-4 border-[#FF8C00] shadow-none hover:bg-[#ffb25c] disabled:opacity-50"
+                        }`}
                     >
                       {amount}
                     </button>
@@ -353,16 +372,34 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
                 </p>
               </div>
             </div>
-            
+
           </div>
         </div>
       </div>
 
       {/* Start Button Footer */}
       <div className="w-full bg-[#FFC17E] flex justify-center items-center h-20 lg:h-20 shrink-0 z-20">
-        <Button size="xl" neon disabled={!canStart} onClick={handleStartGame} className="w-52 bg-[#FF9513] disabled:bg-[#FF8C00]">
-          START
-        </Button>
+        <div className="flex gap-4">
+          {!isHost && (
+            <Button
+              size="xl"
+              onClick={handleLeaveLobby}
+              className="w-52 bg-red-500 hover:bg-red-600"
+            >
+              LEAVE
+            </Button>
+          )}
+
+          <Button
+            size="xl"
+            neon
+            disabled={!canStart}
+            onClick={handleStartGame}
+            className="w-52 bg-[#FF9513] disabled:bg-[#FF8C00]"
+          >
+            START
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -1,5 +1,3 @@
-import { DEFAULT_EDITION } from "../../shared/defaultEdition.js";
-import { QUIZ_QUESTIONS } from "../../shared/quizQuestions.js";
 import { CHANCE_CARDS, COMMUNITY_CHEST_CARDS } from "../constants/game.js";
 
 export const lobbies = {};
@@ -100,16 +98,26 @@ function findTileOwner(lobby, tileId) {
 }
 
 function getTilePrice(tile) {
-  //rn the admin page saves the price as a string instead of a number
-  //fix later
-  return Number(tile.price);
+   const price = Number(tile?.price);
 
-  // if (typeof tile?.price === "number") return tile.price;
+  if (Number.isFinite(price) && price > 0) {
+    return price;
+  }
 
-  // if (tile?.type === "railroad") return 200;
-  // if (tile?.type === "utility") return 150;
+  if (tile?.type === "railroad") return 200;
+  if (tile?.type === "utility") return 150;
 
-  // return 100;
+  return 100;
+}
+
+function getTileSellValue(tile) {
+  const sellValue = Number(tile?.sellValue);
+
+  if (Number.isFinite(sellValue) && sellValue > 0) {
+    return sellValue;
+  }
+
+  return Math.round(getTilePrice(tile) * 0.5);
 }
 
 function getTaxAmount(tile) {
@@ -133,15 +141,23 @@ function getRentAmount(lobby, tile, owner, diceRoll) {
 
   if (tile.type === "railroad") {
     const railroadCount = getOwnedTileCountByType(lobby, owner, "railroad");
-    return [0, 25, 50, 100, 200][railroadCount] ?? 25;
+    const baseRailroadRent = Number(tile.rent) || 25;
+
+    return baseRailroadRent * Math.pow(2, Math.max(railroadCount - 1, 0));
   }
 
   if (tile.type === "utility") {
     const utilityCount = getOwnedTileCountByType(lobby, owner, "utility");
-    return diceRoll * (utilityCount >= 2 ? 10 : 4);
+    const singleUtilityMultiplier = Number(tile.rent) || 4;
+    const multiplier =
+      utilityCount >= 2
+        ? Math.round(singleUtilityMultiplier * 2.5)
+        : singleUtilityMultiplier;
+
+    return diceRoll * multiplier;
   }
 
-  return Number(tile.rent)
+  return Number(tile.rent) || 0;
 }
 
 // ---- bankruptcy related helper functions
@@ -447,7 +463,7 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, isPrivate = false, edition = DEFAULT_EDITION) {
+export function createLobby(hostUid, hostUsername, isPrivate = false, edition) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -469,6 +485,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition = 
     startTime: null,
     endTime: null,
     log: [],
+    availableTokens: ["dog", "shoe", "cat", "boat"],
   };
   console.log(lobbies);
   return lobbies[lobbyCode];
@@ -502,6 +519,17 @@ export function joinLobby(lobbyCode, playerData) {
     return { lobby, error: null };
   }
 
+  let assignedToken = null;
+  let startingMoney = 0;
+
+  if (lobby.status === "playing") {
+    // Get whatever token first in list
+    if (lobby.availableTokens.length > 0) {
+      assignedToken = lobby.availableTokens.shift();
+    }
+    startingMoney = lobby.edition?.startingPoints ?? 1500;
+  }
+
   // push player info
   lobby.players.push({
     uid: playerData.uid,
@@ -516,6 +544,9 @@ export function joinLobby(lobbyCode, playerData) {
     isConnected: true,
     isBankrupt: false,
     isEliminated: false,
+    token: assignedToken,
+    points: startingMoney,
+    money: startingMoney,
   });
   return { lobby, error: null };
 }
@@ -535,6 +566,19 @@ export function updatePlayerToken(lobbyCode, uid, token) {
     return { lobby, error: "Player not found" };
   }
 
+  // If someone already has token, reject
+  if (!lobby.availableTokens.includes(token)) {
+    return { lobby, error: "Token already taken" };
+  }
+
+  // If player already has token, remove it from available tokens
+  if (player.token) {
+    lobby.availableTokens.push(player.token);
+  }
+
+  // Remove new token from available tokens
+  lobby.availableTokens = lobby.availableTokens.filter(t => t !== token);
+
   const tokenTaken = lobby.players.some(
     (currentPlayer) =>
       currentPlayer.uid !== uid && currentPlayer.token === token,
@@ -543,6 +587,7 @@ export function updatePlayerToken(lobbyCode, uid, token) {
   if (tokenTaken) {
     return { lobby, error: "Token already taken" };
   }
+
   player.token = token;
   return { lobby, error: null };
 }
@@ -876,7 +921,7 @@ export function sellProperty(lobbyCode, uid, propertyId) {
     return { lobby, error: "This property cannot be sold" };
   }
 
-  const sellValue = Number(tile.sellValue);
+  const sellValue = getTileSellValue(tile);
 
   player.properties = player.properties.filter(
     (currentPropertyId) => currentPropertyId !== propertyId,
@@ -1178,7 +1223,7 @@ export function placeAuctionBid(lobbyCode, uid, bidIncrement) {
   }
 
   const player = lobby.players.find((currentPlayer) => currentPlayer.uid === uid);
-  
+
   // block bankrupt/eliminated players from auctioning
   if (!player || player.isEliminated || player.isBankrupt) {
     return { lobby, error: "Player not found" };
@@ -1340,14 +1385,77 @@ export function kickPlayer(lobbyCode, uid) {
     return { error: "Lobby not found" };
   }
 
-  if (lobby.players.length <= 2) {
+  // Find player host is trying to kick out
+  const playerToKick = lobby.players.find((p) => p.uid === uid);
+
+  // Return kicked out players' token to available pool
+  if (playerToKick && playerToKick.token) {
+    if (!lobby.availableTokens.includes(playerToKick.token)) {
+      lobby.availableTokens.push(playerToKick.token);
+    }
+  }
+
+  // Now remove the player from the lobby
+  lobby.players = lobby.players.filter((player) => player.uid !== uid);
+
+  if (lobby.players.length < 2) {
     return { error: "Cannot remove player. Minimum 2 players required." };
   }
 
+  if (lobby.currentPlayerIndex >= lobby.players.length) {
+    lobby.currentPlayerIndex = 0;
+  }
+
+  return { lobby, error: null };
+}
+
+export function leaveLobby(lobbyCode, uid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.host.uid === uid) {
+    return { lobby, error: "Host cannot leave the lobby" };
+  }
+
+  const leavingPlayer = lobby.players.find((player) => player.uid === uid);
+
+  if (!leavingPlayer) {
+    return { lobby, error: "Player not found" };
+  }
+
+  // Return the leaving player's token to the available pool
+  if (leavingPlayer.token && !lobby.availableTokens.includes(leavingPlayer.token)) {
+    lobby.availableTokens.push(leavingPlayer.token);
+  }
+
+  const leavingPlayerIndex = lobby.players.findIndex(
+    (player) => player.uid === uid,
+  );
+
   lobby.players = lobby.players.filter((player) => player.uid !== uid);
+
+  if (lobby.currentPlayerIndex > leavingPlayerIndex) {
+    lobby.currentPlayerIndex -= 1;
+  }
 
   if (lobby.currentPlayerIndex >= lobby.players.length) {
     lobby.currentPlayerIndex = 0;
+  }
+
+  addLog(lobby.lobbyCode, {
+    uid: leavingPlayer.uid,
+    username: leavingPlayer.username,
+    message: "left the lobby.",
+  });
+
+  if (lobby.status === "playing" && lobby.players.length < 2) {
+    lobby.status = "finished";
+    lobby.gameStatus = "turnEnded";
+    lobby.endTime = Date.now();
+    lobby.winnerUid = lobby.players[0]?.uid ?? null;
   }
 
   return { lobby, error: null };
@@ -1370,4 +1478,18 @@ export function disconnectPlayer(socketId) {
     }
   }
   return { lobby: null, error: "Socket not found" };
+}
+
+export function updateLobbyEdition(lobbyCode, editionName) {
+  const lobby = getLobby(lobbyCode);
+  
+  if (lobby) {
+    if (!lobby.edition) {
+      lobby.edition = {};
+    }
+    // Update the name so the API endpoint picks it up instantly
+    lobby.edition.name = editionName; 
+  }
+  
+  return { lobby, error: null };
 }
