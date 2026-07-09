@@ -61,7 +61,7 @@ export function AuctionOverlay({
   return (
     <GameOverlayShell>
       <p className="mb-2 text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
-        Auction
+        {auction.source === "bankruptcy" ? "Bankruptcy Auction" : "Auction"}
       </p>
 
       <h2 className="text-[34px] font-extrabold text-[#160f08]">{tile.name}</h2>

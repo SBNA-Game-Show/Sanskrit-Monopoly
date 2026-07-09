@@ -1,4 +1,4 @@
-import type { GameState } from "../../../types/game/gameTypes";
+import type { GameState, GameTile } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
 import { socket } from "../../../socket";
 import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
@@ -10,6 +10,16 @@ type BankruptcyOverlayProps = {
 };
 
 type BankruptcyViewerRole = "bankruptPlayer" | "host" | "observer";
+
+// Keep bankruptcy money labels consistent with the main game sidebar.
+function formatMoney(amount: number) {
+  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
+}
+
+// Read sell values defensively so older/custom editions do not crash the overlay.
+function getSellValue(tile: GameTile) {
+  return Number(tile.sellValue ?? 0);
+}
 
 export function BankruptcyOverlay({
   gameState,
@@ -32,6 +42,30 @@ export function BankruptcyOverlay({
       : isHost
         ? "host"
         : "observer";
+
+  const bankruptPlayerProperties = activeBankruptPlayer.properties
+    .map((propertyId) =>
+      gameState.edition.tiles.find((tile) => tile.id === propertyId),
+    )
+    .filter((tile): tile is GameTile => Boolean(tile));
+
+  const totalSellValue = bankruptPlayerProperties.reduce(
+    (total, property) => total + getSellValue(property),
+    0,
+  );
+
+  function handleSellProperty(propertyId: string) {
+    if (!gameState.lobbyCode || !uid || viewerRole !== "bankruptPlayer") {
+      return;
+    }
+
+    // The server decides whether this sale fully resolves bankruptcy.
+    socket.emit(GAME_EVENTS.GAME_SELL_PROPERTY, {
+      lobbyCode: gameState.lobbyCode,
+      uid,
+      propertyId,
+    });
+  }
 
   function handleBankruptcyResolution() {
     if (!gameState.lobbyCode || !uid) return;
@@ -61,6 +95,59 @@ export function BankruptcyOverlay({
       case "bankruptPlayer":
         return (
           <>
+            <div className="mt-6 rounded-2xl border-[4px] border-[#ffa23b] bg-[#fff1e5] p-4 text-left">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
+                    Sell Properties
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold text-[#6b3f1d]">
+                    Total sell value: {formatMoney(totalSellValue)}
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-[#f5bd78] px-3 py-1 text-sm font-extrabold text-[#6b3f1d]">
+                  {bankruptPlayerProperties.length}
+                </span>
+              </div>
+
+              <div className="mt-4 max-h-[220px] space-y-3 overflow-y-auto pr-1">
+                {bankruptPlayerProperties.length > 0 ? (
+                  bankruptPlayerProperties.map((property) => (
+                    <div
+                      key={property.id}
+                      className="rounded-2xl border-[4px] border-[#ffa23b] bg-[#f5bd78] p-4 shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-extrabold text-[#160f08]">
+                            {property.name}
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold text-[#6b3f1d]">
+                            Sell value: {formatMoney(getSellValue(property))}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSellProperty(property.id)}
+                          className="rounded-xl bg-[#b33a3a] px-4 py-2 text-sm font-extrabold text-white shadow hover:bg-[#c84a4a]"
+                        >
+                          Sell
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-2xl border-[4px] border-dashed border-[#ffa23b] bg-white/50 px-4 py-5 text-center text-sm font-bold text-[#6b3f1d]">
+                    No properties left to sell.
+                  </p>
+                )}
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={handleBankruptcyResolution}
@@ -112,9 +199,7 @@ export function BankruptcyOverlay({
       <p className="mt-4 text-lg font-semibold text-[#6b3f1d]">
         This player is below ₩0 with a balance of{" "}
         <span className="font-extrabold">
-          {bankruptPlayer.money < 0
-            ? `-₩${Math.abs(bankruptPlayer.money)}`
-            : `₩${bankruptPlayer.money}`}
+          {formatMoney(bankruptPlayer.money)}
         </span>
         .
       </p>
