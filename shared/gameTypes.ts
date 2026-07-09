@@ -13,6 +13,7 @@ export type GamePhase =
   | "jail"
   | "bankruptcy"
   | "auction"
+  | "bankruptcyAuction"
   | "popQuiz"
   | "verseChallenge"
   | "penaltyActivity"
@@ -70,6 +71,15 @@ export type ActiveAuction = {
   tileId: string;
   highestBid: number;
   highestBidderUid: string | null;
+  source?: "declinedProperty" | "bankruptcy";
+  bankruptPlayerUid?: string | null;
+};
+
+// for auctioning properties from bankrupt player
+export type ActiveBankruptcyAuction = {
+  bankruptPlayerUid: string;
+  bankruptPlayerName: string;
+  propertyIds: string[]; // Properties waiting for host auction/clear decisions
 };
 
 export type ActiveCard = {
@@ -115,6 +125,7 @@ export type GameState = {
   activeQuiz: ActiveQuiz | null; // quiz testing
   activeCard: ActiveCard | null; // chance and community chest
   activeAuction: ActiveAuction | null; // unless gameStatus is auction
+  activeBankruptcyAuction: ActiveBankruptcyAuction | null;
   // gameTimer: is not given a type since the server does not send this field over to the client
   host: GameHost;
   players: PlayerState[];
