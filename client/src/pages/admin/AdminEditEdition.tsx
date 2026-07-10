@@ -1,23 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom"; 
+import { db } from "../../firebase";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import type { GameEdition, MonopolyTile } from "./AdminTypes";
 
-interface EditProps {
-  selectedEdition: GameEdition;
-  isRenaming: boolean;
-  setIsRenaming: (v: boolean) => void;
-  editNameValue: string;
-  setEditNameValue: (v: string) => void;
-  handleUpdateEditionName: () => Promise<void>;
-  handleSaveTileRules: (tileData: Partial<MonopolyTile> & { index: number }) => Promise<void>;
-  handleAddPopQuizActivity: (quiz: { question: string; options: string[]; correctAnswer: string }) => Promise<void>;
-  handleRemoveActivityItem: (id: string) => Promise<void>;
-  navigateTo: (page: string) => void;
-}
-
-export const AdminEditEdition: React.FC<EditProps> = ({
-  selectedEdition, isRenaming, setIsRenaming, editNameValue, setEditNameValue,
-  handleUpdateEditionName, handleSaveTileRules, handleAddPopQuizActivity, handleRemoveActivityItem, navigateTo
-}) => {
+export const AdminEditEdition: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); 
+  const navigate = useNavigate();
+  const [selectedEdition, setSelectedEdition] = useState<GameEdition | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [editNameValue, setEditNameValue] = useState<string>("");
   const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
   const [targetTileName, setTargetTileName] = useState("");
   const [tileType, setTileType] = useState<MonopolyTile["type"] | "">("");
@@ -26,48 +19,120 @@ export const AdminEditEdition: React.FC<EditProps> = ({
   const [rentCost, setRentCost] = useState<number>(0);
   const [sellingCost, setSellingCost] = useState<number>(0);
   const [propertyGroup, setPropertyGroup] = useState<string>("");
-
   const [quizQuestion, setQuizQuestion] = useState("");
   const [currentOptions, setCurrentOptions] = useState<string[]>(["", "", "", ""]);
   const [correctAnswerStr, setCorrectAnswerStr] = useState("");
 
+  useEffect(() => {
+    if (!id) return;
+    const docRef = doc(db, "game_editions", id);
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        setSelectedEdition({
+          id: snapshot.id,
+          name: data.name || "Unnamed Edition",
+          tiles: data.tiles || [],
+          activities: data.activities || []
+        } as GameEdition);
+        setEditNameValue(data.name || "");
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore single item sync error:", error);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [id]);
+
+  const handleUpdateEditionName = async () => {
+    if (!id) return;
+    try {
+      await updateDoc(doc(db, "game_editions", id), { name: editNameValue.trim() });
+      setIsRenaming(false);
+    } catch (err) {
+      alert("Failed to update name: " + err);
+    }
+  };
+
   const handleTileSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingTileIndex === null) return;
-    if (!tileType) return;
+    if (!selectedEdition || editingTileIndex === null || !id || !tileType) return;
 
-    const isPurchasableTile =
-      tileType === "property" ||
-      tileType === "railroad" ||
-      tileType === "utility";
-
-    await handleSaveTileRules({
-      index: editingTileIndex,
-      name: targetTileName,
+    const isPurchasableTile = tileType === "property" || tileType === "railroad" || tileType === "utility";
+    const updatedTiles = [...selectedEdition.tiles];
+    
+    updatedTiles[editingTileIndex] = {
+      id: updatedTiles[editingTileIndex].id,
+      name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
       type: tileType as MonopolyTile["type"],
-      money: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
+      points: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
       price: isPurchasableTile ? propertyCost : 0,
       rent: isPurchasableTile ? rentCost : 0,
       sellValue: isPurchasableTile ? sellingCost : 0,
       group: tileType === "property" ? (propertyGroup as any) : "",
-    });
+    };
 
-    setEditingTileIndex(null);
+    try {
+      await updateDoc(doc(db, "game_editions", id), { tiles: updatedTiles });
+      setEditingTileIndex(null);
+    } catch (err) {
+      alert("Update Failed: " + err);
+    }
   };
 
   const handleQuizSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedEdition || !id) return;
     const filtered = currentOptions.map(o => o.trim()).filter(Boolean);
     if (filtered.length < 2) return alert("Please provide at least 2 choice options.");
-    await handleAddPopQuizActivity({ question: quizQuestion, options: filtered, correctAnswer: correctAnswerStr });
-    setQuizQuestion("");
-    setCurrentOptions(["", "", "", ""]);
-    setCorrectAnswerStr("");
+
+    const updated = [...(selectedEdition.activities || []), { 
+      id: "quiz_" + Date.now(), 
+      question: quizQuestion.trim(), 
+      options: filtered, 
+      correctAnswer: correctAnswerStr 
+    }];
+
+    try {
+      await updateDoc(doc(db, "game_editions", id), { activities: updated });
+      setQuizQuestion("");
+      setCurrentOptions(["", "", "", ""]);
+      setCorrectAnswerStr("");
+    } catch (err) {
+      alert("Failed to save quiz: " + err);
+    }
   };
+
+  const handleRemoveActivityItem = async (activityId: string) => {
+    if (!selectedEdition || !id) return;
+    const updated = selectedEdition.activities?.filter(act => act.id !== activityId) || [];
+    try {
+      await updateDoc(doc(db, "game_editions", id), { activities: updated });
+    } catch (err) {
+      alert("Failed to remove item: " + err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-[calc(100vh-56px)] bg-[#FFF5E4] flex items-center justify-center">
+        <p className="text-slate-700 font-bold animate-pulse text-lg">Loading Parameters Array...</p>
+      </main>
+    );
+  }
+
+  if (!selectedEdition) {
+    return (
+      <main className="min-h-[calc(100vh-56px)] bg-[#FFF5E4] flex flex-col items-center justify-center space-y-2">
+        <p className="text-red-600 font-bold text-lg">Error: Configuration File Not Found</p>
+        <button onClick={() => navigate("/admin")} className="bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl">Back to List</button>
+      </main>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-4">
-      {/* Dynamic Renaming Header Area */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex justify-between items-center">
         <div>
           {isRenaming ? (
@@ -79,15 +144,14 @@ export const AdminEditEdition: React.FC<EditProps> = ({
           ) : (
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-black text-slate-800 tracking-tight">{selectedEdition.name}</h2>
-              <button type="button" onClick={() => { setIsRenaming(true); setEditNameValue(selectedEdition.name); }} className="text-xs text-blue-600 hover:text-blue-800 font-bold underline bg-blue-50 px-2.5 py-1 rounded-lg transition-colors shadow-sm">Rename Edition</button>
+              <button type="button" onClick={() => setIsRenaming(true)} className="text-xs text-blue-600 hover:text-blue-800 font-bold underline bg-blue-50 px-2.5 py-1 rounded-lg transition-colors shadow-sm">Rename Edition</button>
             </div>
           )}
           <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mt-1">Edition, Tiles, Reward, Penalty setup board</span>
         </div>
-        <button onClick={() => navigateTo("/admin")} className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors">Back to Dashboard</button>
+        <button onClick={() => navigate("/admin")} className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors">Back to Dashboard</button>
       </div>
 
-      {/* Main Structural Matrix Columns Grid */}
       <div className="grid grid-cols-12 gap-5 items-start">
         <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 space-y-2 shadow-sm">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2 mb-2">Active Board Map (40 Tiles Total)</h4>
@@ -99,8 +163,8 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               if (tile.type === "property") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
               else if (tile.type === "railroad") { badgeColor = "text-slate-700 bg-slate-100 border-slate-300"; displayLabel = "Railroad";} 
               else if (tile.type === "utility") { badgeColor = "text-cyan-700 bg-cyan-50 border-cyan-200"; displayLabel = "Utility";}
-              else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.money ?? 0} pts`; }
-              else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.money ?? 0} pts`; }
+              else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.points ?? 0} pts`; }
+              else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.points ?? 0} pts`; }
               else if (tile.type === "tax") { badgeColor = "text-red-600 bg-red-50 border-red-200"; displayLabel = "Tax • 200 pts"; }
               else if (tile.type === "jail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Jail"; }
               else if (tile.type === "goToJail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Go To Jail"; }
@@ -126,7 +190,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                               <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 shadow-sm">Sell: {tile.sellValue ?? 0} Pts</span>
                             </div>
                           ) : (
-                            (tile.type === "minigame" || tile.type === "quiz") && <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">Points: {tile.money ?? 0} Pts</span>
+                            (tile.type === "minigame" || tile.type === "quiz") && <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border">Points: {tile.points ?? 0} Pts</span>
                           )}
                         </div>
                       )}
@@ -135,7 +199,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                   {idx === 0 ? (
                     <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl border italic select-none">STARTING POINT</span>
                   ) : (
-                    <button type="button" onClick={() => { setEditingTileIndex(idx); setTargetTileName(tile.name); setTileType(tile.type); setTileValue(tile.money ?? 0); setPropertyCost(tile.price ?? 0); setRentCost(tile.rent ?? 0); setSellingCost(tile.sellValue ?? 0); setPropertyGroup(tile.group || ""); }} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
+                    <button type="button" onClick={() => { setEditingTileIndex(idx); setTargetTileName(tile.name); setTileType(tile.type); setTileValue(tile.points ?? 0); setPropertyCost(tile.price ?? 0); setRentCost(tile.rent ?? 0); setSellingCost(tile.sellValue ?? 0); setPropertyGroup(tile.group || ""); }} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
                   )}
                 </div>
               );
@@ -143,7 +207,6 @@ export const AdminEditEdition: React.FC<EditProps> = ({
           </div>
         </div>
 
-        {/* Right Sidebar Form Config Panel */}
         <div className="col-span-5 bg-[#FFC288] rounded-2xl p-4 border border-orange-300 shadow-sm space-y-4 sticky top-4">
           {editingTileIndex !== null ? (
             <form onSubmit={handleTileSaveSubmit} className="space-y-4 text-xs">
@@ -162,20 +225,13 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                     value={tileType}
                     onChange={(e) => {
                       const nextType = e.target.value as MonopolyTile["type"] | "";
-
                       setTileType(nextType);
                       setTileValue(0);
 
                       if (nextType === "railroad") {
-                        setPropertyGroup("railroad");
-                        setPropertyCost(200);
-                        setRentCost(25);
-                        setSellingCost(100);
+                        setPropertyGroup("railroad"); setPropertyCost(200); setRentCost(25); setSellingCost(100);
                       } else if (nextType === "utility") {
-                        setPropertyGroup("utility");
-                        setPropertyCost(150);
-                        setRentCost(4);
-                        setSellingCost(75);
+                        setPropertyGroup("utility"); setPropertyCost(150); setRentCost(4); setSellingCost(75);
                       }
                     }}
                     className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
@@ -195,104 +251,49 @@ export const AdminEditEdition: React.FC<EditProps> = ({
                 </div>
               </div>
               {tileType === "property" || tileType === "railroad" || tileType === "utility" ? (
-                    <div className="space-y-3">
-                      {tileType === "property" ? (
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Property Color Set Group
-                        </label>
-
-                        <div className="bg-white p-1 rounded-xl border border-orange-300">
-                          <select
-                            value={propertyGroup}
-                            onChange={(e) => setPropertyGroup(e.target.value)}
-                            className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize"
-                          >
-                            <option value="">-- Select Color Group --</option>
-                            <option value="red">Red</option>
-                            <option value="brown">Brown</option>
-                            <option value="lightBlue">Light Blue</option>
-                            <option value="pink">Pink</option>
-                            <option value="orange">Orange</option>
-                            <option value="yellow">Yellow</option>
-                            <option value="green">Green</option>
-                            <option value="darkBlue">Dark Blue</option>
-                          </select>
-                        </div>
-                      </div>
-                    ) : tileType === "railroad" ? (
-                      <div>
-                        <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[11px] font-bold text-slate-700">
-                          Railroad rent starts at the rent value below and doubles based on how many
-                          railroads the owner has.
-                        </p>
-                      </div>
-                    ) : tileType === "utility" ? (
-                      <div>
-                        <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[11px] font-bold text-slate-700">
-                          Utility rent is based on the current dice roll. Use the rent field as the
-                          single-utility multiplier. Monopoly default is 4.
-                        </p>
-                      </div>
-                    ) : null}
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Property Purchase Cost
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={propertyCost}
-                          onChange={(e) => setPropertyCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Rent Price
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={rentCost}
-                          onChange={(e) => setRentCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-700 mb-1">
-                          Selling Price
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={sellingCost}
-                          onChange={(e) => setSellingCost(Math.abs(Number(e.target.value)))}
-                          className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm"
-                        />
+                <div className="space-y-3">
+                  {tileType === "property" && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Property Color Set Group</label>
+                      <div className="bg-white p-1 rounded-xl border border-orange-300">
+                        <select value={propertyGroup} onChange={(e) => setPropertyGroup(e.target.value)} className="w-full p-1.5 bg-transparent font-bold text-slate-800 focus:outline-none text-xs capitalize">
+                          <option value="">-- Select Color Group --</option>
+                          <option value="red">Red</option>
+                          <option value="brown">Brown</option>
+                          <option value="lightBlue">Light Blue</option>
+                          <option value="pink">Pink</option>
+                          <option value="orange">Orange</option>
+                          <option value="yellow">Yellow</option>
+                          <option value="green">Green</option>
+                          <option value="darkBlue">Dark Blue</option>
+                        </select>
                       </div>
                     </div>
-                  ) : (
-                    (tileType === "minigame" || tileType === "quiz") && (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Money Modifier Value {tileType === "minigame" ? "(Gain/Loss)" : ""}
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={tileValue}
-                            onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))}
-                            className="w-full p-2.5 rounded-xl border border-orange-300 font-bold focus:outline-none text-base bg-white text-slate-900 shadow-sm"
-                          />
-                        </div>
-                      </div>
-                    )
                   )}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Property Purchase Cost</label>
+                    <input type="number" min="0" value={propertyCost} onChange={(e) => setPropertyCost(Math.abs(Number(e.target.value)))} className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Rent Price</label>
+                    <input type="number" min="0" value={rentCost} onChange={(e) => setRentCost(Math.abs(Number(e.target.value)))} className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm" />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Selling Price</label>
+                    <input type="number" min="0" value={sellingCost} onChange={(e) => setSellingCost(Math.abs(Number(e.target.value)))} className="w-full p-2 rounded-xl bg-white border border-orange-300 font-bold text-slate-900 focus:outline-none text-sm shadow-sm" />
+                  </div>
+                </div>
+              ) : (
+                (tileType === "minigame" || tileType === "quiz") && (
+                  <div className="space-y-3">
+                    <div>
+                      {/* ✅ CLEANED FORMATTING: Points Modifier wording confirmed */}
+                      <label className="block font-bold text-slate-700 mb-1">Points Modifier Value</label>
+                      <input type="number" min="0" value={tileValue} onChange={(e) => setTileValue(Math.abs(Number(e.target.value)))} className="w-full p-2.5 rounded-xl border border-orange-300 font-bold focus:outline-none text-base bg-white text-slate-900 shadow-sm" />
+                    </div>
+                  </div>
+                )
+              )}
               <div className="flex gap-2 pt-2">
                 <button type="submit" className="flex-1 bg-[#5CB85C] hover:bg-green-600 text-white font-bold p-2.5 rounded-xl transition-all shadow-sm text-center text-sm">Apply Settings</button>
                 <button type="button" onClick={() => setEditingTileIndex(null)} className="bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold px-4 py-2 rounded-xl transition-all text-sm">Cancel</button>
@@ -307,7 +308,6 @@ export const AdminEditEdition: React.FC<EditProps> = ({
         </div>
       </div>
 
-      {/* Pop Quiz Management Registers Workspace Block */}
       <div className="grid grid-cols-12 gap-5 items-start border-t-2 border-orange-200/40 pt-4 mt-6">
         <div className="col-span-5 bg-[#CBE6FF] border border-[#A4D2FF] rounded-2xl p-4 shadow-sm space-y-3">
           <div>
@@ -339,7 +339,7 @@ export const AdminEditEdition: React.FC<EditProps> = ({
               <p className="text-xs text-gray-400 py-6 text-center">No quiz question created under this edition yet.</p>
             ) : (
               selectedEdition.activities.map((act, idx) => (
-                <div key={act.id || idx} className="bg-white border border-blue-100 rounded-xl p-3 text-xs shadow-sm space-y-2 relative animate-fade-in">
+                <div key={act.id || idx} className="bg-white border border-blue-100 rounded-xl p-3 text-xs shadow-sm space-y-2 relative">
                   <div className="flex justify-between items-start pr-16">
                     <span className="font-bold text-sm text-slate-900">{idx + 1}. {act.question}</span>
                     <button type="button" onClick={() => handleRemoveActivityItem(act.id)} className="text-red-500 hover:text-red-700 font-bold text-[11px] absolute top-3 right-3 bg-red-50 px-2 py-0.5 rounded-md transition-colors focus:outline-none">Delete</button>

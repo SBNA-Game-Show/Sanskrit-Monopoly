@@ -9,7 +9,7 @@ export interface MonopolyTile {
   id: string;
   name: string;
   type: "property" | "railroad" | "utility" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz";
-  money: number; 
+  points: number; 
   price?: number;
   rent?: number;
   sellValue?: number;
