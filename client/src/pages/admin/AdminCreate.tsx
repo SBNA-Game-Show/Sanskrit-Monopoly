@@ -1,21 +1,39 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { db } from "../../firebase";
+import { collection, addDoc } from "firebase/firestore";
+import type { MonopolyTile } from "./AdminTypes";
 
-interface CreateProps {
-  onCreate: (name: string) => Promise<void>;
-  navigateTo: (page: string) => void;
-}
-
-export const AdminCreate: React.FC<CreateProps> = ({ onCreate, navigateTo }) => {
+export const AdminCreate: React.FC = () => {
   const [newEditionName, setNewEditionName] = useState("");
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onCreate(newEditionName);
-    setNewEditionName("");
+    if (!newEditionName.trim()) return;
+
+    const baselineTiles: MonopolyTile[] = Array.from({ length: 40 }, (_, index) => ({
+      id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
+      name: `Tile ${index}`,
+      type: "property", 
+      points: 0, price: 100, rent: 10, sellValue: 50, group: ""
+    }));
+
+    try {
+      await addDoc(collection(db, "game_editions"), {
+        name: newEditionName.trim(),
+        tiles: baselineTiles,
+        activities: []
+      });
+      setNewEditionName("");
+      navigate("/admin");
+    } catch (err) {
+      alert("Firestore Write Failed: " + err);
+    }
   };
 
   return (
-    <div className="bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-6 shadow-sm max-w-lg mx-auto w-full">
+    <div className="bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-6 shadow-sm max-w-lg mx-auto w-full mt-6">
       <h2 className="text-center text-lg font-black text-slate-800 uppercase tracking-wide mb-4">
         Create New Game Edition
       </h2>
@@ -36,7 +54,7 @@ export const AdminCreate: React.FC<CreateProps> = ({ onCreate, navigateTo }) => 
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <button
             type="button"
-            onClick={() => navigateTo("/admin")}
+            onClick={() => navigate("/admin")}
             className="bg-gray-100 hover:bg-gray-200 text-slate-700 text-xs font-bold px-5 py-2.5 rounded-xl transition-colors"
           >
             Cancel

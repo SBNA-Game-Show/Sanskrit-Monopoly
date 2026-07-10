@@ -1,6 +1,4 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
-//RBAC
 import HomeRedirect from "./components/HomeRedirect";
 import RedirectIfAuthenticated from "./components/RedirectIfAuthenticated";
 import RequireAdmin from "./components/RequireAdmin";
@@ -8,14 +6,14 @@ import RequireAuth from "./components/RequireAuth";
 
 //Pages
 import Admin from "./pages/admin/Admin";
+import { AdminCreate } from "./pages/admin/AdminCreate";
+import { AdminEditEdition } from "./pages/admin/AdminEditEdition";
 import Login from "./pages/Login";
 import RootLayout from "./pages/RootLayout";
 import Home from "./pages/Home";
 import Rules from "./pages/Rules";
 import Lobby from "./pages/Lobby";
 import ActiveLobbies from "./pages/ActiveLobbies";
-//import Game from "./pages/Game";
-//import AdminGame from "./pages/AdminGame";
 import Result from "./pages/Result";
 
 const router = createBrowserRouter([
@@ -33,9 +31,13 @@ const router = createBrowserRouter([
         element: <RequireAuth />,
         children: [
           { path: "home", element: <Home /> },
-          {
+          { 
             element: <RequireAdmin />,
-            children: [{ path: "admin", element: <Admin /> }],
+            children: [
+              { path: "admin", element: <Admin /> },
+              {path: "admin/create", element: <AdminCreate /> },
+              { path: "admin/edit/:id", element: <AdminEditEdition /> },
+            ],
           },
           { path: "rules", element: <Rules /> },
           { path: "lobby/:lobbyCode", element: <Lobby /> },
