@@ -89,7 +89,7 @@ function getDynamicTokenOffset(tileIndex: number, orderIndex: number, totalToken
   let w = 0;
   let h = 0;
 
-  // 1. Determine the exact width and height of the current tile
+  // Get width/height of current tile
   if (normalizedIndex % 10 === 0) {
     w = CORNER_SIZE;
     h = CORNER_SIZE;
@@ -101,19 +101,17 @@ function getDynamicTokenOffset(tileIndex: number, orderIndex: number, totalToken
     w = TILE_WIDTH;
     h = TILE_HEIGHT;
   } else {
-    // Left and Right rows are rotated, so width and height are swapped!
+    // Left and Right rows are rotated, so width and height are swapped
     w = TILE_HEIGHT;
     h = TILE_WIDTH;
   }
 
-  // 2. Calculate the distance to the edge
-  // A padding of 14px keeps your 24px tokens safely inside the black border lines. 
-  // (Decrease this to 10 or 12 if you want them touching the exact pixel of the border!)
+  // Get distance to the edge of tile
   const padding = 18; 
   const dx = (w / 2) - padding;
   const dy = (h / 2) - padding;
 
-  // 3. Universal 4-Corner Grid pushed to the exact boundaries
+  // Push tokens to grid formation
   if (orderIndex === 0) return { dx: -dx, dy: -dy }; // Top-Left
   if (orderIndex === 1) return { dx: dx, dy: dy };   // Bottom-Right
   if (orderIndex === 2) return { dx: dx, dy: -dy };  // Top-Right
