@@ -81,34 +81,45 @@ function getTileCenter(tileIndex: number): TileCenter {
   };
 }
 
-function getDynamicTokenOffset(tileIndex: number, orderIndex: number): { dx: number; dy: number } {
-  // Space between tokens in pixels
-  if (orderIndex === 0) return { dx: 0, dy: 0 };
+function getDynamicTokenOffset(tileIndex: number, orderIndex: number, totalTokens: number): { dx: number; dy: number } {
+  // If 1 token, stay centered
+  if (totalTokens <= 1) return { dx: 0, dy: 0 };
 
-  const jumpDistance = (CORNER_SIZE / 2) + 25 + ((orderIndex - 0.8) * 50);
-
-  // Centers 4 players around 0
   const normalizedIndex = tileIndex % 40;
+  let w = 0;
+  let h = 0;
 
-  // Corners (0, 10, 20, 30) --> Diagonally stacked
-  if (normalizedIndex === 0) return { dx: -jumpDistance, dy: -jumpDistance }; // Bottom Right
-  if (normalizedIndex === 10) return { dx: jumpDistance, dy: -jumpDistance }; // Bottom Left
-  if (normalizedIndex === 20) return { dx: jumpDistance, dy: jumpDistance };  // Top Left
-  if (normalizedIndex === 30) return { dx: -jumpDistance, dy: jumpDistance }; // Top Right
+  // 1. Determine the exact width and height of the current tile
+  if (normalizedIndex % 10 === 0) {
+    w = CORNER_SIZE;
+    h = CORNER_SIZE;
+  } else if (
+    (normalizedIndex >= 1 && normalizedIndex <= 9) ||
+    (normalizedIndex >= 21 && normalizedIndex <= 29)
+  ) {
+    // Top and Bottom rows
+    w = TILE_WIDTH;
+    h = TILE_HEIGHT;
+  } else {
+    // Left and Right rows are rotated, so width and height are swapped!
+    w = TILE_HEIGHT;
+    h = TILE_WIDTH;
+  }
 
-  // Bottom row (1-9) --> Vertically stacked
-  if (normalizedIndex >= 1 && normalizedIndex <= 9) return { dx: 0, dy: -jumpDistance };
+  // 2. Calculate the distance to the edge
+  // A padding of 14px keeps your 24px tokens safely inside the black border lines. 
+  // (Decrease this to 10 or 12 if you want them touching the exact pixel of the border!)
+  const padding = 18; 
+  const dx = (w / 2) - padding;
+  const dy = (h / 2) - padding;
 
-  // Top row (21-29) --> Vertically stacked
-  if (normalizedIndex >= 21 && normalizedIndex <= 29) return { dx: 0, dy: jumpDistance };
+  // 3. Universal 4-Corner Grid pushed to the exact boundaries
+  if (orderIndex === 0) return { dx: -dx, dy: -dy }; // Top-Left
+  if (orderIndex === 1) return { dx: dx, dy: dy };   // Bottom-Right
+  if (orderIndex === 2) return { dx: dx, dy: -dy };  // Top-Right
+  if (orderIndex === 3) return { dx: -dx, dy: dy };  // Bottom-Left
 
-  // Left row (11-19) --> Horizontally stacked
-  if (normalizedIndex >= 11 && normalizedIndex <= 19) return { dx: jumpDistance, dy: 0 };
-
-  // Right row (31-39) --> Horizontally stacked
-  if (normalizedIndex >= 31 && normalizedIndex <= 39) return { dx: -jumpDistance, dy: 0 };
-
-  return { dx: 0, dy: 0 }; // Default case, should not happen
+  return { dx: 0, dy: 0 };
 }
 
 const TILE_COUNT = 40;
@@ -530,18 +541,24 @@ export function createZimBoard(
     // Sort to ensure tokens always stack in the same order
     tileOccupancy.forEach(uids => uids.sort());
 
-    function getOrderIndex(uid: string, tileIndex: number) {
+    function getOccupancyData(uid: string, tileIndex: number) {
       const occupants = tileOccupancy.get(tileIndex) || [uid];
       const index = occupants.indexOf(uid);
-      return index === -1 ? 0 : index;
+      return {
+        orderIndex: index === -1 ? 0 : index,
+        totalTokens: occupants.length,
+      };
     }
 
     players.forEach((player, playerIndex) => {
-      // const offset = TOKEN_OFFSETS[playerIndex] ?? { dx: 0, dy: 0 };
-      const isCurrentTurn = player.uid === currentTurnUid;
-      const size = isCurrentTurn ? 42 : 34;
-      const tokenId = player.token ?? null;
+      const targetPosition = player.position;
+      const { orderIndex, totalTokens } = getOccupancyData(player.uid, targetPosition);
 
+      const isCurrentTurn = player.uid === currentTurnUid;
+      const baseSize = totalTokens > 1 ? 24 : 34;
+      const size = isCurrentTurn ? baseSize + 8 : baseSize;
+
+      const tokenId = player.token ?? null;
       const prevPosition = prevPositions.get(player.uid);
       const shouldAnimate = prevPosition != null && prevPosition !== player.position;
 
@@ -574,10 +591,8 @@ export function createZimBoard(
 
       playerDisplays.set(player.uid, nextDisplay);
 
-      const targetPosition = player.position;
-      const orderIndex = getOrderIndex(player.uid, targetPosition);
       const center = getTileCenter(targetPosition);
-      const offset = getDynamicTokenOffset(targetPosition, orderIndex);
+      const offset = getDynamicTokenOffset(targetPosition, orderIndex, totalTokens);
 
       if (prevPosition == null) {
         // 1st time render --> snap directly to position
@@ -598,6 +613,7 @@ export function createZimBoard(
           prevPosition,
           targetPosition,
           orderIndex,
+          totalTokens,
           size
         );
       } else {
@@ -611,21 +627,6 @@ export function createZimBoard(
           ease: "quadOut"
         });
       }
-
-      // nextDisplay.node.loc(
-      //   startCenter.x + startOffset.dx - size / 2,
-      //   startCenter.y + startOffset.dy - size / 2,
-      // );
-
-      // if (shouldAnimate) {
-      //   animatePlayerToPosition(
-      //     nextDisplay.node,
-      //     prevPosition,
-      //     player.position,
-      //     playerIndex,
-      //     size,
-      //   );
-      // }
 
       prevPositions.set(player.uid, player.position);
     });
@@ -702,10 +703,12 @@ export function createZimBoard(
     fromPosition: number,
     toPosition: number,
     finalOrderIndex: number,
+    totalTokens: number,
     size: number,
   ) {
     if (isGoToJailTeleport(edition!, fromPosition, toPosition)) {
       const dest = getTileCenter(toPosition);
+      const offset = getDynamicTokenOffset(toPosition, finalOrderIndex, totalTokens);
       node.animate({
         props: {
           x: dest.x + offset.dx - size / 2,
@@ -729,10 +732,13 @@ export function createZimBoard(
       const next = getTileCenter(currentTileIndex);
 
       const isFinalStep = step === path.length - 1;
-      const orderToUse = isFinalStep ? finalOrderIndex : 0; // only stagger on final tile
+
+      // if walking, stay centered on the tile. If final step, offset to avoid overlap with other tokens on the same tile
+      const orderToUse = isFinalStep ? finalOrderIndex : 0; 
+      const totalToUse = isFinalStep ? totalTokens : 1;
 
       // Calc. specific offset for tile the token is stepping onto
-      const dynamicOffset = getDynamicTokenOffset(currentTileIndex, orderToUse);
+      const dynamicOffset = getDynamicTokenOffset(currentTileIndex, orderToUse, totalToUse);
 
       node.animate({
         props: {
