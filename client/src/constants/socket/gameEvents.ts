@@ -34,5 +34,10 @@ export const GAME_EVENTS = {
   GAME_PLACE_AUCTION_BID: "game:place-auction-bid",
   GAME_RESOLVE_AUCTION: "game:resolve-auction",
 
+  // bankruptcy auctioning
+  GAME_START_BANKRUPTCY_AUCTION: "game:start-bankruptcy-auction",
+  GAME_CLEAR_BANKRUPTCY_PROPERTY: "game:clear-bankruptcy-property",
+  GAME_CLEAR_BANKRUPTCY_AUCTIONS: "game:clear-bankruptcy-auctions",
+
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 } as const;
