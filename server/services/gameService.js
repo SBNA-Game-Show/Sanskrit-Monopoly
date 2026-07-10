@@ -48,11 +48,13 @@ function createActiveQuiz(questions) {
 }
 
 // helper function for auctioning
-function createActiveAuction(tile) {
+function createActiveAuction(tile, options = {}) {
   return {
     tileId: tile.id,
     highestBid: 0,
     highestBidderUid: null,
+    source: options.source ?? "declinedProperty",
+    bankruptPlayerUid: options.bankruptPlayerUid ?? null,
   };
 }
 
@@ -163,7 +165,7 @@ function updateBankruptcyStatus(player) {
   player.isBankrupt = player.money < 0; // player considered bankrupt if money drops below zero
 }
 
-function setBankruptcyActionIfNeeded(lobby, player) {
+export function setBankruptcyActionIfNeeded(lobby, player) {
   updateBankruptcyStatus(player);
 
   // continue if player recovered from bankruptcy or never went negative
@@ -265,7 +267,13 @@ export function applyCardEffect(lobby, player, card) {
       }
       break;
   }
-}
+
+  // card effects can remove money too
+  // bankruptcy has to be checked here too
+  // otherwise player might go below negative from card outcome
+  // but bankruptcy is never triggered
+  setBankruptcyActionIfNeeded(lobby, player);
+};
 
 
 // ***************************************************************
@@ -465,6 +473,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition) {
     gameStatus: null, // null since game hasn't started
     activeQuiz: null, // here he is
     activeAuction: null,
+    activeBankruptcyAuction: null,
     gameTimer: null, // timer for MINIGAMES ONLY, holds reference to timer so we can clearTimeout if needed
     activeCard: null,
     players: [],
@@ -877,12 +886,13 @@ export function sellProperty(lobbyCode, uid, propertyId) {
     return { lobby, error: "You can only sell property on your turn" };
   }
 
-  const allowedStatuses = ["idling", "buyProperty"];
+  const allowedStatuses = ["idling", "buyProperty", "bankruptcy"];
 
   if (!allowedStatuses.includes(lobby.gameStatus)) {
     return {
       lobby,
-      error: "You can only sell before rolling dice or while deciding to buy a property",
+      error:
+        "You can only sell before rolling dice, while buying, or while resolving bankruptcy",
     };
   }
 
@@ -919,6 +929,17 @@ export function sellProperty(lobbyCode, uid, propertyId) {
     message: `sold ${tile.name} for ₩${sellValue}.`,
   });
 
+  if (lobby.gameStatus === "bankruptcy" && !player.isBankrupt) {
+    // Selling enough assets resolves bankruptcy and lets normal turn flow resume.
+    lobby.gameStatus = "turnEnded";
+
+    addLog(lobby.lobbyCode, {
+      uid: player.uid,
+      username: player.username,
+      message: "recovered from bankruptcy by selling property.",
+    });
+  }
+
   return { lobby, error: null };
 }
 
@@ -950,7 +971,7 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: "This player is not bankrupt" };
   }
 
-  const releasedProperties = bankruptPlayer.properties;
+  const releasedProperties = [...bankruptPlayer.properties];
 
   bankruptPlayer.isEliminated = true;
   bankruptPlayer.isBankrupt = false;
@@ -972,16 +993,7 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     lobby.currentPlayerIndex = 0;
   }
 
-  if (lobby.players[lobby.currentPlayerIndex]?.isEliminated) {
-    lobby.currentPlayerIndex = getNextActivePlayerIndex(
-      lobby,
-      lobby.currentPlayerIndex,
-    );
-  }
-
-  if (lobby.currentPlayerIndex === -1) {
-    lobby.currentPlayerIndex = 0;
-  }
+  // Leave the index on the eliminated player so startNextTurn advances exactly once.
 
   addLog(lobby.lobbyCode, {
     uid: bankruptPlayer.uid,
@@ -1010,7 +1022,182 @@ export function resolveBankruptcy(lobbyCode, hostUid, bankruptPlayerUid) {
     return { lobby, error: null };
   }
 
+  // start auction if there are released assets
+  const auctionTileIds = releasedProperties.filter((tileId) => {
+    const tile = lobby.edition.tiles.find(
+      (currentTile) => currentTile.id === tileId,
+    );
+    return isBuyableTile(tile);
+  });
+
+  if (auctionTileIds.length > 0) {
+    // Hold bankrupt properties in a host-managed auction pool instead of auto-chaining auctions.
+    lobby.activeBankruptcyAuction = {
+      bankruptPlayerUid: bankruptPlayer.uid,
+      bankruptPlayerName: bankruptPlayer.username,
+      propertyIds: auctionTileIds,
+    };
+
+    lobby.activeAuction = null;
+    lobby.gameStatus = "bankruptcyAuction";
+
+    addLog(lobby.lobbyCode, {
+      uid: bankruptPlayer.uid,
+      username: bankruptPlayer.username,
+      message: `left ${auctionTileIds.length} properties for bankruptcy auction.`,
+    });
+
+    return { lobby, error: null };
+  }
+
   lobby.gameStatus = "turnEnded";
+
+  return { lobby, error: null };
+}
+
+function finishBankruptcyAuctionPool(lobby) {
+  // Once the pool is empty, normal turn flow can resume.
+  lobby.activeBankruptcyAuction = null;
+  lobby.activeAuction = null;
+  lobby.gameStatus = "turnEnded";
+}
+
+function getBankruptcyAuctionPool(lobby) {
+  if (lobby.gameStatus !== "bankruptcyAuction") {
+    return { pool: null, error: "No bankruptcy auction is pending" };
+  }
+
+  if (!lobby.activeBankruptcyAuction) {
+    return { pool: null, error: "No bankruptcy auction properties found" };
+  }
+
+  return { pool: lobby.activeBankruptcyAuction, error: null };
+}
+
+export function startBankruptcyAuction(lobbyCode, hostUid, propertyId) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.host.uid !== hostUid) {
+    return { lobby, error: "Only the host can start bankruptcy auctions" };
+  }
+
+  const { pool, error } = getBankruptcyAuctionPool(lobby);
+
+  if (error) {
+    return { lobby, error };
+  }
+
+  if (!pool.propertyIds.includes(propertyId)) {
+    return {
+      lobby,
+      error: "This property is not in the bankruptcy auction pool",
+    };
+  }
+
+  const tile = lobby.edition.tiles.find(
+    (currentTile) => currentTile.id === propertyId,
+  );
+
+  if (!tile || !isBuyableTile(tile)) {
+    return { lobby, error: "This property cannot be auctioned" };
+  }
+
+  // Remove the selected property from the pool before starting the one-property auction.
+  pool.propertyIds = pool.propertyIds.filter(
+    (currentPropertyId) => currentPropertyId !== propertyId,
+  );
+
+  lobby.activeAuction = createActiveAuction(tile, {
+    source: "bankruptcy",
+    bankruptPlayerUid: pool.bankruptPlayerUid,
+  });
+
+  lobby.gameStatus = "auction";
+
+  addLog(lobby.lobbyCode, {
+    uid: lobby.host.uid,
+    username: lobby.host.username,
+    message: `started a bankruptcy auction for ${tile.name}.`,
+  });
+
+  return { lobby, error: null };
+}
+
+export function clearBankruptcyProperty(lobbyCode, hostUid, propertyId) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.host.uid !== hostUid) {
+    return { lobby, error: "Only the host can clear bankruptcy properties" };
+  }
+
+  const { pool, error } = getBankruptcyAuctionPool(lobby);
+
+  if (error) {
+    return { lobby, error };
+  }
+
+  if (!pool.propertyIds.includes(propertyId)) {
+    return {
+      lobby,
+      error: "This property is not in the bankruptcy auction pool",
+    };
+  }
+
+  const tile = lobby.edition.tiles.find(
+    (currentTile) => currentTile.id === propertyId,
+  );
+
+  pool.propertyIds = pool.propertyIds.filter(
+    (currentPropertyId) => currentPropertyId !== propertyId,
+  );
+
+  addLog(lobby.lobbyCode, {
+    uid: lobby.host.uid,
+    username: lobby.host.username,
+    message: `${tile?.name ?? "A bankruptcy property"} was cleared without auction.`,
+  });
+
+  if (pool.propertyIds.length === 0) {
+    finishBankruptcyAuctionPool(lobby);
+  }
+
+  return { lobby, error: null };
+}
+
+export function clearBankruptcyAuctions(lobbyCode, hostUid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return { lobby: null, error: "Lobby not found" };
+  }
+
+  if (lobby.host.uid !== hostUid) {
+    return { lobby, error: "Only the host can clear bankruptcy auctions" };
+  }
+
+  const { pool, error } = getBankruptcyAuctionPool(lobby);
+
+  if (error) {
+    return { lobby, error };
+  }
+
+  const clearedCount = pool.propertyIds.length;
+
+  addLog(lobby.lobbyCode, {
+    uid: lobby.host.uid,
+    username: lobby.host.username,
+    message: `cleared ${clearedCount} bankruptcy properties without auction.`,
+  });
+
+  finishBankruptcyAuctionPool(lobby);
 
   return { lobby, error: null };
 }
@@ -1084,7 +1271,9 @@ export function resolveAuction(lobbyCode, hostUid) {
   }
 
   const auction = lobby.activeAuction;
-  const tile = lobby.edition.tiles.find((currentTile) => currentTile.id === auction.tileId);
+  const tile = lobby.edition.tiles.find(
+    (currentTile) => currentTile.id === auction.tileId,
+  );
 
   if (!tile) return { lobby, error: "Auction tile not found" };
 
@@ -1093,7 +1282,6 @@ export function resolveAuction(lobbyCode, hostUid) {
     : null;
 
   if (winner) {
-
     // defensive check in case winner's money changed after bidding
     if (winner.money < auction.highestBid) {
       return { lobby, error: "Winning bidder can no longer afford the bid" };
@@ -1120,6 +1308,20 @@ export function resolveAuction(lobbyCode, hostUid) {
   }
 
   lobby.activeAuction = null;
+
+  if (auction.source === "bankruptcy" && lobby.activeBankruptcyAuction) {
+    if (lobby.activeBankruptcyAuction.propertyIds.length > 0) {
+      // go back to bankruptcy auction list so host can choose next action
+      lobby.gameStatus = "bankruptcyAuction";
+    } else {
+      // No bankrupt properties are left so this bankruptcy flow ends here
+      lobby.activeBankruptcyAuction = null;
+      lobby.gameStatus = "turnEnded";
+    }
+
+    return { lobby, error: null };
+  }
+
   lobby.gameStatus = "turnEnded";
 
   return { lobby, error: null };

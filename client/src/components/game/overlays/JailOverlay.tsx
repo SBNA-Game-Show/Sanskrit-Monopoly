@@ -81,7 +81,7 @@ export function JailOverlay({ gameState, isActivePlayer }: JailOverlayProps) {
 
       {isActivePlayer && !canAffordBail && (
         <p className="mt-3 text-sm font-semibold text-[#b33a3a]">
-          Not enough money to pay bail, NOT IMPLIMENTED
+          Not enough money to pay bail. Pass turn to leave jail after this turn.
         </p>
       )}
     </GameOverlayShell>

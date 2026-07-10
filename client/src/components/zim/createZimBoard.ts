@@ -123,6 +123,32 @@ function buildTilePath(from: number, to: number): number[] {
   return path;
 }
 
+function buildTilePathBackward(from: number, to: number): number[] {
+  const path = [from];
+  let pos = from;
+  while (pos !== to) {
+    pos = (pos - 1 + TILE_COUNT) % TILE_COUNT;
+    path.push(pos);
+  }
+  return path;
+}
+
+function buildBestTilePath(from: number, to: number): number[] {
+  const forward = buildTilePath(from, to);
+  const backward = buildTilePathBackward(from, to);
+  return backward.length < forward.length ? backward : forward;
+}
+
+function isGoToJailTeleport(
+  edition: GameEdition,
+  from: number,
+  to: number,
+): boolean {
+  const fromTile = edition.tiles[from];
+  const toTile = edition.tiles[to];
+  return fromTile?.type === "goToJail" && toTile?.type === "jail";
+}
+
 function getOwnershipMarkerPosition(tileIndex: number): TileCenter {
   const center = getTileCenter(tileIndex);
   const normalizedIndex = tileIndex % 40;
@@ -670,7 +696,7 @@ export function createZimBoard(
     redrawDynamicLayers(initialState);
   }
 
-  // function that has the tokens walk tile-by-tile
+  // function that has the tokens walk tile-by-tile, or teleport directly for Go To Jail
   function animatePlayerToPosition(
     node: zim.Pic | zim.Container,
     fromPosition: number,
@@ -678,7 +704,20 @@ export function createZimBoard(
     finalOrderIndex: number,
     size: number,
   ) {
-    const path = buildTilePath(fromPosition, toPosition);
+    if (isGoToJailTeleport(edition!, fromPosition, toPosition)) {
+      const dest = getTileCenter(toPosition);
+      node.animate({
+        props: {
+          x: dest.x + offset.dx - size / 2,
+          y: dest.y + offset.dy - size / 2,
+        },
+        time: 0.4,
+        ease: "sineInOut",
+      });
+      return;
+    }
+
+    const path = buildBestTilePath(fromPosition, toPosition);
     const stepTime = 0.4 / Math.max(path.length - 1, 1);
 
     let step = 1;
