@@ -55,6 +55,19 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const handleLobbyClosed = ({ message }: { message: string }) => {
+      alert(message);
+      navigate("/home");
+    };
+
+    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
+
+    return () => {
+      socket.off(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
+    };
+  }, [navigate]);
+
   // Native Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, tokenId: string) => {
     e.dataTransfer.setData("tokenId", tokenId);
@@ -81,7 +94,16 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
   };
 
   const handleLeaveLobby = () => {
-    if (!lobbyCode || !uid || isHost) return;
+    if (!lobbyCode || !uid) return;
+
+    if (isHost) {
+      socket.emit(GAME_EVENTS.LOBBY_HOST_LEAVE, {
+        lobbyCode,
+        uid,
+      });
+
+      return;
+    }
 
     socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
       lobbyCode,
@@ -379,7 +401,7 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
               onClick={handleLeaveLobby}
               className="w-52 bg-red-500 hover:bg-red-600"
             >
-              LEAVE
+              {isHost ? "CLOSE LOBBY" : "LEAVE"}
             </Button>
           )}
 
