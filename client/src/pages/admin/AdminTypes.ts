@@ -14,6 +14,7 @@ export interface MonopolyTile {
   rent?: number;
   sellValue?: number;
   group?: "red" | "brown" | "lightBlue" | "pink" | "orange" | "yellow" | "green" | "darkBlue" | "railroad" | "utility" | "" ;
+  color?: string;
 }
 
 export interface GameEdition {
