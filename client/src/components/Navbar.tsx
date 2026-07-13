@@ -3,6 +3,7 @@ import { useToast } from "../context/ToastContext";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNav } from "./TransitionOverlay";
+import logo from "../assets/logo.png"
 
 function Navbar() {
   const { uid, username, isAdmin } = useAuth();
@@ -39,7 +40,7 @@ function Navbar() {
   // If on lobby page then get code from URL
   const lobbyCodeStr = isLobbyPage ? path.split("/lobby/")[1]?.toUpperCase() : "";
 
-  let displayTitle = "SANSKRIT MONOPOLY";
+  let displayTitle = ""; // Default title. Got rid of it
   if (isActiveLobbiesPage) {
     displayTitle = "ACTIVE LOBBIES";
   } else if (isLobbyPage) {
@@ -80,11 +81,18 @@ function Navbar() {
         `}
       </style>
 
-      <div className="flex items-center">
-        <div className="bg-[#FFA545] border-2 border-white rounded-xl text-white text-xl px-4 py-0.5 tracking-wider shadow-sm cursor-default">
-          Logo
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => navigate("/Home")}
+        className="flex items-center hover:scale-105 active:scale-95 transition-transform"
+      >
+        <img
+          src={logo}
+          alt="Sanskrit Monopoly"
+          className="h-10 w-auto"
+          draggable="false"
+        />
+      </button>
 
       {/* Clickable Code */}
       <div
