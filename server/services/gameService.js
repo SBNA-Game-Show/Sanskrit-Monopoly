@@ -463,7 +463,7 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, isPrivate = false, edition) {
+export function createLobby(hostUid, hostUsername, isPrivate = false) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -601,9 +601,16 @@ export function startGame(lobbyCode, hostUid, options = {}) {
 
   if (options.tiles && options.questions) {
     lobby.edition = {
-      ...lobby.edition,
       startingPoints: options.startingPoints,
       tiles: options.tiles,
+      questions: options.questions,
+    };
+  }
+
+  if (typeof options.startingPoints === "number") {
+    lobby.edition = {
+      ...lobby.edition,
+      startingPoints: options.startingPoints,
     };
   }
 
