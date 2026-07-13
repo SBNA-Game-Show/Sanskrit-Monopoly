@@ -1256,7 +1256,7 @@ export function placeAuctionBid(lobbyCode, uid, bidIncrement) {
   addLog(lobby.lobbyCode, {
     uid,
     username: player.username,
-    message: `bid ₩${bid} in the auction.`,
+    message: `raised the auction by ₩${increment} to ₩${bid}.`,
   });
 
   return { lobby, error: null };
