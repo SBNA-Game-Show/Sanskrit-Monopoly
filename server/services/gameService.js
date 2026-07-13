@@ -463,7 +463,7 @@ export function showMiniGame(lobbyCode) {
 }
 
 // function to create lobby
-export function createLobby(hostUid, hostUsername, isPrivate = false, edition) {
+export function createLobby(hostUid, hostUsername, isPrivate = false) {
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -478,7 +478,7 @@ export function createLobby(hostUid, hostUsername, isPrivate = false, edition) {
     activeCard: null,
     players: [],
     host: { uid: hostUid, username: hostUsername, socketId: null },
-    edition,
+    edition: {},
     currentPlayerIndex: 0,
     lastRoll: null,
     winnerUid: null,

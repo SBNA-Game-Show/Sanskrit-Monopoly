@@ -86,11 +86,3 @@ export const PLAYER_COLORS = [
   "#27ae60",
   "#9b51e0",
 ];
-
-export const TOKEN_OFFSETS = [
-  { dx: -15, dy: -15 },
-  { dx: 15, dy: -15 },
-  { dx: -15, dy: 15 },
-  { dx: 15, dy: 15 },
-  { dx: 0, dy: 0 },
-];
