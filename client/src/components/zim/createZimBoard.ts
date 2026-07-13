@@ -5,7 +5,6 @@ import {
   TILE_HEIGHT,
   TILE_WIDTH,
   PLAYER_COLORS,
-  TOKEN_OFFSETS,
 } from "../../constants/zim/board";
 import type {
   TileCenter,
