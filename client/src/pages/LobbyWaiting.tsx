@@ -55,19 +55,6 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const handleLobbyClosed = ({ message }: { message: string }) => {
-      alert(message);
-      navigate("/home");
-    };
-
-    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
-
-    return () => {
-      socket.off(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
-    };
-  }, [navigate]);
-
   // Native Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, tokenId: string) => {
     e.dataTransfer.setData("tokenId", tokenId);
@@ -97,10 +84,19 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     if (!lobbyCode || !uid) return;
 
     if (isHost) {
+      const confirmed = window.confirm(
+        "Are you sure you want to close the lobby?\n\nThis will remove all players and delete the lobby.",
+      );
+
+      if (!confirmed) return;
+
       socket.emit(GAME_EVENTS.LOBBY_HOST_LEAVE, {
         lobbyCode,
         uid,
-      });
+      },
+        () => {
+          navigate("/home");
+        },);
 
       return;
     }
@@ -395,15 +391,13 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
       {/* Start Button Footer */}
       <div className="w-full bg-[#FFC17E] flex justify-center items-center h-20 lg:h-20 shrink-0 z-20">
         <div className="flex gap-4">
-          {!isHost && (
-            <Button
-              size="xl"
-              onClick={handleLeaveLobby}
-              className="w-52 bg-red-500 hover:bg-red-600"
-            >
-              {isHost ? "CLOSE LOBBY" : "LEAVE"}
-            </Button>
-          )}
+          <Button
+            size="xl"
+            onClick={handleLeaveLobby}
+            className="w-52 bg-red-500 hover:bg-red-600"
+          >
+            {isHost ? "CLOSE LOBBY" : "LEAVE"}
+          </Button>
 
           <Button
             size="xl"

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
+import { useNav } from "../components/TransitionOverlay";
+import { useToast } from "../context/ToastContext";
 
 import Game from "./Game";
 import Result from "./Result";
@@ -14,6 +16,8 @@ export default function Lobby() {
   const [lobbyState, setLobbyState] = useState<GameState | null>(null);
   const { lobbyCode } = useParams<{ lobbyCode: string }>();
   const { uid, username, authLoading } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNav();
 
   useEffect(() => {
     if (authLoading) return;
@@ -26,6 +30,15 @@ export default function Lobby() {
       console.log("Game socket error:", error);
     };
 
+    const handleHostLeave = ({ message }: { message: string }) => {
+      navigate("/home");
+      showToast({
+        variant: "success",
+        title: "Lobby Closed",
+        message: message,
+      });
+    };
+
     socket.emit(GAME_EVENTS.LOBBY_JOIN, {
       lobbyCode,
       player: {
@@ -36,10 +49,12 @@ export default function Lobby() {
 
     socket.on(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
     socket.on(GAME_EVENTS.GAME_ERROR, handleGameError);
+    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleHostLeave);
 
     return () => {
       socket.off(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
+      socket.off(GAME_EVENTS.LOBBY_CLOSED, handleHostLeave);
     };
   }, [authLoading]);
 

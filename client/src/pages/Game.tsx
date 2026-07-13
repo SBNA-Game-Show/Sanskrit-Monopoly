@@ -127,19 +127,6 @@ export default function Game({ gameState }: GameProps) {
     showToast(toast);
   }, [gameState.log, showToast]);
 
-  useEffect(() => {
-    const handleLobbyClosed = ({ message }: { message: string }) => {
-      alert(message);
-      navigate("/home");
-    };
-
-    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
-
-    return () => {
-      socket.off(GAME_EVENTS.LOBBY_CLOSED, handleLobbyClosed);
-    };
-  }, [navigate]);
-
   return (
     <main className="min-h-screen w-full bg-[#fffaf0] font-sans text-[#160f08]">
       <section className="grid min-h-screen grid-cols-1 xl:grid-cols-[340px_1fr_340px] gap-6 p-6">
