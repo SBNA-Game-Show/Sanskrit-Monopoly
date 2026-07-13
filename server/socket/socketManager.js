@@ -756,8 +756,7 @@ export function setupSocketEvents(io) {
       const { lobby } = updateLobbyEdition(lobbyCode, editionName);
   
       if (lobby) {
-        // Broadcast the update so players currently in the waiting room see it sync up
-        io.to(lobbyCode).emit("GAME_UPDATED", lobby);
+        broadcastGameState(io, lobby);
       }
     });
 
