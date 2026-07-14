@@ -83,9 +83,6 @@ export const AdminEditTiles: React.FC<TilesProps> = ({ selectedEdition, updateEd
     if (ok) setEditingTileIndex(null);
   };
 
-  const isPurchasable = tileType === "property" || tileType === "railroad" || tileType === "utility";
-  const isScored = tileType === "minigame" || tileType === "quiz";
-
   return (
     <div className="max-w-6xl mx-auto w-full space-y-4">
       <div className="grid grid-cols-12 gap-5 items-start">
