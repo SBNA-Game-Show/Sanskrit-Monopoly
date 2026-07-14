@@ -25,7 +25,8 @@ export const AdminEditEdition: React.FC = () => {
           id: snapshot.id,
           name: data.name || "Unnamed Edition",
           tiles: data.tiles || [],
-          activities: data.activities || []
+          activities: data.activities || [],
+          draft: data.draft === undefined ? true : data.draft
         } as GameEdition);
         setEditNameValue(data.name || "");
       }
@@ -94,7 +95,28 @@ export const AdminEditEdition: React.FC = () => {
           )}
           <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mt-1">Edition, Tiles, Reward, Penalty setup board</span>
         </div>
+        
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-inner">
+            <span className="text-xs font-black text-slate-700 tracking-tight">Draft</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={selectedEdition.draft ?? true}
+              onClick={() => updateEdition({ draft: !(selectedEdition.draft ?? true) }, "Failed to update draft status")}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                (selectedEdition.draft ?? true) ? "bg-slate-800" : "bg-[#5CB85C]"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-[#00ADFF] transition-transform ${
+                  (selectedEdition.draft ?? true) ? "translate-x-1" : "translate-x-6"
+                }`}
+              />
+            </button>
+          </div>
         <button onClick={() => navigate("/admin")} className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-colors">Back to Dashboard</button>
+        </div>
       </div>
 
       {/* 2. NAVIGATION TAB TOGGLES BAR */}

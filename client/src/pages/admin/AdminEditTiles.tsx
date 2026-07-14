@@ -30,7 +30,9 @@ export const AdminEditTiles: React.FC<TilesProps> = ({ selectedEdition, updateEd
     if (!selectedEdition) return selectedEdition;
     const tilesWithColors = selectedEdition.tiles.map((tile) => {
       let color = "#ffffff";
-      if (tile.type === "property" && tile.group) {
+      if (tile.type === "start") {
+        color = "#ffffff";
+      } else if (tile.type === "property" && tile.group) {
         color = (PROPERTY_GROUP_COLORS as any)[tile.group] || "#ffffff";
       } else {
         color = (TILE_TYPE_COLORS as any)[tile.type] || TILE_TYPE_COLORS.special || "#f4e8c8";
@@ -140,6 +142,7 @@ export const AdminEditTiles: React.FC<TilesProps> = ({ selectedEdition, updateEd
                     className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
                   >
                     <option value="">-- Select Rule Type --</option>
+                    <option value="start">Starting Point (GO)</option>
                     <option value="property">Property</option>
                     <option value="railroad">Railroad</option>
                     <option value="utility">Utility</option>

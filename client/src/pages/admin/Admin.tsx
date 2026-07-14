@@ -1,7 +1,7 @@
 import { useState, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../../firebase"; 
-import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import type { GameEdition} from "./AdminTypes";
 import { AdminDashboard } from "./AdminDashboard";
 
@@ -18,7 +18,8 @@ function Admin() {
         id: doc.id,
         name: doc.data().name || "Unnamed Edition",
         tiles: doc.data().tiles || [], 
-        activities: doc.data().activities || []
+        activities: doc.data().activities || [],
+        draft: doc.data().draft === undefined ? true : doc.data().draft
       } as GameEdition));
       
       setEditions(liveEditions);
@@ -47,6 +48,14 @@ function Admin() {
     }
   };
 
+  const handleToggleDraft = async (id: string, currentDraft: boolean) => {
+    try {
+      await updateDoc(doc(db, "game_editions", id), { draft: !currentDraft });
+    } catch (err) {
+      alert("Failed to change status: " + err);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-[calc(100vh-56px)] bg-[#FFF5E4] flex items-center justify-center">
@@ -61,6 +70,7 @@ function Admin() {
         editions={editions} 
         navigateTo={handleNavigationRoute} 
         onDelete={handleDeleteEdition} 
+        onToggleDraft={handleToggleDraft}
       />
     </main>
   );
