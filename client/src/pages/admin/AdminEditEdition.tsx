@@ -2,39 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { db } from "../../firebase";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import type { GameEdition, MonopolyTile } from "./AdminTypes";
+import type { GameEdition } from "./AdminTypes";
 import { AdminEditTiles } from "./AdminEditTiles";
 import { AdminEditQuestions } from "./AdminEditQuestions";
 
 export const AdminEditEdition: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  // Tab State Switcher (Defaults to "tiles")
   const [selectedTab, setSelectedTab] = useState<"tiles" | "questions">("tiles");
-
-  // Global Metadata States
   const [selectedEdition, setSelectedEdition] = useState<GameEdition | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
   const [editNameValue, setEditNameValue] = useState<string>("");
 
-  // Tiles Selection States
-  const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
-  const [targetTileName, setTargetTileName] = useState("");
-  const [tileType, setTileType] = useState<MonopolyTile["type"] | "">("");
-  const [tileValue, setTileValue] = useState<number>(0);
-  const [propertyCost, setPropertyCost] = useState<number>(0);
-  const [rentCost, setRentCost] = useState<number>(0);
-  const [sellingCost, setSellingCost] = useState<number>(0);
-  const [propertyGroup, setPropertyGroup] = useState<string>("");
-
-  // Quiz Form Management States
-  const [quizQuestion, setQuizQuestion] = useState("");
-  const [currentOptions, setCurrentOptions] = useState<string[]>(["", "", "", ""]);
-  const [correctAnswerStr, setCorrectAnswerStr] = useState("");
-
-  // Core Firestore Listener Engine Loop
   useEffect(() => {
     if (!id) return;
     const docRef = doc(db, "game_editions", id);
@@ -67,62 +47,14 @@ export const AdminEditEdition: React.FC = () => {
     }
   };
 
-  const handleTileSaveSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedEdition || editingTileIndex === null || !id || !tileType) return;
-
-    const isPurchasableTile = tileType === "property" || tileType === "railroad" || tileType === "utility";
-    const updatedTiles = [...selectedEdition.tiles];
-    
-    updatedTiles[editingTileIndex] = {
-      id: updatedTiles[editingTileIndex].id,
-      name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
-      type: tileType as MonopolyTile["type"],
-      points: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
-      price: isPurchasableTile ? propertyCost : 0,
-      rent: isPurchasableTile ? rentCost : 0,
-      sellValue: isPurchasableTile ? sellingCost : 0,
-      group: tileType === "property" ? (propertyGroup as any) : "",
-    };
-
+  const updateEdition = async (data: Partial<GameEdition>, errorLabel: string): Promise<boolean> => {
+    if (!id) return false;
     try {
-      await updateDoc(doc(db, "game_editions", id), { tiles: updatedTiles });
-      setEditingTileIndex(null);
+      await updateDoc(doc(db, "game_editions", id), data);
+      return true;
     } catch (err) {
-      alert("Update Failed: " + err);
-    }
-  };
-
-  const handleQuizSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedEdition || !id) return;
-    const filtered = currentOptions.map(o => o.trim()).filter(Boolean);
-    if (filtered.length < 2) return alert("Please provide at least 2 choice options.");
-
-    const updated = [...(selectedEdition.activities || []), { 
-      id: "quiz_" + Date.now(), 
-      question: quizQuestion.trim(), 
-      options: filtered, 
-      correctAnswer: correctAnswerStr 
-    }];
-
-    try {
-      await updateDoc(doc(db, "game_editions", id), { activities: updated });
-      setQuizQuestion("");
-      setCurrentOptions(["", "", "", ""]);
-      setCorrectAnswerStr("");
-    } catch (err) {
-      alert("Failed to save quiz: " + err);
-    }
-  };
-
-  const handleRemoveActivityItem = async (activityId: string) => {
-    if (!selectedEdition || !id) return;
-    const updated = selectedEdition.activities?.filter(act => act.id !== activityId) || [];
-    try {
-      await updateDoc(doc(db, "game_editions", id), { activities: updated });
-    } catch (err) {
-      alert("Failed to remove item: " + err);
+      alert(`${errorLabel}: ${err}`);
+      return false;
     }
   };
 
@@ -145,7 +77,6 @@ export const AdminEditEdition: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto w-full space-y-6">
-      
       {/* 1. UNIVERSAL TOP HEADER BAR */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-100 flex justify-between items-center">
         <div>
@@ -172,9 +103,7 @@ export const AdminEditEdition: React.FC = () => {
           type="button"
           onClick={() => setSelectedTab("tiles")}
           className={`text-2xl font-black tracking-tight transition-all pb-1 ${
-            selectedTab === "tiles" 
-              ? "text-slate-900 border-b-4 border-orange-500 scale-100 opacity-100" 
-              : "text-slate-400 hover:text-slate-600 scale-95 opacity-70"
+            selectedTab === "tiles" ? "text-slate-900 border-b-4 border-orange-500 scale-100 opacity-100" : "text-slate-400 hover:text-slate-600 scale-95 opacity-70"
           }`}
         >
           Tiles
@@ -183,49 +112,18 @@ export const AdminEditEdition: React.FC = () => {
           type="button"
           onClick={() => setSelectedTab("questions")}
           className={`text-2xl font-black tracking-tight transition-all pb-1 ${
-            selectedTab === "questions" 
-              ? "text-slate-900 border-b-4 border-orange-500 scale-100 opacity-100" 
-              : "text-slate-400 hover:text-slate-600 scale-95 opacity-70"
+            selectedTab === "questions" ? "text-slate-900 border-b-4 border-orange-500 scale-100 opacity-100" : "text-slate-400 hover:text-slate-600 scale-95 opacity-70"
           }`}
         >
           Questions
         </button>
       </div>
 
-      {/* 3. CONDITIONAL CHILD VIEWS MOUNTING CHASSIS */}
+      {/* 3. CONDITIONAL CHILD VIEWS - each tab now owns its own state and handlers */}
       {selectedTab === "tiles" ? (
-        <AdminEditTiles
-          selectedEdition={selectedEdition}
-          editingTileIndex={editingTileIndex}
-          setEditingTileIndex={setEditingTileIndex}
-          targetTileName={targetTileName}
-          setTargetTileName={setTargetTileName}
-          tileType={tileType}
-          setTileType={setTileType}
-          tileValue={tileValue}
-          setTileValue={setTileValue}
-          propertyCost={propertyCost}
-          setPropertyCost={setPropertyCost}
-          rentCost={rentCost}
-          setRentCost={setRentCost}
-          sellingCost={sellingCost}
-          setSellingCost={setSellingCost}
-          propertyGroup={propertyGroup}
-          setPropertyGroup={setPropertyGroup}
-          handleTileSaveSubmit={handleTileSaveSubmit}
-        />
+        <AdminEditTiles selectedEdition={selectedEdition} updateEdition={updateEdition} />
       ) : (
-        <AdminEditQuestions
-          selectedEdition={selectedEdition}
-          quizQuestion={quizQuestion}
-          setQuizQuestion={setQuizQuestion}
-          currentOptions={currentOptions}
-          setCurrentOptions={setCurrentOptions}
-          correctAnswerStr={correctAnswerStr}
-          setCorrectAnswerStr={setCorrectAnswerStr}
-          handleQuizSubmit={handleQuizSubmit}
-          handleRemoveActivityItem={handleRemoveActivityItem}
-        />
+        <AdminEditQuestions selectedEdition={selectedEdition} updateEdition={updateEdition} />
       )}
     </div>
   );

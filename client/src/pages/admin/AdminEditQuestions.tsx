@@ -1,22 +1,39 @@
-import React from "react";
-import type { GameEdition } from "./AdminTypes";
+import React, { useState } from "react";
+import type { GameEdition, PopQuizActivity } from "./AdminTypes";
 
 interface QuestionsProps {
   selectedEdition: GameEdition;
-  quizQuestion: string;
-  setQuizQuestion: (val: string) => void;
-  currentOptions: string[];
-  setCurrentOptions: (val: string[]) => void;
-  correctAnswerStr: string;
-  setCorrectAnswerStr: (val: string) => void;
-  handleQuizSubmit: (e: React.FormEvent) => Promise<void>;
-  handleRemoveActivityItem: (activityId: string) => Promise<void>;
+  updateEdition: (data: Partial<GameEdition>, errorLabel: string) => Promise<boolean>;
 }
 
-export const AdminEditQuestions: React.FC<QuestionsProps> = ({
-  selectedEdition, quizQuestion, setQuizQuestion, currentOptions, setCurrentOptions,
-  correctAnswerStr, setCorrectAnswerStr, handleQuizSubmit, handleRemoveActivityItem
-}) => {
+export const AdminEditQuestions: React.FC<QuestionsProps> = ({ selectedEdition, updateEdition }) => {
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [currentOptions, setCurrentOptions] = useState<string[]>(["", "", "", ""]);
+  const [correctAnswerStr, setCorrectAnswerStr] = useState("");
+
+  const handleQuizSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const filtered = currentOptions.map(o => o.trim()).filter(Boolean);
+    if (filtered.length < 2) return alert("Please provide at least 2 choice options.");
+
+    const updatedActivities: PopQuizActivity[] = [
+      ...(selectedEdition.activities || []),
+      { id: "quiz_" + Date.now(), question: quizQuestion.trim(), options: filtered, correctAnswer: correctAnswerStr }
+    ];
+
+    const ok = await updateEdition({ activities: updatedActivities }, "Failed to save quiz");
+    if (ok) {
+      setQuizQuestion("");
+      setCurrentOptions(["", "", "", ""]);
+      setCorrectAnswerStr("");
+    }
+  };
+
+  const handleRemoveActivityItem = async (activityId: string) => {
+    const updatedActivities = selectedEdition.activities?.filter(act => act.id !== activityId) || [];
+    await updateEdition({ activities: updatedActivities }, "Failed to remove item");
+  };
+
   return (
     <div className="grid grid-cols-12 gap-5 items-start border-t border-orange-100 pt-2 animate-fade-in">
       <div className="col-span-5 bg-[#CBE6FF] border border-[#A4D2FF] rounded-2xl p-4 shadow-sm space-y-3">
@@ -42,7 +59,7 @@ export const AdminEditQuestions: React.FC<QuestionsProps> = ({
           <button type="submit" className="w-full bg-[#3B71CA] hover:bg-blue-600 text-white font-bold p-2.5 rounded-xl transition-all shadow-sm mt-2">Append Pop Quiz to Edition</button>
         </form>
       </div>
-      
+
       <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 shadow-sm space-y-3">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2">Quiz MCQ Registers</h4>
         <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">

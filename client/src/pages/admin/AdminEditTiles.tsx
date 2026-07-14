@@ -1,53 +1,98 @@
-import React from "react";
+import React, { useState } from "react";
 import type { GameEdition, MonopolyTile } from "./AdminTypes";
 
 interface TilesProps {
   selectedEdition: GameEdition;
-  editingTileIndex: number | null;
-  setEditingTileIndex: (idx: number | null) => void;
-  targetTileName: string;
-  setTargetTileName: (val: string) => void;
-  tileType: MonopolyTile["type"] | "";
-  setTileType: (type: MonopolyTile["type"] | "") => void;
-  tileValue: number;
-  setTileValue: (val: number) => void;
-  propertyCost: number;
-  setPropertyCost: (val: number) => void;
-  rentCost: number;
-  setRentCost: (val: number) => void;
-  sellingCost: number;
-  setSellingCost: (val: number) => void;
-  propertyGroup: string;
-  setPropertyGroup: (val: string) => void;
-  handleTileSaveSubmit: (e: React.FormEvent) => Promise<void>;
+  updateEdition: (data: Partial<GameEdition>, errorLabel: string) => Promise<boolean>;
 }
 
-export const AdminEditTiles: React.FC<TilesProps> = ({
-  selectedEdition, editingTileIndex, setEditingTileIndex, targetTileName, setTargetTileName,
-  tileType, setTileType, tileValue, setTileValue, propertyCost, setPropertyCost,
-  rentCost, setRentCost, sellingCost, setSellingCost, propertyGroup, setPropertyGroup, handleTileSaveSubmit
-}) => {
+// Badge styling and label per tile type.
+const TILE_BADGE: Record<MonopolyTile["type"], { color: string; label: (t: MonopolyTile) => string }> = {
+  property:  { color: "text-blue-600 bg-blue-50 border-blue-200",          label: () => "PROPERTY" },
+  railroad:  { color: "text-slate-700 bg-slate-100 border-slate-300",      label: () => "Railroad" },
+  utility:   { color: "text-cyan-700 bg-cyan-50 border-cyan-200",          label: () => "Utility" },
+  quiz:      { color: "text-green-600 bg-green-50 border-green-200",       label: (t) => `Quiz • +/- ${t.points ?? 0} pts` },
+  minigame:  { color: "text-emerald-600 bg-emerald-50 border-emerald-200", label: (t) => `Minigame • +/- ${t.points ?? 0} pts` },
+  tax:       { color: "text-red-600 bg-red-50 border-red-200",             label: () => "Tax • 200 pts" },
+  jail:      { color: "text-purple-600 bg-purple-50 border-purple-200",    label: () => "Jail" },
+  goToJail:  { color: "text-purple-600 bg-purple-50 border-purple-200",    label: () => "Go To Jail" },
+  chance:    { color: "text-indigo-600 bg-indigo-50 border-indigo-200",    label: () => "Chance Card" },
+  community: { color: "text-amber-600 bg-amber-50 border-amber-200",       label: () => "Community Chest" },
+};
+
+const AUTO_FILL: Partial<Record<MonopolyTile["type"], { group: string; price: number; rent: number; sellValue: number }>> = {
+  railroad: { group: "railroad", price: 200, rent: 25, sellValue: 100 },
+  utility: { group: "utility", price: 150, rent: 4, sellValue: 75 },
+};
+
+export const AdminEditTiles: React.FC<TilesProps> = ({ selectedEdition, updateEdition }) => {
+  const [editingTileIndex, setEditingTileIndex] = useState<number | null>(null);
+  const [targetTileName, setTargetTileName] = useState("");
+  const [tileType, setTileType] = useState<MonopolyTile["type"] | "">("");
+  const [tileValue, setTileValue] = useState<number>(0);
+  const [propertyCost, setPropertyCost] = useState<number>(0);
+  const [rentCost, setRentCost] = useState<number>(0);
+  const [sellingCost, setSellingCost] = useState<number>(0);
+  const [propertyGroup, setPropertyGroup] = useState<string>("");
+
+  const handleEditTile = (idx: number) => {
+    const tile = selectedEdition.tiles[idx];
+    setEditingTileIndex(idx);
+    setTargetTileName(tile.name);
+    setTileType(tile.type);
+    setTileValue(tile.points ?? 0);
+    setPropertyCost(tile.price ?? 0);
+    setRentCost(tile.rent ?? 0);
+    setSellingCost(tile.sellValue ?? 0);
+    setPropertyGroup(tile.group || "");
+  };
+
+  const handleTypeChange = (nextType: MonopolyTile["type"] | "") => {
+    setTileType(nextType);
+    setTileValue(0);
+    const defaults = nextType ? AUTO_FILL[nextType] : undefined;
+    if (defaults) {
+      setPropertyGroup(defaults.group);
+      setPropertyCost(defaults.price);
+      setRentCost(defaults.rent);
+      setSellingCost(defaults.sellValue);
+    }
+  };
+
+  const handleTileSaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTileIndex === null || !tileType) return;
+
+    const isPurchasableTile = tileType === "property" || tileType === "railroad" || tileType === "utility";
+    const updatedTiles = [...selectedEdition.tiles];
+
+    updatedTiles[editingTileIndex] = {
+      id: updatedTiles[editingTileIndex].id,
+      name: targetTileName.trim() || updatedTiles[editingTileIndex].name,
+      type: tileType,
+      points: tileType === "minigame" || tileType === "quiz" ? tileValue : 0,
+      price: isPurchasableTile ? propertyCost : 0,
+      rent: isPurchasableTile ? rentCost : 0,
+      sellValue: isPurchasableTile ? sellingCost : 0,
+      group: tileType === "property" ? (propertyGroup as MonopolyTile["group"]) : "",
+    };
+
+    const ok = await updateEdition({ tiles: updatedTiles }, "Update Failed");
+    if (ok) setEditingTileIndex(null);
+  };
+
+  const isPurchasable = tileType === "property" || tileType === "railroad" || tileType === "utility";
+  const isScored = tileType === "minigame" || tileType === "quiz";
+
   return (
     <div className="grid grid-cols-12 gap-5 items-start animate-fade-in">
       <div className="col-span-7 bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-4 space-y-2 shadow-sm">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-orange-100 pb-2 mb-2">Active Board Map (40 Tiles Total)</h4>
         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
           {selectedEdition.tiles?.map((tile, idx) => {
-            let badgeColor = "text-gray-600 bg-gray-50 border-gray-200";
-            let displayLabel = tile.type.toUpperCase();
-
-            if (tile.type === "property") badgeColor = "text-blue-600 bg-blue-50 border-blue-200";
-            else if (tile.type === "railroad") { badgeColor = "text-slate-700 bg-slate-100 border-slate-300"; displayLabel = "Railroad";} 
-            else if (tile.type === "utility") { badgeColor = "text-cyan-700 bg-cyan-50 border-cyan-200"; displayLabel = "Utility";}
-            else if (tile.type === "quiz") { badgeColor = "text-green-600 bg-green-50 border-green-200"; displayLabel = `Quiz • +/- ${tile.points ?? 0} pts`; }
-            else if (tile.type === "minigame") { badgeColor = "text-emerald-600 bg-emerald-50 border-emerald-200"; displayLabel = `Minigame • +/- ${tile.points ?? 0} pts`; }
-            else if (tile.type === "tax") { badgeColor = "text-red-600 bg-red-50 border-red-200"; displayLabel = "Tax • 200 pts"; }
-            else if (tile.type === "jail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Jail"; }
-            else if (tile.type === "goToJail") { badgeColor = "text-purple-600 bg-purple-50 border-purple-200"; displayLabel = "Go To Jail"; }
-            else if (tile.type === "chance") { badgeColor = "text-indigo-600 bg-indigo-50 border-indigo-200"; displayLabel = "Chance Card"; }
-            else if (tile.type === "community") { badgeColor = "text-amber-600 bg-amber-50 border-amber-200"; displayLabel = "Community Chest"; }
-
+            const badge = TILE_BADGE[tile.type] ?? { color: "text-gray-600 bg-gray-50 border-gray-200", label: () => tile.type.toUpperCase() };
             const isCurrentlyEditingThis = editingTileIndex === idx;
+            const tileIsPurchasable = tile.type === "property" || tile.type === "railroad" || tile.type === "utility";
 
             return (
               <div key={tile.id || idx} className={`border rounded-xl px-4 py-3 flex justify-between items-center shadow-sm transition-all ${isCurrentlyEditingThis ? "bg-orange-50 border-orange-400 ring-2 ring-orange-200" : "bg-white border-orange-100 hover:border-orange-200"}`}>
@@ -57,8 +102,8 @@ export const AdminEditTiles: React.FC<TilesProps> = ({
                     <span className="text-base text-slate-900 font-extrabold tracking-tight">{idx === 0 ? "STARTING POINT" : tile.name}</span>
                     {idx !== 0 && (
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeColor}`}>{displayLabel}</span>
-                        {(tile.type === "property" || tile.type === "railroad" || tile.type === "utility") ? (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badge.color}`}>{badge.label(tile)}</span>
+                        {tileIsPurchasable ? (
                           <div className="flex flex-wrap gap-1.5 items-center">
                             {tile.group && <span className="text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase tracking-wider bg-white shadow-sm border-gray-300 text-slate-700 capitalize">{tile.group}</span>}
                             <span className="text-[10px] font-bold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border shadow-sm">Cost: {tile.price ?? 0} Pts</span>
@@ -75,7 +120,7 @@ export const AdminEditTiles: React.FC<TilesProps> = ({
                 {idx === 0 ? (
                   <span className="text-xs font-bold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl border italic select-none">STARTING POINT</span>
                 ) : (
-                  <button type="button" onClick={() => { setEditingTileIndex(idx); setTargetTileName(tile.name); setTileType(tile.type); setTileValue(tile.points ?? 0); setPropertyCost(tile.price ?? 0); setRentCost(tile.rent ?? 0); setSellingCost(tile.sellValue ?? 0); setPropertyGroup(tile.group || ""); }} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
+                  <button type="button" onClick={() => handleEditTile(idx)} className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm transition-all transform active:scale-95 ${isCurrentlyEditingThis ? "bg-orange-500 text-white cursor-default" : "bg-[#5CB85C] hover:bg-green-600 text-white"}`}>{isCurrentlyEditingThis ? "Editing..." : "Edit Tile"}</button>
                 )}
               </div>
             );
@@ -97,21 +142,7 @@ export const AdminEditTiles: React.FC<TilesProps> = ({
             <div>
               <label className="block font-bold text-slate-700 mb-1.5">Rule Classification Type</label>
               <div className="bg-white p-1 rounded-xl border border-orange-300">
-                <select
-                  value={tileType}
-                  onChange={(e) => {
-                    const nextType = e.target.value as MonopolyTile["type"] | "";
-                    setTileType(nextType);
-                    setTileValue(0);
-
-                    if (nextType === "railroad") {
-                      setPropertyGroup("railroad"); setPropertyCost(200); setRentCost(25); setSellingCost(100);
-                    } else if (nextType === "utility") {
-                      setPropertyGroup("utility"); setPropertyCost(150); setRentCost(4); setSellingCost(75);
-                    }
-                  }}
-                  className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs"
-                >
+                <select value={tileType} onChange={(e) => handleTypeChange(e.target.value as MonopolyTile["type"] | "")} className="w-full p-2 bg-transparent font-bold text-slate-800 focus:outline-none text-xs">
                   <option value="">-- Select Rule Type --</option>
                   <option value="property">Property</option>
                   <option value="railroad">Railroad</option>
@@ -126,7 +157,7 @@ export const AdminEditTiles: React.FC<TilesProps> = ({
                 </select>
               </div>
             </div>
-            {tileType === "property" || tileType === "railroad" || tileType === "utility" ? (
+            {isPurchasable ? (
               <div className="space-y-3">
                 {tileType === "property" && (
                   <div>
@@ -160,7 +191,7 @@ export const AdminEditTiles: React.FC<TilesProps> = ({
                 </div>
               </div>
             ) : (
-              (tileType === "minigame" || tileType === "quiz") && (
+              isScored && (
                 <div className="space-y-3">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Points Modifier Value</label>
