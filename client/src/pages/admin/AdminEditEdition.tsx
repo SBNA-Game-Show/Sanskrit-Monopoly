@@ -105,12 +105,12 @@ export const AdminEditEdition: React.FC = () => {
               aria-checked={selectedEdition.draft ?? true}
               onClick={() => updateEdition({ draft: !(selectedEdition.draft ?? true) }, "Failed to update draft status")}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                (selectedEdition.draft ?? true) ? "bg-slate-800" : "bg-[#5CB85C]"
+                (selectedEdition.draft ?? true) ? "bg-[#5CB85C]" : "bg-slate-800"
               }`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-[#00ADFF] transition-transform ${
-                  (selectedEdition.draft ?? true) ? "translate-x-1" : "translate-x-6"
+                  (selectedEdition.draft ?? true) ? "translate-x-6" : "translate-x-1"
                 }`}
               />
             </button>
