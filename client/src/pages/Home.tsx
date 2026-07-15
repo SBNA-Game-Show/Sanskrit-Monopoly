@@ -334,7 +334,7 @@ function Home() {
       </div> {/* Buttons*/}
 
       {/* Footer */}
-      <div className="w-full bg-[#FFC17E] h-20 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)]"></div>
+      <div className="w-full bg-[#FFC17E] h-16 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)]"></div>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 export const GAME_EVENTS = {
   LOBBY_JOIN: "lobby:join",
+  LOBBY_UPDATE_EDITION: "lobby:update-edition",
   LOBBY_LEAVE: "lobby:leave",
   LOBBY_HOST_LEAVE: "lobby:host-leave",
   LOBBY_CLOSED: "lobby:closed",
@@ -36,6 +37,11 @@ export const GAME_EVENTS = {
   // auctioning
   GAME_PLACE_AUCTION_BID: "game:place-auction-bid",
   GAME_RESOLVE_AUCTION: "game:resolve-auction",
+
+  // bankruptcy auctioning
+  GAME_START_BANKRUPTCY_AUCTION: "game:start-bankruptcy-auction",
+  GAME_CLEAR_BANKRUPTCY_PROPERTY: "game:clear-bankruptcy-property",
+  GAME_CLEAR_BANKRUPTCY_AUCTIONS: "game:clear-bankruptcy-auctions",
 
   QUIZ_SUBMIT_ANSWER: "quiz:submitAnswer",
 };

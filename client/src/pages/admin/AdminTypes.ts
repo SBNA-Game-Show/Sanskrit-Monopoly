@@ -8,17 +8,18 @@ export interface PopQuizActivity {
 export interface MonopolyTile {
   id: string;
   name: string;
-  type: "property" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz";
-  money: number; 
+  type: "property" | "railroad" | "utility" | "tax" | "jail" | "goToJail" | "chance" | "community" | "minigame" | "quiz" | "start";
+  points: number; 
   price?: number;
   rent?: number;
   sellValue?: number;
-  group?: "red" | "brown" | "lightBlue" | "pink" | "orange" | "yellow" | "green" | "darkBlue" | "" ;
+  group?: "red" | "brown" | "lightBlue" | "pink" | "orange" | "yellow" | "green" | "darkBlue" | "railroad" | "utility" | "" ;
 }
 
 export interface GameEdition {
   id: string;
   name: string;
   tiles: MonopolyTile[];              
-  activities?: PopQuizActivity[]; 
+  activities?: PopQuizActivity[];
+  draft?: boolean; 
 }

@@ -6,6 +6,7 @@ import { TOKEN_IMAGE_BY_ID } from "../constants/game/tokenOptions";
 
 function Result({ gameState }: any) {
   const navigate = useNav();
+
   const sortedPlayers = [...gameState.players].sort(
     (a, b) => (b.points || 0) - (a.points || 0),
   );
@@ -64,21 +65,10 @@ function Result({ gameState }: any) {
                   <div className="result-stats">
                     <div className="stat-box">
                       <span className="stat-icon">⭐</span>
-                      <span className="stat-label">Score/अंकाः</span>
+                      <span className="stat-label">Points/अंकाः</span>
                       <strong>{player.points || 0}</strong>
                     </div>
 
-                    <div className="stat-box">
-                      <span className="stat-icon">💰</span>
-                      <span className="stat-label">Money/धनम्</span>
-                      <strong>{player.money || 0}</strong>
-                    </div>
-
-                    <div className="stat-box">
-                      <span className="stat-icon">🏠</span>
-                      <span className="stat-label">Properties/गृहाः</span>
-                      <strong>{player.properties?.length || 0}</strong>
-                    </div>
                   </div>
                 </div>
               </div>

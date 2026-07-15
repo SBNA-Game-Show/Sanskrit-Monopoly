@@ -102,6 +102,16 @@ export default function Game({ gameState }: GameProps) {
     );
   };
 
+  // added since GAME_HOST_SKIP_TURN was defined but never used
+  // skip turn was wired to roll dice when it should have used the previously defined state
+  const handleSkipTurn = () => {
+  if (!gameState.lobbyCode || !uid) return;
+
+  socket.emit(GAME_EVENTS.GAME_HOST_SKIP_TURN, {
+    lobbyCode: gameState.lobbyCode,
+  });
+};
+
   const handleEndGame = () => {
     if (!gameState.lobbyCode || !uid) return;
     socket.emit(GAME_EVENTS.GAME_HOST_END_GAME, {
@@ -252,7 +262,7 @@ export default function Game({ gameState }: GameProps) {
                 <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
                   Force Roll
                 </Button>
-                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleRollDice}>
+                <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleSkipTurn}>
                   Skip Turn
                 </Button>
                 <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleEndGame}>

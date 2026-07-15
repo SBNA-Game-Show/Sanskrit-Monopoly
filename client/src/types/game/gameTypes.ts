@@ -9,4 +9,5 @@ export type {
   PlayerState,
   ActiveQuiz, // for quiz
   ActiveAuction, // for auctioning
+  ActiveBankruptcyAuction,
 } from "../../../../shared/gameTypes";
