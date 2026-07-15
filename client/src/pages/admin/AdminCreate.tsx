@@ -23,7 +23,8 @@ export const AdminCreate: React.FC = () => {
       await addDoc(collection(db, "game_editions"), {
         name: newEditionName.trim(),
         tiles: baselineTiles,
-        activities: []
+        activities: [],
+        draft: true
       });
       setNewEditionName("");
       navigate("/admin");
