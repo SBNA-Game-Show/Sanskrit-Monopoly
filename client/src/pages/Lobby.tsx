@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
 import { useNav } from "../components/TransitionOverlay";
@@ -33,7 +33,7 @@ export default function Lobby() {
     const handleHostLeave = ({ message }: { message: string }) => {
       navigate("/home");
       showToast({
-        variant: "success",
+        variant: "error",
         title: "Lobby Closed",
         message: message,
       });
@@ -76,7 +76,7 @@ export default function Lobby() {
 
       navigate("/");
     }
-  }, [lobbyState, uid, navigate]);
+  }, [lobbyState]);
 
   // --- TRAFFIC CONTROLLER ROUTING ---
 
