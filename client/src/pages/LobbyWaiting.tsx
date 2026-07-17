@@ -46,7 +46,9 @@ export default function LobbyWaiting({ lobbyState, lobbyCode }: LobbyWaitingProp
     const editionsRef = collection(db, "game_editions");
 
     const unsubscribe = onSnapshot(editionsRef, (snapshot) => {
-      const liveEditions = snapshot.docs.map((doc) => { return { id: doc.id, name: doc.data().name } });
+      const liveEditions = snapshot.docs
+      .filter((doc) => doc.data().draft === false)
+      .map((doc) => { return { id: doc.id, name: doc.data().name } });
       setAvailableEditions(liveEditions);
     }, (error) => {
       console.log(error);
