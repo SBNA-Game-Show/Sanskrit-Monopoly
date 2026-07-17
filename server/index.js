@@ -14,7 +14,7 @@ app.post("/api/lobby-create", async (req, res) => {
     res.json({ lobby });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
+    res.status(400).json({
       error: "Failed to create game",
       details: error.message,
     });

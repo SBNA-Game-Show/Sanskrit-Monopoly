@@ -1,5 +1,6 @@
 export const GAME_EVENTS = {
   LOBBY_JOIN: "lobby:join",
+  LOBBY_JOIN_REJECTED: "lobby:join-rejected",
   LOBBY_UPDATE_EDITION: "lobby:update-edition",
   LOBBY_LEAVE: "lobby:leave",
   LOBBY_HOST_LEAVE: "lobby:host-leave",

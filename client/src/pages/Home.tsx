@@ -211,7 +211,8 @@ function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create room");
+        const errorData = await response.json();
+        throw new Error(errorData.details || "Failed to create room");
       }
 
       const data = await response.json();
@@ -221,11 +222,11 @@ function Home() {
         message: `${lobbyType === "private" ? "Private" : "Public"} room has been created successfully.`,
       });
       navigate(`/lobby/${data.lobby.lobbyCode}`);
-    } catch {
+    } catch (error: any) {
       showToast({
         variant: "error",
-        title: "Could not create room",
-        message: "Something went wrong. Please try again.",
+        title: "Action Denied",
+        message: error.message || "Something went wrong. Please try again.",
       });
     }
   };

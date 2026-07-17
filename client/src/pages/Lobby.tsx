@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { socket } from "../socket";
 import { useAuth } from "../context/AuthContext";
 import { useNav } from "../components/TransitionOverlay";
@@ -17,10 +17,14 @@ export default function Lobby() {
   const { lobbyCode } = useParams<{ lobbyCode: string }>();
   const { uid, username, authLoading } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNav();
+  
+  const transitionNav = useNav();
+  const standardNav = useNavigate();
 
   useEffect(() => {
     if (authLoading) return;
+
+    let isRedirecting = false;
 
     const handleGameUpdated = (nextState: GameState) => {
       setLobbyState(nextState);
@@ -30,14 +34,36 @@ export default function Lobby() {
       console.log("Game socket error:", error);
     };
 
+    const handleMultiJoinReject = ({ message, existingLobbyCode }: { message: string, existingLobbyCode?: string }) => {
+      if (isRedirecting) return;
+      isRedirecting = true;
+      
+      showToast({
+        variant: "error",
+        title: "Access Denied",
+        message: message
+      });
+
+      if (existingLobbyCode) {
+        standardNav(`/lobby/${existingLobbyCode}`);
+      } else {
+        transitionNav(`/home`);
+      }
+    };
+
     const handleHostLeave = ({ message }: { message: string }) => {
-      navigate("/home");
+      transitionNav("/home");
       showToast({
         variant: "error",
         title: "Lobby Closed",
         message: message,
       });
     };
+
+    socket.on(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
+    socket.on(GAME_EVENTS.GAME_ERROR, handleGameError);
+    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleHostLeave);
+    socket.on("lobby:join-rejected", handleMultiJoinReject);
 
     socket.emit(GAME_EVENTS.LOBBY_JOIN, {
       lobbyCode,
@@ -47,16 +73,13 @@ export default function Lobby() {
       },
     });
 
-    socket.on(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
-    socket.on(GAME_EVENTS.GAME_ERROR, handleGameError);
-    socket.on(GAME_EVENTS.LOBBY_CLOSED, handleHostLeave);
-
     return () => {
       socket.off(GAME_EVENTS.GAME_UPDATED, handleGameUpdated);
       socket.off(GAME_EVENTS.GAME_ERROR, handleGameError);
       socket.off(GAME_EVENTS.LOBBY_CLOSED, handleHostLeave);
+      socket.off(GAME_EVENTS.LOBBY_JOIN_REJECTED, handleMultiJoinReject);
     };
-  }, [authLoading]);
+  }, [authLoading, lobbyCode, transitionNav, standardNav, showToast, uid, username]);
 
   // Kick detection: If the user is not part of the lobby, navigate them away
   useEffect(() => {
@@ -74,9 +97,9 @@ export default function Lobby() {
         message: "You have been removed from the lobby by the host.",
       });
 
-      navigate("/");
+      transitionNav("/");
     }
-  }, [lobbyState]);
+  }, [lobbyState, transitionNav, showToast, uid]);
 
   // --- TRAFFIC CONTROLLER ROUTING ---
 

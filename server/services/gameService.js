@@ -10,6 +10,21 @@ export function getLobby(lobbyCode) {
   return lobbies[lobbyCode] ?? null;
 }
 
+export function findLobbyByUid(uid) {
+  // Check if user host or player in active lobby
+  for (const lobby of Object.values(lobbies)) {
+    if (lobby.host.uid === uid) {
+      return lobby;
+    }
+
+    const isPlayer = lobby.players.some((p) => p.uid === uid);
+    if (isPlayer) {
+      return lobby;
+    }
+  }
+  return null;
+}
+
 export function addLog(lobbyCode, entry) {
   const lobby = getLobby(lobbyCode);
 
@@ -464,6 +479,11 @@ export function showMiniGame(lobbyCode) {
 
 // function to create lobby
 export function createLobby(hostUid, hostUsername, isPrivate = false) {
+  // Prevent creating new lobby if user already in one
+  if (findLobbyByUid(hostUid)) {
+    throw new Error("You are already in active game or lobby.");
+  }
+
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -517,6 +537,12 @@ export function joinLobby(lobbyCode, playerData) {
     existingPlayer.username = playerData.username;
     existingPlayer.isConnected = true;
     return { lobby, error: null };
+  }
+
+  // Prevent user joining lobby if they're in a diff. lobby
+  const currentLobby = findLobbyByUid(playerData.uid);
+  if (currentLobby && currentLobby.lobbyCode !== lobbyCode) {
+    return { lobby: null, error: "You are already in active game or lobby", existingLobbyCode: currentLobby.lobbyCode };
   }
 
   let assignedToken = null;

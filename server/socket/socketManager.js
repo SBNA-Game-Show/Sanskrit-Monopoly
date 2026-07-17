@@ -180,7 +180,11 @@ export function setupSocketEvents(io) {
       });
 
       if (result.error) {
-        emitGameError(socket, result.error);
+        if (result.error.includes("already in active game")) {
+          socket.emit("lobby:join-rejected", { message: result.error, existingLobbyCode: result.existingLobbyCode });
+        } else {
+          emitGameError(socket, result.error);
+        }
         return;
       }
 
