@@ -479,11 +479,6 @@ export function showMiniGame(lobbyCode) {
 
 // function to create lobby
 export function createLobby(hostUid, hostUsername, isPrivate = false) {
-  // Prevent creating new lobby if user already in one
-  if (findLobbyByUid(hostUid)) {
-    throw new Error("You are already in active game or lobby.");
-  }
-
   const lobbyCode = generateLobbyCode();
 
   lobbies[lobbyCode] = {
@@ -537,12 +532,6 @@ export function joinLobby(lobbyCode, playerData) {
     existingPlayer.username = playerData.username;
     existingPlayer.isConnected = true;
     return { lobby, error: null };
-  }
-
-  // Prevent user joining lobby if they're in a diff. lobby
-  const currentLobby = findLobbyByUid(playerData.uid);
-  if (currentLobby && currentLobby.lobbyCode !== lobbyCode) {
-    return { lobby: null, error: "You are already in active game or lobby", existingLobbyCode: currentLobby.lobbyCode };
   }
 
   let assignedToken = null;
