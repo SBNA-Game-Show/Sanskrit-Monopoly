@@ -1460,6 +1460,33 @@ export function leaveLobby(lobbyCode, uid) {
 
   return { lobby, error: null };
 }
+export function closeLobby(lobbyCode, hostUid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return {
+      lobby: null,
+      error: "Lobby not found",
+    };
+  }
+
+  if (lobby.host.uid !== hostUid) {
+    return {
+      lobby,
+      error: "Only the host can close the lobby",
+    };
+  }
+
+  // Reference for socketManager to access the lobby information.
+  const closedLobby = lobby;
+
+  delete lobbies[lobbyCode];
+
+  return {
+    lobby: closedLobby,
+    error: null,
+  };
+}
 
 export function disconnectPlayer(socketId) {
   for (const lobby of Object.values(lobbies)) {

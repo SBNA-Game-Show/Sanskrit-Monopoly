@@ -72,10 +72,26 @@ export default function Game({ gameState }: GameProps) {
   };
   const handleLeaveLobby = () => {
 
-    if (!gameState.lobbyCode || !uid || isHost) {
-      console.log("Leave blocked", { lobbyCode: gameState.lobbyCode, uid, isHost });
+    if (!gameState.lobbyCode || !uid) return;
+
+    if (isHost) {
+      const confirmed = window.confirm(
+        "Are you sure you want to close the lobby?\n\nThis will remove all players and delete the lobby.",
+      );
+
+      if (!confirmed) return;
+
+      socket.emit(GAME_EVENTS.LOBBY_HOST_LEAVE, {
+        lobbyCode: gameState.lobbyCode,
+        uid,
+      },
+        () => {
+          navigate("/home");
+        },);
+
       return;
     }
+
     socket.emit(GAME_EVENTS.LOBBY_LEAVE, {
       lobbyCode: gameState.lobbyCode,
       uid,
@@ -251,6 +267,14 @@ export default function Game({ gameState }: GameProps) {
                 </Button>
                 <Button variant="action" size="lg" disabled={gameState.gameStatus !== "idling"} onClick={handleEndGame}>
                   End Game
+                </Button>
+                <Button
+                  variant="action"
+                  size="lg"
+                  onClick={handleLeaveLobby}
+                  className="bg-red-600"
+                >
+                  Close Lobby
                 </Button>
               </>
             ) : (
