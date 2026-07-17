@@ -14,7 +14,7 @@ app.post("/api/lobby-create", async (req, res) => {
     res.json({ lobby });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
+    res.status(400).json({
       error: "Failed to create game",
       details: error.message,
     });
@@ -24,11 +24,11 @@ app.post("/api/lobby-create", async (req, res) => {
 app.get("/api/lobbies", (req, res) => {
   try {
     const allLobbies = Object.values(lobbies || {})
-    .filter((lobby) => !lobby.isPrivate) // Only show public lobbies
+    .filter((lobby) => !lobby.isPrivate && lobby.status !== "finished") // Only show public lobbies
     .map((lobby) => ({
       code: lobby.lobbyCode,
       host: lobby.host?.username || "Unknown Host",
-      players: lobby.players?.length || 1,
+      players: lobby.players?.length || 0,
       maxPlayers: 4,
       edition: lobby.edition?.name || "----"
     }));
