@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import type { GameState } from "../../types/game/gameTypes";
 import StartOfTurnOverlay from "./overlays/StartOfTurnOverlay";
 import { PopQuizOverlay } from "./overlays/PopQuizOverlay";
@@ -13,18 +12,6 @@ import { ChanceOverlay } from "./overlays/ChanceOverlay";
 import { CommunityChestOverlay } from "./overlays/CommunityChestOverlay";
 import { BankruptcyAuctionOverlay } from "./overlays/BankruptcyAuctionOverlay";
 import { AuctionOverlay } from "./overlays/AuctionOverlay";
-import { TileRevealOverlay } from "./overlays/TileRevealOverlay";
-
-const TILE_STATUSES = new Set([
-  "jail",
-  "buyProperty",
-  "chance",
-  "community",
-  "popQuiz",
-  "verseChallenge",
-  "penaltyActivity",
-  "miniGame",
-]);
 
 type GameOverlayLayerProps = {
   gameState: GameState;
@@ -49,30 +36,12 @@ export function GameOverlayLayer({
   isHost,
   uid,
 }: GameOverlayLayerProps) {
-  const [phase, setPhase] = useState<"pre" | "overlay">("overlay"); //this is used to show the tile reveal animation before the actual overlay
-  const prevStatus = useRef(gameState.gameStatus);
- 
-  useEffect(() => { 
-    if (gameState.gameStatus === prevStatus.current) return;
-    prevStatus.current = gameState.gameStatus;
- 
-    if (TILE_STATUSES.has(gameState.gameStatus)) {
-      setPhase("pre"); // Show the tile reveal animation before the actual overlay
-    } else {
-      setPhase("overlay"); // Show the actual overlay immediately for non-tile statuses like rolling the dice
-    }
-  }, [gameState.gameStatus]);
-
   const currentPlayer = getCurrentPlayer(gameState);
   // const currentTile = getCurrentTile(gameState);
 
   if (!currentPlayer || !gameState.gameStatus) return null;
 
   const isActivePlayer = currentPlayer.uid === uid;
-
-  if (phase === "pre" && TILE_STATUSES.has(gameState.gameStatus)) {
-    return <TileRevealOverlay onComplete={() => setPhase("overlay")} />;
-  }
 
   switch (gameState.gameStatus) {
     case "startOfTurn":
