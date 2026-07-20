@@ -13,17 +13,18 @@ export const AdminCreate: React.FC = () => {
     if (!newEditionName.trim()) return;
 
     const baselineTiles: MonopolyTile[] = Array.from({ length: 40 }, (_, index) => ({
-      id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`, 
-      name: `Tile ${index}`,
-      type: "property", 
-      points: 0, price: 100, rent: 10, sellValue: 50, group: ""
+      id: `tile-${index}-${Math.random().toString(36).substring(2, 7)}`,
+      name: index === 0 ? "START" : `Tile ${index}`,
+      type: index === 0 ? "start" : "property", 
+      points: 0, price: index === 0 ? 0 : 100, rent: index === 0 ? 0 : 10, sellValue: index === 0 ? 0 : 50, group: ""
     }));
 
     try {
       await addDoc(collection(db, "game_editions"), {
         name: newEditionName.trim(),
         tiles: baselineTiles,
-        activities: []
+        activities: [],
+        draft: true
       });
       setNewEditionName("");
       navigate("/admin");

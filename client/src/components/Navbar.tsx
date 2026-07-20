@@ -83,7 +83,7 @@ function Navbar() {
 
       <button
         type="button"
-        onClick={() => navigate("/Home")}
+        onClick={() => navigate("/home")}
         className="flex items-center hover:scale-105 active:scale-95 transition-transform"
       >
         <img

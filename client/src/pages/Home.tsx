@@ -211,7 +211,8 @@ function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create room");
+        const errorData = await response.json();
+        throw new Error(errorData.details || "Failed to create room");
       }
 
       const data = await response.json();
@@ -221,11 +222,11 @@ function Home() {
         message: `${lobbyType === "private" ? "Private" : "Public"} room has been created successfully.`,
       });
       navigate(`/lobby/${data.lobby.lobbyCode}`);
-    } catch {
+    } catch (error: any) {
       showToast({
         variant: "error",
-        title: "Could not create room",
-        message: "Something went wrong. Please try again.",
+        title: "Action Denied",
+        message: error.message || "Something went wrong. Please try again.",
       });
     }
   };
@@ -270,30 +271,33 @@ function Home() {
       <div className="z-10 flex flex-col items-center justify-center space-y-6 max-w-xl w-full px-4 flex-grow mx-auto">
         {/* Top Row */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-
           {/* Spring Public/Private Option Menu */}
-          <div className={`relative group flex justify-center ${shared_styles.controlWidth}`}>
+          <div
+            className={`relative group flex justify-center ${shared_styles.controlWidth}`}
+          >
             <div className="absolute bottom-full mb-3 left-0 w-full flex flex-col items-center gap-2 opacity-0 invisible translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                <button 
-                  type="button" 
-                  onClick={() => createRoom("public")}
-                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
-                    PUBLIC
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => createRoom("private")}
-                  className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300">
-                    PRIVATE
-                </button>
+              <button
+                type="button"
+                onClick={() => createRoom("public")}
+                className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300"
+              >
+                PUBLIC
+              </button>
+              <button
+                type="button"
+                onClick={() => createRoom("private")}
+                className="w-[185px] h-[56px] rounded-2xl bg-[#FDAF5D] hover:bg-[#FF9513] text-white font-jersey text-2xl tracking-widest shadow-sm cursor-pointer transition-colors duration-300"
+              >
+                PRIVATE
+              </button>
             </div>
 
             {/* Create Room Btn */}
             <Button size="xl" glow className="w-full sm:w-56">
               CREATE LOBBY
             </Button>
-          </div> {/* Spring Public/Private Option Menu */}
-
+          </div>{" "}
+          {/* Spring Public/Private Option Menu */}
           {/* Enter Code */}
           <div
             style={{ filter: shared_styles.activeGlow }}
@@ -316,7 +320,11 @@ function Home() {
             type="button"
             disabled={!isCodeEntered}
             onClick={() => navigate(`/lobby/${lobbyCode}`)}
-            style={{filter: isCodeEntered ? shared_styles.activeGlow : shared_styles.passiveGlow}}
+            style={{
+              filter: isCodeEntered
+                ? shared_styles.activeGlow
+                : shared_styles.passiveGlow,
+            }}
             className={`w-64 shadow-none ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}
             ${isCodeEntered ? "bg-[#FDAF5D] hover-scale-105 active:scale-95 cursor-pointer opacity-100" : "bg-[#FFC17E]/70 opacity-70 cursor-not-allowed"}`}
           >
@@ -327,12 +335,23 @@ function Home() {
             type="button"
             onClick={() => navigate("/active-lobbies")}
             style={{ filter: shared_styles.activeGlow }}
-            className={`bg-[#FDAF5D] hover:scale-105 active:scale-95 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}>
+            className={`bg-[#FDAF5D] hover:scale-105 active:scale-95 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}
+          >
             ACTIVE LOBBIES
           </button>
-        </div>{/* Enter Lobby Btn */}
-      </div> {/* Buttons*/}
-
+        </div> {/* Enter Lobby Btn */}
+        <div className="flex items-center justify-center w-full">
+          <button
+            type="button"
+            onClick={() => navigate("/rules")}
+            style={{ filter: shared_styles.activeGlow }}
+            className={`bg-[#FDAF5D] hover:scale-105 active:scale-95 shadow-sm cursor-pointer ${shared_styles.controlWidth} ${shared_styles.btnHeight} ${shared_styles.textFormat} ${shared_styles.hoverTransition}`}
+          >
+            RULES
+          </button>
+        </div>
+      </div>
+      {/* Buttons*/}
       {/* Footer */}
       <div className="w-full bg-[#FFC17E] h-16 shrink-0 shadow-[0px_-4px_10px_rgba(0,0,0,0.05)]"></div>
     </main>

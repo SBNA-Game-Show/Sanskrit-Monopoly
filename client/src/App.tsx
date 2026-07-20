@@ -11,7 +11,7 @@ import { AdminEditEdition } from "./pages/admin/AdminEditEdition";
 import Login from "./pages/Login";
 import RootLayout from "./pages/RootLayout";
 import Home from "./pages/Home";
-import Rules from "./pages/Rules";
+import Rules from "./pages/rules/Rules";
 import Lobby from "./pages/Lobby";
 import ActiveLobbies from "./pages/ActiveLobbies";
 import Result from "./pages/Result";

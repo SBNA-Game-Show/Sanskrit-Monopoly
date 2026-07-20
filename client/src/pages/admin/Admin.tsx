@@ -18,7 +18,8 @@ function Admin() {
         id: doc.id,
         name: doc.data().name || "Unnamed Edition",
         tiles: doc.data().tiles || [], 
-        activities: doc.data().activities || []
+        activities: doc.data().activities || [],
+        draft: doc.data().draft === undefined ? true : doc.data().draft
       } as GameEdition));
       
       setEditions(liveEditions);
@@ -60,7 +61,7 @@ function Admin() {
       <AdminDashboard 
         editions={editions} 
         navigateTo={handleNavigationRoute} 
-        onDelete={handleDeleteEdition} 
+        onDelete={handleDeleteEdition}
       />
     </main>
   );

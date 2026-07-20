@@ -10,6 +10,21 @@ export function getLobby(lobbyCode) {
   return lobbies[lobbyCode] ?? null;
 }
 
+export function findLobbyByUid(uid) {
+  // Check if user host or player in active lobby
+  for (const lobby of Object.values(lobbies)) {
+    if (lobby.host.uid === uid) {
+      return lobby;
+    }
+
+    const isPlayer = lobby.players.some((p) => p.uid === uid);
+    if (isPlayer) {
+      return lobby;
+    }
+  }
+  return null;
+}
+
 export function addLog(lobbyCode, entry) {
   const lobby = getLobby(lobbyCode);
 
@@ -1256,7 +1271,7 @@ export function placeAuctionBid(lobbyCode, uid, bidIncrement) {
   addLog(lobby.lobbyCode, {
     uid,
     username: player.username,
-    message: `bid ₩${bid} in the auction.`,
+    message: `raised the auction by ₩${increment} to ₩${bid}.`,
   });
 
   return { lobby, error: null };
@@ -1459,6 +1474,33 @@ export function leaveLobby(lobbyCode, uid) {
   }
 
   return { lobby, error: null };
+}
+export function closeLobby(lobbyCode, hostUid) {
+  const lobby = getLobby(lobbyCode);
+
+  if (!lobby) {
+    return {
+      lobby: null,
+      error: "Lobby not found",
+    };
+  }
+
+  if (lobby.host.uid !== hostUid) {
+    return {
+      lobby,
+      error: "Only the host can close the lobby",
+    };
+  }
+
+  // Reference for socketManager to access the lobby information.
+  const closedLobby = lobby;
+
+  delete lobbies[lobbyCode];
+
+  return {
+    lobby: closedLobby,
+    error: null,
+  };
 }
 
 export function disconnectPlayer(socketId) {

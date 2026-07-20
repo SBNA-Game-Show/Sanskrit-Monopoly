@@ -11,6 +11,7 @@ import {
   forceSkipTurn,
   kickPlayer,
   leaveLobby,
+  closeLobby,
   disconnectPlayer,
   startNextTurn,
   resolveLandingAction,
@@ -170,6 +171,28 @@ export function setupSocketEvents(io) {
       if (!lobbyCode || !player?.uid || !player?.username) {
         emitGameError(socket, "Missing lobby or player data");
         return;
+      }
+
+      // Kick player/host out of previous lobby
+      for (const existingLobby of Object.values(lobbies)) {
+        if (existingLobby.lobbyCode === lobbyCode) continue;
+
+        const isHost = existingLobby.host.uid === player.uid;
+        const isPlayer = existingLobby.players.some((p) => p.uid === player.uid);
+
+        if (isHost) {
+          closeLobby(existingLobby.lobbyCode, player.uid);
+          socket.to(existingLobby.lobbyCode).emit(GAME_EVENTS.LOBBY_CLOSED, { message: "The host has joined another game. Lobby closed." });
+          io.in(existingLobby.lobbyCode).socketsLeave(existingLobby.lobbyCode);
+        }
+        else if (isPlayer) {
+          const leaveResult = leaveLobby(existingLobby.lobbyCode, player.uid);
+
+          if (!leaveResult.error) {
+            socket.leave(existingLobby.lobbyCode);
+            broadcastGameState(io, leaveResult.lobby);
+          }
+        }
       }
 
       const result = joinLobby(lobbyCode, {
@@ -622,6 +645,47 @@ export function setupSocketEvents(io) {
       socket.leave(lobbyCode);
 
       broadcastGameState(io, result.lobby);
+
+      if (typeof callback === "function") {
+        callback();
+      }
+    });
+
+    socket.on(GAME_EVENTS.LOBBY_HOST_LEAVE, ({ lobbyCode, uid }, callback) => {
+
+
+      if (!lobbyCode || !uid) {
+        emitGameError(socket, "Missing host leave data");
+        return;
+      }
+
+      const lobby = getLobby(lobbyCode);
+
+      if (!lobby) {
+        emitGameError(socket, "Lobby not found");
+        return;
+      }
+
+      // Verifying request came from the host.
+      if (lobby.host.uid !== uid || lobby.host.socketId !== socket.id) {
+        emitGameError(socket, "Only the host can close the lobby");
+        return;
+      }
+
+      const result = closeLobby(lobbyCode, uid);
+
+      if (result.error) {
+        emitGameError(socket, result.error);
+        return;
+      }
+
+      // Notifying the host and all players are inside the room.
+      socket.to(lobbyCode).emit(GAME_EVENTS.LOBBY_CLOSED, {
+        message: "The host has closed the lobby.",
+      });
+
+      // Removeing every connected socket from the lobby room.
+      io.in(lobbyCode).socketsLeave(lobbyCode);
 
       if (typeof callback === "function") {
         callback();

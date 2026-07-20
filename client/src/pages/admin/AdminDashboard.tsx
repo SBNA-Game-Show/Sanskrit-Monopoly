@@ -7,7 +7,7 @@ interface DashboardProps {
   onDelete: (id: string, name: string) => void;
 }
 
-export const AdminDashboard: React.FC<DashboardProps> = ({ editions, navigateTo, onDelete }) => {
+export const AdminDashboard: React.FC<DashboardProps> = ({ editions, navigateTo, onDelete}) => {
   return (
     <div className="bg-[#FFFDF9] border border-[#FFE4C4] rounded-xl p-5 h-full flex flex-col shadow-sm max-w-4xl mx-auto w-full">
       <div className="flex justify-between items-center mb-5">
@@ -23,18 +23,28 @@ export const AdminDashboard: React.FC<DashboardProps> = ({ editions, navigateTo,
       </div>
 
       <div className="border-2 border-[#00ADFF] rounded-xl overflow-hidden bg-white shadow-sm">
-        <div className="bg-slate-50 border-b-2 border-[#00ADFF] grid grid-cols-12 px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
-          <div className="col-span-6">Configuration (Editions)</div>
-          <div className="col-span-3">Active Rules</div>
-          <div className="col-span-3 text-right">Actions</div>
+        <div className="bg-slate-50 border-b-2 border-[#00ADFF] grid grid-cols-14 px-2 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+          <div className="col-span-5">Configuration (Editions)</div>
+          <div className="col-span-2 text-center">Draft</div>
+          <div className="col-span-3 pl-9">Active Rules</div>
+          <div className="col-span-2 text-right">Actions</div>
         </div>
         <div className="divide-y divide-gray-100">
           {editions.length === 0 ? (
             <div className="p-8 text-center text-sm text-gray-400 font-medium">No cloud configurations detected.</div>
           ) : (
-            editions.map((item) => (
-              <div key={item.id} className="grid grid-cols-12 px-4 py-4 items-center text-sm text-slate-700 font-semibold hover:bg-orange-50/30 transition-colors">
-                <div className="col-span-6 text-base text-slate-900">{item.name}</div>
+            editions.map((item) => {
+              // Read status, fallback to true if undefined
+              const isDraft = item.draft === undefined ? true : item.draft;
+
+              return (
+                <div key={item.id} className="grid grid-cols-12 px-4 py-4 items-center text-sm text-slate-700 font-semibold hover:bg-orange-50/30 transition-colors">
+                  <div className="col-span-4 text-base text-slate-900">{item.name}</div>
+
+                <div className="col-span-2 text-center font-mono text-sm text-slate-600 font-bold">
+                    {isDraft ? "True" : "False"}                    
+                </div>
+
                 <div className="col-span-3 pl-4">
                   <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full text-xs font-bold">
                     {(item.tiles || []).length} Rule Enforcements
@@ -55,7 +65,8 @@ export const AdminDashboard: React.FC<DashboardProps> = ({ editions, navigateTo,
                   </button>
                 </div>
               </div>
-            ))
+            );
+            })
           )}
         </div>
       </div>
