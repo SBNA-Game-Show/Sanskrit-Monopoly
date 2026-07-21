@@ -81,18 +81,30 @@ function Navbar() {
         `}
       </style>
 
-      <button
-        type="button"
-        onClick={() => navigate("/home")}
-        className="flex items-center hover:scale-105 active:scale-95 transition-transform"
-      >
-        <img
-          src={logo}
-          alt="Sanskrit Monopoly"
-          className="h-10 w-auto"
-          draggable="false"
-        />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate("/home")}
+          className="flex items-center hover:scale-105 active:scale-95 transition-transform"
+        >
+          <img
+            src={logo}
+            alt="Sanskrit Monopoly"
+            className="h-10 w-auto"
+            draggable="false"
+          />
+        </button>
+
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => navigate("/admin")}
+            className="btn-primary font-sans"
+          >
+            Admin
+          </button>
+        )}
+      </div>
 
       {/* Clickable Code */}
       <div
