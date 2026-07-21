@@ -199,6 +199,28 @@ export function setupSocketEvents(io) {
         return;
       }
 
+      // Kick player/host out of previous lobby
+      for (const existingLobby of Object.values(lobbies)) {
+        if (existingLobby.lobbyCode === lobbyCode) continue;
+
+        const isHost = existingLobby.host.uid === player.uid;
+        const isPlayer = existingLobby.players.some((p) => p.uid === player.uid);
+
+        if (isHost) {
+          closeLobby(existingLobby.lobbyCode, player.uid);
+          socket.to(existingLobby.lobbyCode).emit(GAME_EVENTS.LOBBY_CLOSED, { message: "The host has joined another game. Lobby closed." });
+          io.in(existingLobby.lobbyCode).socketsLeave(existingLobby.lobbyCode);
+        }
+        else if (isPlayer) {
+          const leaveResult = leaveLobby(existingLobby.lobbyCode, player.uid);
+
+          if (!leaveResult.error) {
+            socket.leave(existingLobby.lobbyCode);
+            broadcastGameState(io, leaveResult.lobby);
+          }
+        }
+      }
+
       const result = joinLobby(lobbyCode, {
         uid: player.uid,
         username: player.username,
