@@ -2,11 +2,8 @@ import { useMemo, useState } from "react";
 import { DEFAULT_EDITION } from "../../../../shared/defaultEdition.js";
 import { ZimSceneHost } from "../../components/zim/ZimSceneHost";
 import { createZimBoard } from "../../components/zim/createZimBoardPreview";
-import {
-  PROPERTY_GROUP_COLORS,
-  TILE_TYPE_COLORS,
-} from "../../constants/zim/board";
-import type { GameEdition, GameTile } from "../../types/game/gameTypes";
+import { getTilesWithNormalizedColors } from "../../utils/editionColors";
+import type { GameEdition } from "../../types/game/gameTypes";
 import { RulesSectionList } from "./RulesSectionList";
 import { RulesTileFlowPanel } from "./RulesTileFlowPanel";
 import { RulesTileInfoPanel } from "./RulesTileInfoPanel";
@@ -15,27 +12,12 @@ type RulesBoardActions = {
   onClick: (index: number) => void;
 };
 
-function getNormalizedTileColor(tile: GameTile) {
-  const groupColors = PROPERTY_GROUP_COLORS as Record<string, string>;
-  const typeColors = TILE_TYPE_COLORS as Record<string, string>;
-
-  // Match the admin preview behavior so rule colors stay familiar across pages.
-  if (tile.group && groupColors[tile.group]) {
-    return groupColors[tile.group];
-  }
-
-  return tile.color ?? typeColors[tile.type] ?? typeColors.special ?? "#f4e8c8";
-}
-
 function buildRulesEdition(): GameEdition {
   const defaultEdition = DEFAULT_EDITION as GameEdition;
 
   return {
     ...defaultEdition,
-    tiles: defaultEdition.tiles.map((tile) => ({
-      ...tile,
-      color: getNormalizedTileColor(tile),
-    })),
+    tiles: getTilesWithNormalizedColors(defaultEdition.tiles),
   };
 }
 

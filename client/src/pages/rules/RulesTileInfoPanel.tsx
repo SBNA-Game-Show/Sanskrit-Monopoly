@@ -1,45 +1,15 @@
-import {
-  fallbackTileRuleInfo,
-  tileRuleInfoByType,
-} from "../../content/monopolyRules";
+import { getRuleInfo } from "../../utils/rulesTileHelpers";
 import type { GameTile } from "../../types/game/gameTypes";
+import { formatMoney } from "../../utils/gameMoney";
+import { getTileRent } from "../../utils/gameTiles";
+import { getSellValue } from "../../utils/gameTiles";
+import { getTilePrice } from "../../utils/gameTiles";
+import { isPurchasableTile } from "../../utils/gameTiles";
 
 type RulesTileInfoPanelProps = {
   tile: GameTile | null;
   tileIndex: number | null;
 };
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-function getTilePrice(tile: GameTile) {
-  return tile.price ?? 100;
-}
-
-function getTileRent(tile: GameTile) {
-  if (tile.type === "railroad") return tile.rent ?? 25;
-  if (tile.type === "utility") return tile.rent ?? 4;
-
-  return tile.rent ?? Math.max(10, Math.round(getTilePrice(tile) * 0.1));
-}
-
-function getSellValue(tile: GameTile) {
-  return tile.sellValue ?? Math.round(getTilePrice(tile) * 0.5);
-}
-
-function isPurchasableTile(tile: GameTile) {
-  return (
-    tile.type === "property" ||
-    tile.type === "railroad" ||
-    tile.type === "utility"
-  );
-}
-
-function getRuleInfo(tile: GameTile) {
-  // Custom edition tile types fall back to a generic activity explanation.
-  return tileRuleInfoByType[tile.type] ?? fallbackTileRuleInfo;
-}
 
 function getStatItems(tile: GameTile) {
   if (isPurchasableTile(tile)) {

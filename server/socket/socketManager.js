@@ -43,6 +43,15 @@ function broadcastGameState(io, lobby) {
   io.to(lobby.lobbyCode).emit(GAME_EVENTS.GAME_UPDATED, lobby);
 }
 
+function syncFinalPointsFromMoney(lobby) {
+  // Leaderboard treats scores as points, but the game will just use money as the final score.
+  // Makes it easier than to refactor the entire codebase
+  lobby.players.forEach((player) => {
+    const finalMoney = Number(player.money ?? 0);
+    player.points = Number.isFinite(finalMoney) ? finalMoney : 0;
+  });
+}
+
 function finishPopQuiz(lobby, io) {
   if (!lobby.activeQuiz) return;
   if (lobby.gameStatus !== "popQuiz") return;
@@ -52,23 +61,29 @@ function finishPopQuiz(lobby, io) {
     lobby.gameTimer = null;
   }
 
-  const currentPlayer = lobby.players[lobby.currentPlayerIndex];
-  if (lobby.activeQuiz.status === "correct") {
-    currentPlayer.money += Number(lobby.edition.tiles[currentPlayer.position].money);
-    addLog(lobby.lobbyCode, {
-      uid: currentPlayer.uid,
-      username: currentPlayer.username,
-      message: "got ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering correctly.",
-    });
-  }
-  else if (lobby.activeQuiz.status === "timerExpired" || lobby.activeQuiz.status === "incorrect") {
-    currentPlayer.money -= Number(lobby.edition.tiles[currentPlayer.position].money);
-    addLog(lobby.lobbyCode, {
-      uid: currentPlayer.uid,
-      username: currentPlayer.username,
-      message: "paid ₩" + lobby.edition.tiles[currentPlayer.position].money + " for answering incorrectly.",
-    });
-  }
+const currentPlayer = lobby.players[lobby.currentPlayerIndex];
+const quizMoneyDelta = getQuizMoneyDelta(lobby, currentPlayer);
+
+if (lobby.activeQuiz.status === "correct") {
+  currentPlayer.money += quizMoneyDelta;
+
+  addLog(lobby.lobbyCode, {
+    uid: currentPlayer.uid,
+    username: currentPlayer.username,
+    message: `got ₩${quizMoneyDelta} for answering correctly.`,
+  });
+} else if (
+  lobby.activeQuiz.status === "timerExpired" ||
+  lobby.activeQuiz.status === "incorrect"
+) {
+  currentPlayer.money -= quizMoneyDelta;
+
+  addLog(lobby.lobbyCode, {
+    uid: currentPlayer.uid,
+    username: currentPlayer.username,
+    message: `paid ₩${quizMoneyDelta} for answering incorrectly.`,
+  });
+}
 
   lobby.activeQuiz = null;
 
@@ -80,6 +95,17 @@ function finishPopQuiz(lobby, io) {
   }
 
   startNextTurn(lobby, io, broadcastGameState);
+}
+
+function getQuizMoneyDelta(lobby, player) {
+  const tile = lobby.edition.tiles[player.position];
+
+  // Support newer quiz tiles using points, plus older saved tiles that may still use money.
+  const rawDelta = tile?.points ?? tile?.money ?? tile?.amount ?? 0;
+  const moneyDelta = Number(rawDelta);
+
+  // Never allow invalid quiz values to poison the player's money balance.
+  return Number.isFinite(moneyDelta) ? moneyDelta : 0;
 }
 
 function startQuizTimer(lobby, io) {
@@ -709,15 +735,21 @@ export function setupSocketEvents(io) {
       lobby.winnerUid = null;
       lobby.endTime = Date.now();
 
+      syncFinalPointsFromMoney(lobby);
+
       addLog(lobbyCode, {
         uid: lobby.host.uid,
         username: lobby.host.username,
         message: "ended the game.",
       });
 
-      // temporarily commented out
-      // may submit incorrect scores (points-based instead of money-based)
-      // await submitScoresToLeaderboard(lobby);
+      // Changed to submit points to leaderboard
+      try {
+        // Submit after broadcasting so a Firebase failure cannot trap players in-game.
+        await submitScoresToLeaderboard(lobby);
+      } catch (error) {
+        console.error("Leaderboard submission failed:", error);
+      }
 
       broadcastGameState(io, lobby);
     });
