@@ -1,29 +1,21 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { GameState, GameTile } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
 import { socket } from "../../../socket";
 import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
+import { formatMoney } from "../../../utils/gameMoney";
+import {
+  getPlayerProperties,
+  getSellValue,
+  getTilePrice,
+  getTileRent,
+} from "../../../utils/gameTiles";
 
 type BuyPropertyOverlayProps = {
   gameState: GameState;
   isActivePlayer: boolean;
   uid: string | null;
 };
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-function getTilePrice(tile: GameTile) {
-  return tile.price ?? 100;
-}
-
-function getTileRent(tile: GameTile) {
-  if (tile.type === "railroad") return tile.rent ?? 25;
-  if (tile.type === "utility") return tile.rent ?? 4;
-
-  return tile.rent ?? Math.max(10, Math.round(getTilePrice(tile) * 0.1));
-}
 
 function getRentRulesText(tile: GameTile, rent: number) {
   if (tile.type === "railroad") {
@@ -37,18 +29,6 @@ function getRentRulesText(tile: GameTile, rent: number) {
   return `Base rent is ${formatMoney(rent)}. If the player owns the full color set, rent becomes ${formatMoney(rent * 2)}.`;
 }
 
-function getSellValue(tile: GameTile) {
-  return Math.round(getTilePrice(tile) * 0.5);
-}
-
-function getPlayerOwnedTiles(gameState: GameState, propertyIds: string[]) {
-  return propertyIds
-    .map((propertyId) =>
-      gameState.edition.tiles.find((tile) => tile.id === propertyId),
-    )
-    .filter((tile): tile is GameTile => Boolean(tile));
-}
-
 export function BuyPropertyOverlay({
   gameState,
   isActivePlayer,
@@ -59,31 +39,34 @@ export function BuyPropertyOverlay({
     string | null
   >(null);
 
-  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-  const tileIndex = currentPlayer?.position ?? -1;
+  // The turn player owns the landing decision; the viewer player owns "your" UI.
+  const turnPlayer = gameState.players[gameState.currentPlayerIndex];
+  const viewerPlayer =
+    gameState.players.find((player) => player.uid === uid) ?? null;
+  const viewerMoney = viewerPlayer?.money ?? 0;
+  const tileIndex = turnPlayer?.position ?? -1;
   const tile = gameState.edition.tiles[tileIndex];
 
   const owner = tile
     ? gameState.players.find((player) => player.properties.includes(tile.id))
     : null;
 
-  const ownedTiles = useMemo(() => {
-    if (!currentPlayer || !tile) return [];
-
-    return getPlayerOwnedTiles(gameState, currentPlayer.properties).filter(
-      (ownedTile) => ownedTile.id !== tile.id,
-    );
-  }, [currentPlayer, gameState, tile]);
+  const ownedTiles =
+    isActivePlayer && viewerPlayer && tile
+      ? getPlayerProperties(gameState, viewerPlayer).filter(
+          (ownedTile) => ownedTile.id !== tile.id,
+        )
+      : [];
 
   const selectedSellProperty =
     ownedTiles.find((ownedTile) => ownedTile.id === selectedSellPropertyId) ??
     ownedTiles[0] ??
     null;
 
-  if (!currentPlayer || !tile || owner) return null;
+  if (!turnPlayer || !tile || owner) return null;
 
   const price = getTilePrice(tile);
-  const canAfford = currentPlayer.money >= price;
+  const canAfford = isActivePlayer && viewerMoney >= price;
   const resolvedTileIndex = tileIndex >= 0 ? tileIndex : 0;
   const color = tile.color ?? "#ffffff";
   const description =
@@ -91,7 +74,7 @@ export function BuyPropertyOverlay({
     "A Sanskrit Monopoly property card. Buy it to collect rent when other players land here.";
 
   const rent = getTileRent(tile);
-  getRentRulesText(tile, rent)
+  getRentRulesText(tile, rent);
   const sellValue = getSellValue(tile);
 
   const selectedSellValue = selectedSellProperty
@@ -99,11 +82,12 @@ export function BuyPropertyOverlay({
     : 0;
 
   const canSellAndAfford =
+    isActivePlayer &&
     Boolean(selectedSellProperty) &&
-    currentPlayer.money + selectedSellValue >= price;
+    viewerMoney + selectedSellValue >= price;
 
   const handleBuyProperty = () => {
-    if (!gameState.lobbyCode || !uid) return;
+    if (!gameState.lobbyCode || !uid || !isActivePlayer) return;
 
     socket.emit(GAME_EVENTS.GAME_BUY_PROPERTY, {
       lobbyCode: gameState.lobbyCode,
@@ -112,7 +96,7 @@ export function BuyPropertyOverlay({
   };
 
   const handleDeclineProperty = () => {
-    if (!gameState.lobbyCode || !uid) return;
+    if (!gameState.lobbyCode || !uid || !isActivePlayer) return;
 
     socket.emit(GAME_EVENTS.GAME_DECLINE_PROPERTY, {
       lobbyCode: gameState.lobbyCode,
@@ -131,7 +115,12 @@ export function BuyPropertyOverlay({
   };
 
   const handleSellAndBuy = () => {
-    if (!selectedSellProperty || !gameState.lobbyCode || !uid || !isActivePlayer) {
+    if (
+      !selectedSellProperty ||
+      !gameState.lobbyCode ||
+      !uid ||
+      !isActivePlayer
+    ) {
       return;
     }
 
@@ -212,9 +201,11 @@ export function BuyPropertyOverlay({
             </p>
           </div>
 
-          <p className="mt-4 text-center text-lg font-extrabold text-[#160f08]">
-            Your money: {formatMoney(currentPlayer.money ?? 0)}
-          </p>
+          {isActivePlayer && (
+            <p className="mt-4 text-center text-lg font-extrabold text-[#160f08]">
+              Your money: {formatMoney(viewerMoney)}
+            </p>
+          )}
 
           <div className="mt-5">
             {isActivePlayer ? (
@@ -225,8 +216,8 @@ export function BuyPropertyOverlay({
                       Not enough money to buy this property.
                     </p>
                     <p className="mt-1 text-sm font-bold text-[#6b3f1d]">
-                      You need {formatMoney(price - currentPlayer.money)} more.
-                      You can sell one of your properties below.
+                      You need {formatMoney(price - viewerMoney)} more. You can
+                      sell one of your properties below.
                     </p>
                   </div>
                 )}
@@ -267,7 +258,7 @@ export function BuyPropertyOverlay({
                 <p className="text-lg font-semibold text-[#6b3f1d]">
                   Waiting for{" "}
                   <span className="font-extrabold">
-                    {currentPlayer?.username ?? "the current player"}
+                    {turnPlayer?.username ?? "the current player"}
                   </span>{" "}
                   to decide.
                 </p>
@@ -275,7 +266,7 @@ export function BuyPropertyOverlay({
             )}
           </div>
 
-          {showSellOptions && ownedTiles.length > 0 && (
+          {isActivePlayer && showSellOptions && ownedTiles.length > 0 && (
             <div className="mt-5 rounded-2xl border-[4px] border-[#ffa23b] bg-[#fff1e5] p-4">
               <p className="text-sm font-extrabold uppercase tracking-wide text-[#6b3f1d]">
                 Compare Properties Before Selling
@@ -287,8 +278,7 @@ export function BuyPropertyOverlay({
 
               <div className="mt-4 max-h-[170px] space-y-2 overflow-y-auto pr-1">
                 {ownedTiles.map((ownedTile) => {
-                  const isSelected =
-                    selectedSellProperty?.id === ownedTile.id;
+                  const isSelected = selectedSellProperty?.id === ownedTile.id;
 
                   return (
                     <button
@@ -313,8 +303,7 @@ export function BuyPropertyOverlay({
                   <div
                     className="mb-4 h-9 rounded-xl border-[3px] border-[#6b3f1d]"
                     style={{
-                      backgroundColor:
-                        selectedSellProperty.color ?? "#ffffff",
+                      backgroundColor: selectedSellProperty.color ?? "#ffffff",
                     }}
                   />
 

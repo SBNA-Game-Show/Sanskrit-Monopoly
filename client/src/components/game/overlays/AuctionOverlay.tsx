@@ -3,6 +3,7 @@ import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 import { socket } from "../../../socket";
 import { PropertySummaryCard } from "../PropertySummaryCard";
 import { GameOverlayShell } from "./GameOverlayShell";
+import { formatMoney } from "../../../utils/gameMoney";
 
 type AuctionOverlayProps = {
   gameState: GameState;
@@ -11,10 +12,6 @@ type AuctionOverlayProps = {
 };
 
 const BID_INCREMENTS = [1, 5, 10, 25];
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
 
 function getBidStatus(
   player: PlayerState,

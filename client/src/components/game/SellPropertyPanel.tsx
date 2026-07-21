@@ -1,30 +1,16 @@
 import { useState } from "react";
-import type { GameState, GameTile, PlayerState } from "../../types/game/gameTypes";
+import type { GameState } from "../../types/game/gameTypes";
 import { GAME_EVENTS } from "../../constants/socket/gameEvents";
 import { socket } from "../../socket";
+import { formatMoney } from "../../utils/gameMoney";
+import { getPlayerProperties } from "../../utils/gameTiles";
+import { getSellValue } from "../../utils/gameTiles";
+
 
 type SellPropertyPanelProps = {
   gameState: GameState;
   uid: string | null;
 };
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-function getSellValue(tile: GameTile) {
-  return Number(tile.sellValue);
-}
-
-function getPlayerProperties(gameState: GameState, player: PlayerState | null) {
-  if (!player) return [];
-
-  return player.properties
-    .map((propertyId) =>
-      gameState.edition.tiles.find((tile) => tile.id === propertyId),
-    )
-    .filter((tile): tile is GameTile => Boolean(tile));
-}
 
 export function SellPropertyPanel({ gameState, uid }: SellPropertyPanelProps) {
   const [isOpen, setIsOpen] = useState(false);

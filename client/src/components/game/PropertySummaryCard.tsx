@@ -1,26 +1,13 @@
 import type { GameTile } from "../../types/game/gameTypes";
+import { formatMoney } from "../../utils/gameMoney";
+import { getTileRent } from "../../utils/gameTiles";
+import { getSellValue } from "../../utils/gameTiles";
+import { getTilePrice } from "../../utils/gameTiles";
 
 type PropertySummaryCardProps = {
   tile: GameTile;
   label?: string;
 };
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-function getTilePrice(tile: GameTile) {
-  return tile.price ?? 100;
-}
-
-function getTileRent(tile: GameTile) {
-  return tile.rent ?? Math.max(10, Math.round(getTilePrice(tile) * 0.1));
-}
-
-function getSellValue(tile: GameTile) {
-  // Prefer admin-configured sell value, then fall back to half price.
-  return tile.sellValue ?? Math.round(getTilePrice(tile) * 0.5);
-}
 
 export function PropertySummaryCard({
   tile,

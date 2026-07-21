@@ -11,18 +11,12 @@ import { useEffect, useRef } from "react";
 import { useToast } from "../context/ToastContext";
 import { SellPropertyPanel } from "../components/game/SellPropertyPanel";
 import { useNav } from "../components/TransitionOverlay";
+import { formatMoney } from "../utils/gameMoney";
 
 
 type GameProps = {
   gameState: GameState;
 };
-
-// mini-function that changes how the money is formatted
-// previously, when money went below 0, it would render ₩-106
-// this just makes it look -₩106 so it's more visually correct
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
 
 // mini-function to check whether a log entry is a completed auction
 function isAuctionWinLog(message: string) {
