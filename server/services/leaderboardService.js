@@ -35,7 +35,7 @@ export async function submitScoresToLeaderboard(lobby) {
         if (!player.uid) return;
 
         const entryKey = `${timestamp}_${player.uid}_${timePlayedInSeconds}`;
-        const score = Number(player.points ?? player.money ?? player.score ?? 0);
+        const score = Number(player.money ?? 0);
 
         entries[entryKey] = Number.isFinite(score) ? score : 0;
     });

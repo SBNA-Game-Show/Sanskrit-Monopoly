@@ -65,7 +65,7 @@ function Result({ gameState }: any) {
                   <div className="result-stats">
                     <div className="stat-box">
                       <span className="stat-icon">⭐</span>
-                      <span className="stat-label">Points/अंकाः</span>
+                      <span className="stat-label">Money/अर्थः</span>
                       <strong>{player.money || 0}</strong>
                     </div>
 
