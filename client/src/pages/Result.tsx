@@ -8,7 +8,7 @@ function Result({ gameState }: any) {
   const navigate = useNav();
 
   const sortedPlayers = [...gameState.players].sort(
-    (a, b) => (b.points || 0) - (a.points || 0),
+    (a, b) => (b.money || 0) - (a.money || 0),
   );
 
   const winner = sortedPlayers[0];
@@ -65,8 +65,8 @@ function Result({ gameState }: any) {
                   <div className="result-stats">
                     <div className="stat-box">
                       <span className="stat-icon">⭐</span>
-                      <span className="stat-label">Points/अंकाः</span>
-                      <strong>{player.points || 0}</strong>
+                      <span className="stat-label">Money/अर्थः</span>
+                      <strong>{player.money || 0}</strong>
                     </div>
 
                   </div>

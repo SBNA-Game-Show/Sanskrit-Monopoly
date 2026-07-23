@@ -2,16 +2,13 @@ import type { GameState, GameTile } from "../../../types/game/gameTypes";
 import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
 import { socket } from "../../../socket";
 import { GameOverlayShell } from "./GameOverlayShell";
+import { formatMoney } from "../../../utils/gameMoney";
 
 type BankruptcyAuctionOverlayProps = {
   gameState: GameState;
   uid: string | null;
   isHost: boolean;
 };
-
-function formatMoney(amount: number | undefined) {
-  return `₩${Number(amount ?? 0)}`;
-}
 
 export function BankruptcyAuctionOverlay({
   gameState,

@@ -1,38 +1,14 @@
-import {
-  fallbackTileRuleInfo,
-  tileRuleInfoByType,
-} from "../../content/monopolyRules";
 import type { GameTile } from "../../types/game/gameTypes";
+import { formatMoney } from "../../utils/gameMoney";
+import { getTileRent } from "../../utils/gameTiles";
+import { isPurchasableTile } from "../../utils/gameTiles";
+import { getRuleInfo } from "../../utils/rulesTileHelpers";
 
 type RulesTileFlowPanelProps = {
   className?: string;
   tile: GameTile | null;
   tileIndex: number | null;
 };
-
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-function getTileRent(tile: GameTile) {
-  if (tile.type === "railroad") return tile.rent ?? 25;
-  if (tile.type === "utility") return tile.rent ?? 4;
-
-  return tile.rent ?? Math.max(10, Math.round((tile.price ?? 100) * 0.1));
-}
-
-function isPurchasableTile(tile: GameTile) {
-  return (
-    tile.type === "property" ||
-    tile.type === "railroad" ||
-    tile.type === "utility"
-  );
-}
-
-function getRuleInfo(tile: GameTile) {
-  // Custom edition tile types still get a readable explanation block.
-  return tileRuleInfoByType[tile.type] ?? fallbackTileRuleInfo;
-}
 
 function getRentRulesText(tile: GameTile) {
   const rent = getTileRent(tile);

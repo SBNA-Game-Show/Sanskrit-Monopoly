@@ -2,6 +2,8 @@ import type { GameState, GameTile } from "../../../types/game/gameTypes";
 import { GameOverlayShell } from "./GameOverlayShell";
 import { socket } from "../../../socket";
 import { GAME_EVENTS } from "../../../constants/socket/gameEvents";
+import { formatMoney } from "../../../utils/gameMoney";
+import { getSellValue } from "../../../utils/gameTiles";
 
 type BankruptcyOverlayProps = {
   gameState: GameState;
@@ -10,16 +12,6 @@ type BankruptcyOverlayProps = {
 };
 
 type BankruptcyViewerRole = "bankruptPlayer" | "host" | "observer";
-
-// Keep bankruptcy money labels consistent with the main game sidebar.
-function formatMoney(amount: number) {
-  return amount < 0 ? `-₩${Math.abs(amount)}` : `₩${amount}`;
-}
-
-// Read sell values defensively so older/custom editions do not crash the overlay.
-function getSellValue(tile: GameTile) {
-  return Number(tile.sellValue ?? 0);
-}
 
 export function BankruptcyOverlay({
   gameState,
