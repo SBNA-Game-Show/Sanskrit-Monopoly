@@ -138,15 +138,9 @@ export function GameOverlayLayer({
 
     case "turnEnded":
       return (
+        //intentionally render nothing
+        //maybe remove this case entirely later and double check if it breaks anything
         <></>
-        // commented out for now
-        // Change this to its own seperate result overlay later
-        // ex: player 1 got +20 points or -20 points, etc
-        // <PenaltyActivityOverlay
-        //   gameState={gameState}
-        //   isActivePlayer={isActivePlayer}
-        //   mode="result"
-        // />
       );
 
     case "miniGame":
