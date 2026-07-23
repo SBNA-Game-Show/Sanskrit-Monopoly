@@ -554,24 +554,12 @@ export function setupSocketEvents(io) {
       const lobby = lobbies[lobbyCode];
       const currentPlayer = lobby.players[lobby.currentPlayerIndex];
 
-            
-      if (lobby.gameStatus === "jail" && currentPlayer.jailed) {
-        // passing from jail serves the jail turn and prevents an infinite jail loop
-        currentPlayer.jailed = false;
-
-        addLog(lobbyCode, {
-          uid: currentPlayer.uid,
-          username: currentPlayer.username,
-          message: "served their jail turn and left jail.",
-        });
-      } else {
-        addLog(lobbyCode, {
-          uid: currentPlayer.uid,
-          username: currentPlayer.username,
-          message: "passed their turn.",
-        });
-      }
-
+      addLog(lobbyCode, {
+        uid: currentPlayer.uid,
+        username: currentPlayer.username,
+        message: "passed their turn.",
+      });
+      
       startNextTurn(lobby, io, broadcastGameState);
     });
 
