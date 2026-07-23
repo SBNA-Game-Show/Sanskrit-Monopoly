@@ -16,10 +16,14 @@ export default function ActiveLobbies() {
     const [lobbies, setLobbies] = useState<ActiveLobby[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const SERVER_URL = import.meta.env.DEV
+        ? "http://localhost:3000"
+        : "https://sanskrit-monopoly.onrender.com";
+
     useEffect(() => {
         const fetchLobbies = async () => {
             try {
-                const response = await fetch("http://localhost:3000/api/lobbies");
+                const response = await fetch(`${SERVER_URL}/api/lobbies`);
                 if (!response.ok) throw new Error("Failed to fetch lobbies");
 
                 const data = await response.json();
