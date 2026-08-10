@@ -1,4 +1,5 @@
-# monopoly!!!!!!!!!!!
+# Sanskrit Monopoly
+Documentation: https://docs.google.com/document/d/1aHboftl8Mp0polg_5FiBfl-PPLz4SPrJCumcSQqLoRk/edit?usp=sharing
 
 ## Running the client-side
 
