@@ -22,7 +22,14 @@ export function GameOverlayShell({
   const sizeClass = size === "wide" ? "max-w-[980px]" : "max-w-[560px]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-6"style={{ animation: "fadeIn 0.3s ease-out forwards" }}
+    >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
       <div
         className={`w-full ${sizeClass} rounded-[28px] border-[8px] p-7 text-center shadow-2xl ${colorClasses}`}
       >
